@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MM ROADWAYS — Management Suite</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ══════════════════════════════════════════
+   GLOBAL RESET
+══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; }
+
+/* ══════════════════════════════════════════
+   CSS VARIABLES — LIGHT THEME
+══════════════════════════════════════════ */
+:root {
+  /* Sidebar */
+  --sb-bg:        #1c2b4a;
+  --sb-dark:      #152039;
+  --sb-w:         235px;
+  --sb-border:    rgba(255,255,255,0.08);
+
+  /* Accent */
+  --accent:       #f97316;
+  --accent2:      #fb923c;
+  --accent-soft:  #fff4ed;
+  --accent-glow:  rgba(249,115,22,0.25);
+  --accent-grad:  linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+
+  /* Blue accent for chips */
+  --blue:         #3b82f6;
+  --blue-soft:    #eff6ff;
+  --green:        #22c55e;
+  --green-soft:   #f0fdf4;
+
+  /* Page / content */
+  --page-bg:      #f1f5f9;
+  --card-bg:      #ffffff;
+  --topbar-bg:    #ffffff;
+  --topbar-h:     58px;
+  --border:       #e2e8f0;
+  --shadow:       0 1px 3px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.06);
+
+  /* Text */
+  --txt-dark:     #0f172a;
+  --txt-mid:      #475569;
+  --txt-muted:    #94a3b8;
+  --txt-light:    #cbd5e1;
+
+  /* Nav */
+  --nav-hover:    rgba(255,255,255,0.07);
+  --nav-active:   var(--accent-grad);
+
+  --radius:       10px;
+}
+
+/* ══════════════════════════════════════════
+   LOGIN SCREEN
+══════════════════════════════════════════ */
+#loginScreen {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(135deg, #1c2b4a 0%, #0f172a 50%, #1e3a5f 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+/* Animated background blobs */
+#loginScreen::before {
+  content: '';
+  position: absolute;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(249,115,22,0.12) 0%, transparent 70%);
+  top: -150px; right: -100px;
+  border-radius: 50%;
+  animation: pulse-bg 6s ease-in-out infinite;
+}
+#loginScreen::after {
+  content: '';
+  position: absolute;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(59,130,246,0.10) 0%, transparent 70%);
+  bottom: -100px; left: -80px;
+  border-radius: 50%;
+  animation: pulse-bg 8s ease-in-out infinite reverse;
+}
+@keyframes pulse-bg {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.7; }
+}
+
+.login-box {
+  background: rgba(255,255,255,0.97);
+  border-radius: 20px;
+  padding: 44px 40px 36px;
+  width: 420px;
+  max-width: 92vw;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
+  position: relative;
+  z-index: 1;
+  animation: slideUp 0.5s cubic-bezier(.34,1.4,.64,1) both;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(40px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.login-logo {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.login-truck {
+  font-size: 52px;
+  display: block;
+  margin-bottom: 8px;
+  animation: truck-bounce 2s ease-in-out infinite;
+}
+@keyframes truck-bounce {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.login-brand {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--txt-dark);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.login-tagline {
+  font-size: 11px;
+  color: var(--txt-muted);
+  font-weight: 600;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+.login-heading {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--txt-dark);
+  margin-bottom: 5px;
+}
+.login-desc {
+  font-size: 12.5px;
+  color: var(--txt-muted);
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+/* Hint badge */
+.hint-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--blue-soft);
+  border: 1.5px solid #bfdbfe;
+  border-radius: 9px;
+  padding: 8px 14px;
+  font-size: 11.5px;
+  color: #1d4ed8;
+  font-weight: 700;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.form-group { margin-bottom: 16px; }
+.form-label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--txt-mid);
+  margin-bottom: 6px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 600;
+  color: var(--txt-dark);
+  background: #f8fafc;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  outline: none;
+}
+.form-input:focus {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+.form-input::placeholder { color: var(--txt-muted); font-weight: 500; }
+
+.btn-login {
+  width: 100%;
+  padding: 13px;
+  background: var(--accent-grad);
+  border: none;
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-weight: 800;
+  font-family: 'Nunito', sans-serif;
+  color: #fff;
+  cursor: pointer;
+  letter-spacing: 0.4px;
+  margin-top: 8px;
+  box-shadow: 0 4px 20px var(--accent-glow);
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.btn-login:hover { transform: translateY(-2px); box-shadow: 0 8px 28px var(--accent-glow); }
+.btn-login:active { transform: translateY(0); }
+
+.login-error {
+  background: #fef2f2;
+  border: 1.5px solid #fca5a5;
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-size: 12.5px;
+  color: #dc2626;
+  font-weight: 700;
+  margin-top: 12px;
+  display: none;
+  animation: shake 0.35s ease;
+}
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-7px); }
+  75% { transform: translateX(7px); }
+}
+
+.login-footer {
+  margin-top: 26px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  font-size: 11px;
+  color: var(--txt-muted);
+  font-weight: 500;
+  line-height: 1.6;
+}
+.login-footer .dev { color: var(--accent); font-weight: 800; font-size: 12px; }
+
+/* ══════════════════════════════════════════
+   MAIN APP (hidden until login)
+══════════════════════════════════════════ */
+#appShell {
+  display: none;
+  height: 100%;
+  width: 100%;
+}
+#appShell.show { display: flex; }
+
+/* ══════════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════════ */
+.sidebar {
+  width: var(--sb-w);
+  background: var(--sb-bg);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  z-index: 20;
+  box-shadow: 4px 0 30px rgba(0,0,0,0.22);
+}
+
+.brand {
+  background: var(--sb-dark);
+  padding: 0 18px;
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--sb-border);
+}
+.brand-icon {
+  width: 36px; height: 36px;
+  background: var(--accent-grad);
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+.brand-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 17px; font-weight: 700;
+  color: #fff; letter-spacing: 0.8px;
+  text-transform: uppercase; line-height: 1.2;
+}
+.brand-tag {
+  font-size: 9px; color: var(--accent2);
+  font-weight: 600; letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.nav-scroll {
+  flex: 1; overflow-y: auto; padding: 12px 0 16px;
+}
+.nav-scroll::-webkit-scrollbar { width: 3px; }
+.nav-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
+
+.nav-section {
+  font-size: 9px; font-weight: 800;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: rgba(255,255,255,0.25);
+  padding: 10px 18px 6px;
+}
+
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px 10px 16px;
+  margin: 2px 8px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  border: 1px solid transparent;
+  position: relative;
+  user-select: none;
+}
+.nav-item:hover { background: var(--nav-hover); border-color: rgba(255,255,255,0.1); }
+.nav-item.active {
+  background: var(--accent-grad);
+  border-color: transparent;
+  box-shadow: 0 4px 18px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.nav-item.active::before {
+  content: '';
+  position: absolute; left: -8px;
+  top: 50%; transform: translateY(-50%);
+  width: 3px; height: 55%;
+  background: var(--accent2);
+  border-radius: 0 3px 3px 0;
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+.nav-icon { font-size: 19px; width: 26px; text-align: center; flex-shrink: 0; transition: transform 0.2s; }
+.nav-item:hover .nav-icon { transform: scale(1.18); }
+
+.nav-info { flex: 1; min-width: 0; }
+.nav-title {
+  font-size: 13px; font-weight: 700;
+  color: rgba(255,255,255,0.88);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  line-height: 1.3;
+}
+.nav-sub {
+  font-size: 10px; color: rgba(255,255,255,0.35);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-top: 1px; font-weight: 500;
+}
+.nav-item.active .nav-title { color: #fff; }
+.nav-item.active .nav-sub { color: rgba(255,255,255,0.75); }
+
+.nav-num {
+  font-size: 10px; font-weight: 800;
+  color: rgba(255,255,255,0.20);
+  min-width: 20px; text-align: right;
+  flex-shrink: 0;
+}
+.nav-item.active .nav-num { color: rgba(255,255,255,0.6); }
+
+/* Sidebar footer */
+.sb-footer {
+  border-top: 1px solid var(--sb-border);
+  padding: 14px 18px; flex-shrink: 0;
+  background: var(--sb-dark);
+}
+.sb-footer-dev {
+  font-size: 10px; color: rgba(255,255,255,0.32);
+  font-weight: 500; text-align: center; line-height: 1.7;
+}
+.dev-name { color: var(--accent2); font-weight: 800; font-size: 12px; }
+.dev-badge {
+  display: inline-block;
+  background: var(--accent-grad); color: #fff;
+  font-size: 9px; font-weight: 800;
+  padding: 2px 9px; border-radius: 20px;
+  letter-spacing: 0.8px; text-transform: uppercase; margin-top: 5px;
+}
+
+/* ══════════════════════════════════════════
+   MAIN PANEL
+══════════════════════════════════════════ */
+.main-panel {
+  flex: 1; display: flex; flex-direction: column;
+  overflow: hidden; background: var(--page-bg); min-width: 0;
+}
+
+/* Topbar */
+.topbar {
+  height: var(--topbar-h);
+  background: var(--topbar-bg);
+  border-bottom: 2px solid var(--border);
+  display: flex; align-items: center;
+  padding: 0 22px; gap: 10px; flex-shrink: 0;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.tb-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.tb-module-icon { font-size: 26px; flex-shrink: 0; }
+.tb-info { min-width: 0; }
+.tb-name {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 20px; font-weight: 700;
+  color: var(--txt-dark); letter-spacing: 0.3px; line-height: 1.1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.tb-crumb { font-size: 11px; color: var(--txt-muted); font-weight: 600; }
+.tb-crumb .crumb-active { color: var(--accent); font-weight: 700; }
+
+.tb-right { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
+
+/* Chips */
+.chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 13px; border-radius: 20px;
+  font-size: 11.5px; font-weight: 700;
+  white-space: nowrap; border: 1.5px solid; letter-spacing: 0.3px;
+}
+.chip-live {
+  color: #15803d; border-color: #86efac; background: var(--green-soft);
+}
+.chip-live-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #22c55e; box-shadow: 0 0 6px #22c55e;
+  animation: blink 1.5s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.25;} }
+.chip-date { color: var(--blue); border-color: #bfdbfe; background: var(--blue-soft); }
+.chip-company {
+  color: #fff; border-color: transparent;
+  background: var(--accent-grad);
+  box-shadow: 0 2px 12px var(--accent-glow);
+}
+
+/* User menu */
+.user-menu {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 14px 5px 6px; border-radius: 24px;
+  border: 1.5px solid var(--border); background: #f8fafc;
+  cursor: default;
+}
+.user-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--accent-grad);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 900; color: #fff;
+  font-family: 'Rajdhani', sans-serif; letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+.user-name { font-size: 12px; font-weight: 800; color: var(--txt-dark); line-height: 1.2; }
+.user-role { font-size: 10px; color: var(--txt-muted); font-weight: 600; }
+
+.btn-logout {
+  padding: 6px 14px; border-radius: 20px;
+  border: 1.5px solid #fca5a5;
+  background: #fef2f2; color: #dc2626;
+  font-size: 11.5px; font-weight: 700;
+  font-family: 'Nunito', sans-serif;
+  cursor: pointer; transition: all 0.18s;
+}
+.btn-logout:hover { background: #dc2626; color: #fff; border-color: #dc2626; }
+
+/* ══════════════════════════════════════════
+   CONTENT / IFRAMES
+══════════════════════════════════════════ */
+.content-area { flex: 1; position: relative; overflow: hidden; }
+
+.module-frame {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; border: none;
+  display: none; opacity: 0;
+  transition: opacity 0.28s ease;
+}
+.module-frame.active { display: block; }
+.module-frame.visible { opacity: 1; }
+
+/* Loader */
+.loader {
+  position: absolute; inset: 0;
+  background: var(--page-bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 18px; z-index: 10;
+  transition: opacity 0.3s;
+}
+.loader.hide { opacity: 0; pointer-events: none; }
+.loader-spinner {
+  position: relative; width: 60px; height: 60px;
+}
+.loader-spinner::before, .loader-spinner::after {
+  content: ''; position: absolute;
+  border-radius: 50%; border: 3px solid transparent;
+}
+.loader-spinner::before {
+  inset: 0; border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+.loader-spinner::after {
+  inset: 8px; border-top-color: var(--blue);
+  animation: spin 1.2s linear infinite reverse;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader-icon {
+  font-size: 22px; position: absolute;
+  top: 50%; left: 50%; transform: translate(-50%,-50%);
+}
+.loader-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 16px; font-weight: 700;
+  color: var(--txt-mid); letter-spacing: 1px;
+}
+.loader-sub { font-size: 12px; color: var(--txt-muted); font-weight: 600; }
+
+/* ══════════════════════════════════════════
+   MOBILE
+══════════════════════════════════════════ */
+.hamburger {
+  display: none; background: none; border: none;
+  font-size: 22px; cursor: pointer; color: var(--txt-dark); padding: 4px;
+}
+.mask {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5); z-index: 15; backdrop-filter: blur(3px);
+}
+
+@media (max-width: 820px) {
+  .sidebar {
+    position: fixed; left: calc(-1 * var(--sb-w) - 10px);
+    top: 0; height: 100%; transition: left 0.28s cubic-bezier(.4,0,.2,1); z-index: 20;
+  }
+  .sidebar.open { left: 0; }
+  .mask.show { display: block; }
+  .hamburger { display: block; }
+  .chip-date, .chip-live, .user-name, .user-role { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     LOGIN SCREEN
+══════════════════════════════════════════ -->
+<div id="loginScreen">
+  <div class="login-box">
+
+    <div class="login-logo">
+      <span class="login-truck">🚛</span>
+      <div class="login-brand">MM Roadways</div>
+      <div class="login-tagline">Management Suite</div>
+    </div>
+
+    <!-- <div class="hint-badge">
+      🔐 &nbsp;User: <strong>mmroadways</strong> &nbsp;|&nbsp; Pass: <strong>mmr@2026</strong>
+    </div> -->
+
+    <div class="login-heading">Welcome Back! 👋</div>
+    <div class="login-desc">Please sign in to access your dashboard.</div>
+
+    <div class="form-group">
+      <label class="form-label" for="uname">Username</label>
+      <input class="form-input" type="text" id="uname" placeholder="Enter your username" autocomplete="username" />
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="upass">Password</label>
+      <input class="form-input" type="password" id="upass" placeholder="Enter your password" autocomplete="current-password" />
+    </div>
+
+    <button class="btn-login" onclick="doLogin()">🔓 &nbsp;Sign In to Dashboard</button>
+
+    <div class="login-error" id="loginError">❌ &nbsp;Invalid username or password. Please try again.</div>
+
+    <div class="login-footer">
+      Developed with ❤️ by &nbsp;<span class="dev">✦ Vignesh ✦</span><br>
+      © 2026 MM Roadways &nbsp;·&nbsp; All Rights Reserved
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MAIN APP SHELL
+══════════════════════════════════════════ -->
+<div id="appShell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-icon">🚛</div>
+      <div>
+        <div class="brand-name">MM Roadways</div>
+        <div class="brand-tag">Mgmt Suite</div>
+      </div>
+    </div>
+
+    <div class="nav-scroll">
+      <div class="nav-section">All Modules</div>
+      <div id="navList"></div>
+    </div>
+
+    <div class="sb-footer">
+      <div class="sb-footer-dev">
+        Developed by<br>
+        <span class="dev-name">✦ Vignesh ✦</span><br>
+        <span class="dev-badge">MM Roadways · 2026</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN PANEL -->
+  <div class="main-panel">
+    <div class="topbar">
+      <div class="tb-left">
+        <button class="hamburger" onclick="toggleSidebar()">☰</button>
+        <span class="tb-module-icon" id="tbIcon"></span>
+        <div class="tb-info">
+          <div class="tb-name" id="tbName">Loading...</div>
+          <div class="tb-crumb">MM Roadways › <span class="crumb-active" id="tbSub">—</span></div>
+        </div>
+      </div>
+      <div class="tb-right">
+        <div class="chip chip-live"><span class="chip-live-dot"></span>LIVE</div>
+        <div class="chip chip-date" id="dateBadge">─</div>
+        <div class="chip chip-company">MM ROADWAYS</div>
+        <div class="user-menu">
+          <div class="user-avatar">V</div>
+          <div>
+            <div class="user-name">Vignesh</div>
+            <div class="user-role">Administrator</div>
+          </div>
+        </div>
+        <button class="btn-logout" onclick="doLogout()">⏏ Logout</button>
+      </div>
+    </div>
+
+    <div class="content-area" id="contentArea">
+      <div class="loader" id="loader">
+        <div class="loader-spinner">
+          <span class="loader-icon" id="loaderIcon">🚛</span>
+        </div>
+        <div class="loader-text">LOADING MODULE</div>
+        <div class="loader-sub" id="loaderSub">Please wait...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mask" id="mask" onclick="closeSidebar()"></div>
+
+<!-- ══════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════ -->
+<script>
+/* ─────────────────────────────────────────────────────
+   CREDENTIALS  →  Change username & password here
+───────────────────────────────────────────────────── */
+// const CREDENTIALS = {
+//   username: 'mmroadways',
+//   password: 'mmr@2026'
+// };
+
+const USERS = [
+  { username: 'mmroadways',  password: 'mmr@2026',   name: 'Vignesh',  role: 'Administrator' },
+  { username: 'prahar',    password: 'prahar@123',    name: 'Vicky',   role: 'Manager'       },
+  { username: '',     password: '',    name: '',   role: 'Driver'        },
+  { username: '',    password: '',    name: '',    role: 'Accountant'    },
+  // Add more users here as needed...
+];
+
+/* ─────────────────────────────────────────────────────
+   MODULES  →  'file' must match your HTML filenames
+   All 10 HTML files must be in the SAME folder as
+   this MM_Roadways_MAIN.html file.
+───────────────────────────────────────────────────── */
+const MODULES = [
+  { icon:'🏠', title:'Dashboard',         sub:'Transport Overview',      file:'deepseek_html_20260202_9f48c3.html' },
+  { icon:'⛽', title:'Fuel Statement',    sub:'Reconciliation Report',   file:'All_Statement_Compare.html'         },
+  { icon:'👤', title:'Driver Salary',     sub:'Salary & Photo Records',  file:'Driver_Salary_Photo_deep.html'      },
+  { icon:'📋', title:'Daily Settlements', sub:'Vehicle Expense Tracker', file:'Daily_Settlements.html'             },
+  { icon:'🚗', title:'Idle Vehicles',     sub:'Idle Vehicle Monitor',    file:'Idle_Vehicle.html'                  },
+  { icon:'📍', title:'Mileage',           sub:'Mileage Calculation',     file:'MM_Roadways_Mileage.html'           },
+  { icon:'🔍', title:'Fuel Check',        sub:'Transaction Comparator',  file:'mmfuell.html'                       },
+  { icon:'📊', title:'Trip Sheet',        sub:'Pending Tripsheet',       file:'Pending_Tripsheet1.html'            },
+  { icon:'🏷️', title:'FASTag',            sub:'FASTag Dashboard',        file:'Fastag.html'                        },
+  { icon:'🔄', title:'File Converter',    sub:'XLS / CSV / JSON / PDF',  file:'All_File_Format.html'               }
+];
+
+/* ─────────────────────────────────────────────────────
+   LOGIN LOGIC
+───────────────────────────────────────────────────── */
+function doLogin() {
+  const u   = document.getElementById('uname').value.trim();
+  const p   = document.getElementById('upass').value;
+  const err = document.getElementById('loginError');
+
+  const matchedUser = USERS.find(usr => usr.username === u && usr.password === p);
+  if (matchedUser) {
+    const box = document.querySelector('.login-box');
+    box.style.transition = 'transform 0.4s ease, opacity 0.4s ease';
+    box.style.transform  = 'scale(0.9) translateY(-20px)';
+    box.style.opacity    = '0';
+    setTimeout(() => {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('appShell').classList.add('show');
+      initApp(matchedUser);
+    }, 420);
+  } else {
+    err.style.display   = 'block';
+    err.style.animation = 'none';
+    void err.offsetWidth;
+    err.style.animation = 'shake 0.35s ease';
+    document.getElementById('upass').value = '';
+    document.getElementById('upass').focus();
+  }
+}
+
+// Enter key support on login
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') {
+    doLogin();
+  }
+});
+
+function doLogout() {
+  if (!confirm('Are you sure you want to logout?')) return;
+  document.getElementById('appShell').classList.remove('show');
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('uname').value = '';
+  document.getElementById('upass').value = '';
+  document.getElementById('loginError').style.display = 'none';
+  const box = document.querySelector('.login-box');
+  box.style.transition = '';
+  box.style.transform  = '';
+  box.style.opacity    = '';
+  activeIdx = -1;
+}
+
+/* ─────────────────────────────────────────────────────
+   APP INIT
+───────────────────────────────────────────────────── */
+let activeIdx = -1;
+let iframeMap = {};
+let appReady  = false;
+
+function initApp() {
+  // Set date chip
+  const d = new Date();
+  document.getElementById('dateBadge').textContent =
+    d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+
+  if (!appReady) {
+    appReady = true;
+
+    // Build nav items
+    const navList = document.getElementById('navList');
+    MODULES.forEach((mod, i) => {
+      const el = document.createElement('div');
+      el.className = 'nav-item';
+      el.innerHTML = `
+        <span class="nav-icon">${mod.icon}</span>
+        <div class="nav-info">
+          <div class="nav-title">${mod.title}</div>
+          <div class="nav-sub">${mod.sub}</div>
+        </div>
+        <span class="nav-num">${String(i + 1).padStart(2, '0')}</span>
+      `;
+      el.addEventListener('click', () => { activate(i); closeSidebar(); });
+      navList.appendChild(el);
+    });
+
+    // Create iframes
+    const area = document.getElementById('contentArea');
+    MODULES.forEach((mod, i) => {
+      const fr = document.createElement('iframe');
+      fr.className = 'module-frame';
+      fr.setAttribute('sandbox',
+        'allow-scripts allow-same-origin allow-forms allow-modals allow-downloads allow-popups');
+      area.appendChild(fr);
+      iframeMap[i] = { el: fr, loaded: false };
+    });
+  }
+
+  activate(0);
+}
+
+/* ─────────────────────────────────────────────────────
+   ACTIVATE MODULE
+───────────────────────────────────────────────────── */
+function activate(idx) {
+  if (idx === activeIdx) return;
+
+  const mod = MODULES[idx];
+
+  // Highlight nav
+  document.querySelectorAll('.nav-item').forEach((el, i) => {
+    el.classList.toggle('active', i === idx);
+  });
+
+  // Hide previous frame
+  if (activeIdx >= 0) {
+    iframeMap[activeIdx].el.classList.remove('visible', 'active');
+  }
+
+  // Update topbar
+  document.getElementById('tbIcon').textContent    = mod.icon;
+  document.getElementById('tbName').textContent    = mod.title;
+  document.getElementById('tbSub').textContent     = mod.sub;
+  document.getElementById('loaderIcon').textContent = mod.icon;
+  document.getElementById('loaderSub').textContent  = mod.title + ' — ' + mod.sub;
+
+  // Show loader
+  document.getElementById('loader').classList.remove('hide');
+
+  activeIdx = idx;
+  const fo = iframeMap[idx];
+  fo.el.classList.add('active');
+
+  if (!fo.loaded) {
+    fo.el.src = mod.file;
+    fo.el.onload = () => { fo.loaded = true; revealFrame(idx); };
+    // Fallback in case onload doesn't fire (file:// protocol quirks)
+    setTimeout(() => { if (!fo.loaded) { fo.loaded = true; revealFrame(idx); } }, 3500);
+  } else {
+    setTimeout(() => revealFrame(idx), 80);
+  }
+}
+
+function revealFrame(idx) {
+  document.getElementById('loader').classList.add('hide');
+  iframeMap[idx].el.classList.add('visible');
+}
+
+/* ─────────────────────────────────────────────────────
+   MOBILE SIDEBAR TOGGLE
+───────────────────────────────────────────────────── */
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('mask').classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('mask').classList.remove('show');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fastag Amount Dashboard</title>
+
+  <!-- Libraries -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/multiple-select@1.7.0/dist/multiple-select.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/multiple-select@1.7.0/dist/multiple-select.min.js"></script>
+  
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #f1f8e9, #e8f5e9);
+      color: #1b5e20;
+      text-align: center;
+      padding: 30px;
+    }
+    h1 {
+      font-size: 2.4em;
+      color: #2e7d32;
+      margin-bottom: 20px;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+    }
+    .card {
+      width: 95%;
+      max-width: 1200px;
+      margin: 20px auto;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+      padding: 25px;
+    }
+    input[type="file"], input[type="text"], select {
+      padding: 12px 18px;
+      border-radius: 10px;
+      border: 2px solid #a5d6a7;
+      font-size: 16px;
+      margin: 8px;
+      width: 250px;
+      outline: none;
+      transition: 0.3s;
+    }
+    input:focus {
+      border-color: #43a047;
+      box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
+    }
+    #vehicleSelect {
+      width: 300px;
+    }
+    button {
+      background: linear-gradient(45deg, #4caf50, #81c784);
+      border: none;
+      color: white;
+      font-weight: bold;
+      padding: 12px 25px;
+      border-radius: 25px;
+      margin: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 3px 8px rgba(76, 175, 80, 0.3);
+    }
+    button:hover {
+      background: linear-gradient(45deg, #2e7d32, #43a047);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(76, 175, 80, 0.5);
+    }
+    #totalAmount {
+      font-weight: bold;
+      color: #2e7d32;
+      font-size: 1.6em;
+    }
+    #chartContainer {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+    }
+    #chartTotal {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      background: rgba(255, 255, 255, 0.85);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-weight: bold;
+      color: #2e7d32;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    canvas {
+      width: 100% !important;
+      height: 500px !important;
+      background: linear-gradient(135deg, #2e7d32, #1b5e20);
+      border-radius: 20px;
+      padding: 15px;
+    }
+    
+    /* Table Styles */
+    #dataTable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    #dataTable th {
+      background-color: #2e7d32;
+      color: white;
+      padding: 12px;
+      text-align: left;
+    }
+    #dataTable td {
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    #dataTable tr:hover {
+      background-color: #f1f8e9;
+    }
+    .table-container {
+      max-height: 400px;
+      overflow-y: auto;
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+    }
+    
+    /* DataTables Customization */
+    .dataTables_wrapper {
+      margin-top: 20px;
+    }
+    .dataTables_filter input {
+      border: 2px solid #a5d6a7 !important;
+      border-radius: 5px;
+      padding: 5px;
+    }
+    .dataTables_length select {
+      border: 2px solid #a5d6a7 !important;
+      border-radius: 5px;
+      padding: 5px;
+    }
+    
+    /* Tabs */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .tab-button {
+      padding: 12px 30px;
+      margin: 0 5px;
+      background: #e8f5e9;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #2e7d32;
+      transition: all 0.3s;
+    }
+    .tab-button.active {
+      background: linear-gradient(45deg, #4caf50, #81c784);
+      color: white;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>📊 Fastag Amount Dashboard</h1>
+
+  <div class="card">
+    <input type="file" id="excelFile" accept=".xlsx, .xls" />
+    <input type="text" id="chartTitleInput" placeholder="Enter Chart Title (e.g. October 2025 Fastag Report)" />
+    <button id="updateTitleBtn">✅ Update Title</button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-button active" data-tab="chart">📈 Chart View</button>
+    <button class="tab-button" data-tab="table">📊 Table View</button>
+    <button class="tab-button" data-tab="summary">💰 Summary</button>
+  </div>
+
+  <!-- Chart Tab -->
+  <div class="card tab-content active" id="chart-tab">
+    <h2 id="chartTitleDisplay">Fastag Report</h2>
+    <div id="chartContainer">
+      <div id="chartTotal">₹0.00</div>
+      <canvas id="barChart"></canvas>
+    </div>
+    <button id="downloadChartBtn">⬇️ Download Chart</button>
+  </div>
+
+  <!-- Table Tab -->
+  <div class="card tab-content" id="table-tab">
+    <h2>📋 Excel Data Table</h2>
+    <table id="dataTable" class="display" style="width:100%">
+      <thead>
+        <tr>
+          <th>Vehicle Number</th>
+          <th>Amount (₹)</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <!-- Data will be populated here -->
+      </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="2" style="text-align:right">Total:</th>
+          <th id="tableTotal">₹0.00</th>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Summary Tab -->
+  <div class="card tab-content" id="summary-tab">
+    <h2>📊 Data Summary</h2>
+    <div class="card">
+      <h3>Vehicle Selection</h3>
+      <select id="vehicleSelect" multiple></select>
+      <h3>💰 Total Amount: ₹<span id="totalAmount">0.00</span></h3>
+    </div>
+    
+    <div class="card" style="margin-top: 20px;">
+      <h3>📈 Quick Statistics</h3>
+      <div style="display: flex; justify-content: space-around; flex-wrap: wrap;">
+        <div style="background: #e8f5e9; padding: 15px; border-radius: 10px; margin: 10px; min-width: 200px;">
+          <h4>Total Records</h4>
+          <p id="totalRecords">0</p>
+        </div>
+        <div style="background: #e8f5e9; padding: 15px; border-radius: 10px; margin: 10px; min-width: 200px;">
+          <h4>Unique Vehicles</h4>
+          <p id="uniqueVehicles">0</p>
+        </div>
+        <div style="background: #e8f5e9; padding: 15px; border-radius: 10px; margin: 10px; min-width: 200px;">
+          <h4>Average Amount</h4>
+          <p id="averageAmount">₹0.00</p>
+        </div>
+        <div style="background: #e8f5e9; padding: 15px; border-radius: 10px; margin: 10px; min-width: 200px;">
+          <h4>Maximum Amount</h4>
+          <p id="maxAmount">₹0.00</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allData = [];
+    let chart = null;
+    let currentTotal = 0;
+    let dataTable = null;
+
+    // Tab functionality
+    document.querySelectorAll('.tab-button').forEach(button => {
+      button.addEventListener('click', () => {
+        // Remove active class from all buttons and contents
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        // Add active class to clicked button and corresponding content
+        button.classList.add('active');
+        const tabId = button.getAttribute('data-tab');
+        document.getElementById(`${tabId}-tab`).classList.add('active');
+      });
+    });
+
+    // Excel File Upload
+    document.getElementById("excelFile").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = new Uint8Array(event.target.result);
+          const workbook = XLSX.read(data, { type: "array" });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          allData = XLSX.utils.sheet_to_json(sheet);
+          
+          // Standardize column names
+          allData = allData.map(row => {
+            const newRow = {};
+            Object.keys(row).forEach(key => {
+              const normalizedKey = key.toLowerCase().trim();
+              if (normalizedKey.includes('vehicle')) {
+                newRow['Vehicle'] = row[key];
+              } else if (normalizedKey.includes('amount') || normalizedKey.includes('debit')) {
+                newRow['Amount'] = parseFloat(row[key]) || 0;
+              } else {
+                newRow[key] = row[key];
+              }
+            });
+            return newRow;
+          }).filter(row => row.Vehicle && row.Amount); // Filter out invalid rows
+
+          // Update UI
+          populateVehicles();
+          updateDataTable();
+          updateSummaryStats();
+          
+          alert(`✅ Excel file uploaded successfully! Loaded ${allData.length} records.`);
+        } catch (error) {
+          alert(`❌ Error reading Excel file: ${error.message}`);
+          console.error(error);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+
+    // Initialize DataTable
+    function updateDataTable() {
+      const tableBody = document.getElementById('tableBody');
+      tableBody.innerHTML = '';
+      
+      let tableTotal = 0;
+      
+      allData.forEach((row, index) => {
+        const vehicle = row.Vehicle || row['Vehicle No'] || 'N/A';
+        const amount = parseFloat(row.Amount || row['Debit Amount'] || 0) || 0;
+        tableTotal += amount;
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${vehicle}</td>
+          <td>₹${amount.toFixed(2)}</td>
+          <td>
+            <button onclick="selectVehicle('${vehicle}')" style="padding: 5px 10px; font-size: 12px;">Select</button>
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+      
+      // Update table total
+      document.getElementById('tableTotal').textContent = `₹${tableTotal.toFixed(2)}`;
+      
+      // Initialize or refresh DataTable
+      if (dataTable) {
+        dataTable.destroy();
+      }
+      
+      dataTable = $('#dataTable').DataTable({
+        paging: true,
+        pageLength: 10,
+        searching: true,
+        ordering: true,
+        info: true,
+        autoWidth: true,
+        order: [[1, 'desc']] // Sort by amount descending by default
+      });
+    }
+
+    // Update summary statistics
+    function updateSummaryStats() {
+      const totalRecords = allData.length;
+      const uniqueVehicles = [...new Set(allData.map(row => row.Vehicle || row['Vehicle No']))].length;
+      const totalAmount = allData.reduce((sum, row) => sum + (parseFloat(row.Amount || row['Debit Amount'] || 0) || 0), 0);
+      const averageAmount = totalRecords > 0 ? totalAmount / totalRecords : 0;
+      const maxAmount = Math.max(...allData.map(row => parseFloat(row.Amount || row['Debit Amount'] || 0) || 0));
+      
+      document.getElementById('totalRecords').textContent = totalRecords;
+      document.getElementById('uniqueVehicles').textContent = uniqueVehicles;
+      document.getElementById('averageAmount').textContent = `₹${averageAmount.toFixed(2)}`;
+      document.getElementById('maxAmount').textContent = `₹${maxAmount.toFixed(2)}`;
+    }
+
+    // Populate vehicle dropdown
+    function populateVehicles() {
+      const vehicleSelect = document.getElementById("vehicleSelect");
+      vehicleSelect.innerHTML = "";
+      
+      // Get unique vehicles from allData
+      const vehicles = [...new Set(allData.map(row => row.Vehicle || row['Vehicle No']))].filter(v => v);
+      
+      vehicles.forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = v;
+        opt.textContent = v;
+        vehicleSelect.appendChild(opt);
+      });
+
+      $('#vehicleSelect').multipleSelect({
+        filter: true,
+        selectAll: true,
+        placeholder: "Select Vehicles",
+        onClick: updateChart,
+        onCheckAll: updateChart,
+        onUncheckAll: updateChart
+      });
+    }
+
+    // Helper function to select vehicle from table
+    function selectVehicle(vehicle) {
+      $('#vehicleSelect').multipleSelect('setSelects', [vehicle]);
+      updateChart();
+      // Switch to summary tab
+      document.querySelector('[data-tab="summary"]').click();
+    }
+
+    // Update chart
+    document.getElementById("updateTitleBtn").addEventListener("click", () => {
+      const title = document.getElementById("chartTitleInput").value.trim();
+      if (title) {
+        document.getElementById("chartTitleDisplay").textContent = title;
+        if (chart) {
+          chart.options.plugins.title.text = title;
+          chart.update();
+        }
+      }
+    });
+
+    function updateChart() {
+      const selected = $('#vehicleSelect').multipleSelect('getSelects');
+      if (selected.length === 0) {
+        if (chart) chart.destroy();
+        document.getElementById("totalAmount").textContent = "0.00";
+        document.getElementById("chartTotal").textContent = "₹0.00";
+        return;
+      }
+
+      const totals = {};
+      let overall = 0;
+
+      allData.forEach(row => {
+        const vehicle = row.Vehicle || row['Vehicle No'];
+        const amount = parseFloat(row.Amount || row['Debit Amount'] || 0) || 0;
+        if (selected.includes(vehicle)) {
+          totals[vehicle] = (totals[vehicle] || 0) + amount;
+          overall += amount;
+        }
+      });
+
+      currentTotal = overall;
+      document.getElementById("totalAmount").textContent = overall.toFixed(2);
+      document.getElementById("chartTotal").textContent = "₹" + overall.toLocaleString();
+
+      // Sort amounts DESCENDING
+      const sortedEntries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+      const sortedTotals = Object.fromEntries(sortedEntries);
+
+      drawChart(sortedTotals);
+    }
+
+    function drawChart(totals) {
+      const ctx = document.getElementById("barChart").getContext("2d");
+      const labels = Object.keys(totals);
+      const values = Object.values(totals);
+      const colors = labels.map((_, i) => `hsl(${i * 45}, 80%, 50%)`);
+
+      if (chart) chart.destroy();
+
+      chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Total Amount (₹)',
+            data: values,
+            backgroundColor: colors,
+            borderColor: '#ffffff',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { display: false },
+            title: {
+              display: true,
+              text: document.getElementById("chartTitleDisplay").textContent,
+              color: '#ffffff',
+              font: { size: 20, weight: 'bold' }
+            },
+            datalabels: {
+              color: 'white',
+              anchor: 'center',
+              align: 'center',
+              font: { size: 14, weight: 'bold' },
+              formatter: (v) => v.toLocaleString()
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: '#ffffff', maxRotation: 45, minRotation: 45 },
+              grid: { display: false }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#ffffff' },
+              grid: { color: 'rgba(255,255,255,0.2)' }
+            }
+          }
+        },
+        plugins: [ChartDataLabels]
+      });
+    }
+
+    // Download Chart
+    document.getElementById("downloadChartBtn").addEventListener("click", () => {
+      if (!chart) return alert("⚠️ Please upload and generate a chart first!");
+
+      const canvas = document.getElementById("barChart");
+      const width = canvas.width;
+      const height = canvas.height;
+
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = width;
+      tempCanvas.height = height;
+      const ctx = tempCanvas.getContext("2d");
+
+      ctx.fillStyle = "#808080";  
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.drawImage(canvas, 0, 0);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 20px Poppins";
+      ctx.textAlign = "right";
+      ctx.fillText(`💰 Total: ₹${currentTotal.toFixed(2)}`, width - 30, 40);
+
+      const link = document.createElement("a");
+      link.download = "Fastag_Chart.png";
+      link.href = tempCanvas.toDataURL("image/png");
+      link.click();
+    });
+  </script>
+
+</body>
+</html>

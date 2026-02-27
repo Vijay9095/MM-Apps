@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MMROADWAYS IDLE VEHICLES</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root {
+  --bg: #eef2f7;
+  --card: #ffffff;
+  --primary: #1a5fb4;
+  --primary-dark: #0d3b7a;
+  --accent: #f59e0b;
+  --accent2: #10b981;
+  --danger: #ef4444;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --border: #d1d9e6;
+  --shadow: 0 4px 24px rgba(26,95,180,0.10);
+  --radius: 14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Nunito',sans-serif;background:var(--bg);min-height:100vh;color:var(--text);}
+
+/* TABS */
+.tabs-bar{
+  background:#fff;
+  border-bottom:2px solid var(--border);
+  display:flex;
+  padding:0 32px;
+  gap:0;
+  position:sticky;
+  top:72px;
+  z-index:90;
+  box-shadow:0 2px 8px rgba(26,95,180,0.07);
+}
+.tab-btn{
+  padding:14px 28px;
+  font-family:'Rajdhani',sans-serif;
+  font-size:15px;
+  font-weight:700;
+  letter-spacing:1.2px;
+  text-transform:uppercase;
+  border:none;
+  background:transparent;
+  color:var(--text-muted);
+  cursor:pointer;
+  border-bottom:3px solid transparent;
+  transition:all 0.2s;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:-2px;
+}
+.tab-btn.active{
+  color:var(--primary);
+  border-bottom-color:var(--primary);
+  background:linear-gradient(to bottom,rgba(26,95,180,0.04),transparent);
+}
+.tab-btn:hover:not(.active){color:var(--primary);background:rgba(26,95,180,0.04);}
+
+/* HEADER */
+.site-header{
+  background:linear-gradient(120deg,#1a5fb4 0%,#0d3b7a 55%,#1a5fb4 100%);
+  padding:0 32px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  height:72px;
+  box-shadow:0 4px 20px rgba(13,59,122,0.3);
+  position:sticky;
+  top:0;
+  z-index:100;
+}
+.logo{display:flex;align-items:center;gap:14px;}
+.logo-icon{
+  width:48px;height:48px;
+  background:rgba(255,255,255,0.15);
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;
+}
+.logo-text h1{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:#fff;letter-spacing:2.5px;line-height:1;}
+.logo-text p{font-size:11px;color:rgba(255,255,255,0.7);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;}
+.header-right{display:flex;align-items:center;gap:10px;}
+.hdr-badge{background:rgba(255,255,255,0.15);color:#fff;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;letter-spacing:0.5px;}
+
+/* CONTENT */
+.page{display:none;padding:28px 24px;max-width:1500px;margin:0 auto;}
+.page.active{display:block;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:8px;border:none;font-family:'Nunito',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all 0.18s;text-transform:uppercase;letter-spacing:0.5px;}
+.btn-primary{background:var(--primary);color:#fff;box-shadow:0 3px 10px rgba(26,95,180,0.3);}
+.btn-primary:hover{background:var(--primary-dark);transform:translateY(-1px);}
+.btn-green{background:var(--accent2);color:#fff;box-shadow:0 3px 10px rgba(16,185,129,0.3);}
+.btn-green:hover{background:#059669;transform:translateY(-1px);}
+.btn-amber{background:var(--accent);color:#fff;box-shadow:0 3px 10px rgba(245,158,11,0.3);}
+.btn-amber:hover{background:#d97706;transform:translateY(-1px);}
+.btn-white{background:#fff;color:var(--primary);border:2px solid var(--primary);}
+.btn-white:hover{background:var(--primary);color:#fff;}
+.btn-danger{background:#fee2e2;color:var(--danger);padding:5px 10px;font-size:12px;border-radius:6px;}
+.btn-danger:hover{background:#fecaca;}
+.btn-sm{padding:6px 13px;font-size:12px;}
+
+/* STATS */
+.stats-bar{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:16px 22px;flex:1;min-width:140px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;border-left:5px solid;}
+.stat-card.s1{border-color:var(--primary);}
+.stat-card.s2{border-color:var(--accent);}
+.stat-card.s3{border-color:var(--accent2);}
+.stat-card.s4{border-color:#a855f7;}
+.stat-icon{font-size:26px;width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.s1 .stat-icon{background:#e8f0fb;}
+.s2 .stat-icon{background:#fef3c7;}
+.s3 .stat-icon{background:#d1fae5;}
+.s4 .stat-icon{background:#f3e8ff;}
+.stat-info p{font-size:11px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;}
+.stat-info h2{font-size:26px;font-weight:800;font-family:'Rajdhani',sans-serif;}
+
+/* FORM CARD */
+.form-card{background:var(--card);border-radius:var(--radius);padding:22px 24px;box-shadow:var(--shadow);margin-bottom:24px;border-top:4px solid var(--primary);}
+.form-card h2{font-family:'Rajdhani',sans-serif;font-size:18px;font-weight:700;color:var(--primary);margin-bottom:16px;letter-spacing:1.2px;text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+.form-row{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;}
+.form-group{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px;}
+.form-group label{font-size:11px;font-weight:800;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.7px;}
+.color-row{display:flex;gap:8px;align-items:center;}
+input[type=color]{width:44px;height:40px;border-radius:7px;border:2px solid var(--border);cursor:pointer;padding:2px;background:#fff;}
+input[type=text],textarea,input[type=number]{border:2px solid var(--border);border-radius:8px;padding:9px 13px;font-family:'Nunito',sans-serif;font-size:13.5px;color:var(--text);outline:none;transition:border 0.18s;width:100%;background:#fff;}
+input[type=text]:focus,textarea:focus,input[type=number]:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,95,180,0.1);}
+textarea{resize:vertical;min-height:40px;max-height:100px;}
+.add-btn{height:44px;padding:0 26px;font-size:14px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:800;display:flex;align-items:center;gap:8px;transition:all 0.2s;white-space:nowrap;box-shadow:0 4px 14px rgba(26,95,180,0.35);letter-spacing:0.5px;text-transform:uppercase;}
+.add-btn:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(26,95,180,0.4);}
+
+/* COLUMNS GRID */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.section-header h2{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;letter-spacing:1px;display:flex;align-items:center;gap:8px;}
+.download-row{display:flex;gap:10px;flex-wrap:wrap;}
+
+/* COLUMNS LAYOUT */
+.columns-container{
+  display:flex;
+  gap:16px;
+  overflow-x:auto;
+  padding-bottom:8px;
+  align-items:flex-start;
+}
+.col-card{
+  background:var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  min-width:260px;
+  max-width:320px;
+  flex:1;
+  overflow:hidden;
+  transition:transform 0.2s;
+}
+.col-card:hover{transform:translateY(-2px);}
+.col-header{
+  padding:14px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  font-family:'Rajdhani',sans-serif;
+  font-size:15px;
+  font-weight:700;
+  color:#fff;
+  letter-spacing:1px;
+  text-transform:uppercase;
+}
+.col-num{
+  background:rgba(255,255,255,0.2);
+  width:26px;height:26px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;
+}
+.col-body{padding:14px;}
+.entry-bubble{
+  background:#f8faff;
+  border:1px solid #e2eaf8;
+  border-radius:10px;
+  padding:12px 14px;
+  font-size:13.5px;
+  color:var(--text);
+  line-height:1.55;
+  margin-bottom:10px;
+  position:relative;
+}
+.entry-bubble:last-child{margin-bottom:0;}
+.entry-bubble .entry-time{font-size:11px;color:var(--text-muted);margin-top:6px;}
+.entry-bubble .del-btn{
+  position:absolute;top:8px;right:8px;
+  background:#fee2e2;color:var(--danger);
+  border:none;border-radius:5px;padding:2px 7px;
+  font-size:11px;cursor:pointer;font-weight:700;
+  opacity:0;transition:opacity 0.15s;
+}
+.entry-bubble:hover .del-btn{opacity:1;}
+
+/* EMPTY COL */
+.empty-col{padding:24px 14px;text-align:center;color:var(--text-muted);font-size:13px;}
+.empty-col span{font-size:28px;display:block;margin-bottom:8px;}
+
+/* ALL DATA TABLE VIEW */
+.table-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:linear-gradient(90deg,var(--primary),var(--primary-dark));}
+thead th{padding:13px 15px;text-align:left;color:#fff;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;white-space:nowrap;}
+tbody tr{border-bottom:1px solid #f1f5f9;transition:background 0.15s;}
+tbody tr:hover{background:#f5f8ff;}
+tbody tr:last-child{border-bottom:none;}
+td{padding:12px 15px;font-size:13.5px;vertical-align:middle;}
+.td-sno{color:var(--text-muted);font-weight:700;text-align:center;width:40px;}
+.header-badge{display:inline-block;padding:5px 14px;border-radius:20px;font-weight:700;font-size:12.5px;color:#fff;letter-spacing:0.5px;text-shadow:0 1px 2px rgba(0,0,0,0.18);}
+.td-time{color:var(--text-muted);font-size:11.5px;white-space:nowrap;}
+
+/* IDLE VEHICLES MODULE */
+.idle-form-grid{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:14px;align-items:flex-end;}
+
+.idle-table-wrap{overflow-x:auto;}
+.idle-table{width:100%;border-collapse:collapse;}
+.idle-table thead tr{background:linear-gradient(90deg,#0d3b7a,#1a5fb4);}
+.idle-table thead th{padding:13px 15px;text-align:left;color:#fff;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;}
+.idle-table tbody tr{border-bottom:1px solid #f1f5f9;transition:background 0.15s;}
+.idle-table tbody tr:hover{background:#f0f6ff;}
+.idle-table td{padding:12px 15px;font-size:13.5px;vertical-align:middle;}
+.days-badge{display:inline-block;padding:3px 12px;border-radius:12px;font-weight:800;font-size:12px;}
+.days-low{background:#d1fae5;color:#065f46;}
+.days-mid{background:#fef3c7;color:#92400e;}
+.days-high{background:#fee2e2;color:#991b1b;}
+.vehicle-no{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;color:var(--primary);}
+.loc-text{color:var(--text);font-size:13px;}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:50px 20px;color:var(--text-muted);}
+.empty-state .e-icon{font-size:52px;margin-bottom:12px;}
+.empty-state p{font-size:15px;font-weight:700;}
+.empty-state span{font-size:12px;}
+
+/* CAPTURE AREAS */
+#cap-todo,#cap-idle{
+  position:fixed;left:-9999px;top:0;width:1300px;
+  background:#fff;font-family:'Nunito',sans-serif;z-index:-1;
+}
+.cap-hdr{background:linear-gradient(120deg,#1a5fb4,#0d3b7a);padding:22px 36px;display:flex;align-items:center;gap:18px;}
+.cap-hdr-icon{font-size:34px;width:60px;height:60px;background:rgba(255,255,255,0.18);border-radius:14px;display:flex;align-items:center;justify-content:center;}
+.cap-hdr h1{font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;color:#fff;letter-spacing:3px;}
+.cap-hdr p{color:rgba(255,255,255,0.75);font-size:12px;letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;}
+.cap-meta{background:#f0f4f8;padding:10px 36px;display:flex;gap:28px;font-size:12.5px;color:#64748b;font-weight:700;border-bottom:2px solid #e2e8f0;}
+.cap-section-title{padding:12px 36px 6px;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;color:var(--primary);letter-spacing:1px;text-transform:uppercase;border-top:3px solid var(--primary);margin-top:0;}
+.cap-tbl{width:100%;border-collapse:collapse;}
+.cap-tbl thead tr{background:linear-gradient(90deg,#1a5fb4,#0d3b7a);}
+.cap-tbl thead th{padding:12px 16px;color:#fff;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;text-align:left;}
+.cap-tbl tbody tr:nth-child(even){background:#f5f8ff;}
+.cap-tbl tbody td{padding:11px 16px;font-size:12.5px;border-bottom:1px solid #e8eef8;vertical-align:top;}
+.cap-footer{background:linear-gradient(90deg,#1a5fb4,#0d3b7a);padding:12px 36px;color:rgba(255,255,255,0.8);font-size:11.5px;text-align:center;letter-spacing:0.5px;}
+
+/* COLUMNS CAPTURE */
+.cap-cols-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;padding:14px 36px 20px;}
+.cap-col{border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;}
+.cap-col-hdr{padding:12px 16px;color:#fff;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;display:flex;align-items:center;justify-content:space-between;}
+.cap-col-body{padding:12px;}
+.cap-bubble{background:#f8faff;border:1px solid #e2eaf8;border-radius:8px;padding:10px 12px;font-size:12px;color:#1e293b;line-height:1.5;margin-bottom:8px;}
+.cap-bubble:last-child{margin-bottom:0;}
+.cap-bubble .cb-time{font-size:10px;color:#94a3b8;margin-top:4px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:28px;right:28px;background:#1e293b;color:#fff;padding:11px 20px;border-radius:10px;font-weight:700;font-size:13.5px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.2);opacity:0;transform:translateY(20px);transition:all 0.3s;pointer-events:none;}
+.toast.show{opacity:1;transform:translateY(0);}
+
+@media(max-width:768px){
+  .idle-form-grid{grid-template-columns:1fr 1fr;}
+  .site-header{padding:0 14px;}
+  .columns-container{flex-direction:column;}
+  .col-card{min-width:100%;max-width:100%;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="logo">
+    <div class="logo-icon">🚛</div>
+    <div class="logo-text">
+      <h1>MMROADWAYS</h1>
+      <p>Idle Vehicles Management System</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="hdr-badge" id="hdr-date"></span>
+  </div>
+</header>
+
+<!-- TABS -->
+<div class="tabs-bar">
+  <button class="tab-btn active" onclick="switchTab('todo')" id="tab-todo">📋 Todo Tracker</button>
+  <button class="tab-btn" onclick="switchTab('idle')" id="tab-idle">🚛 Idle Vehicles</button>
+</div>
+
+<!-- ===================== TODO PAGE ===================== -->
+<div class="page active" id="page-todo">
+  
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="stat-card s1"><div class="stat-icon">📋</div><div class="stat-info"><p>Total Entries</p><h2 id="t-stat1">0</h2></div></div>
+    <div class="stat-card s2"><div class="stat-icon">🗂️</div><div class="stat-info"><p>Columns Used</p><h2 id="t-stat2">0</h2></div></div>
+    <div class="stat-card s3"><div class="stat-icon">📅</div><div class="stat-info"><p>Today's Entries</p><h2 id="t-stat3">0</h2></div></div>
+    <div class="stat-card s4"><div class="stat-icon">🏷️</div><div class="stat-info"><p>Categories</p><h2 id="t-stat4">0</h2></div></div>
+  </div>
+
+  <!-- ADD FORM -->
+  <div class="form-card">
+    <h2>➕ Add New Entry</h2>
+    <div class="form-row">
+      <div class="form-group" style="max-width:260px">
+        <label>Header / Category</label>
+        <div class="color-row">
+          <input type="color" id="tHeaderColor" value="#1a5fb4">
+          <input type="text" id="tHeaderText" placeholder="e.g. Route 1, Truck #45..." maxlength="50" style="flex:1">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Summary / Details</label>
+        <textarea id="tSummary" placeholder="Enter details, remarks, notes..." rows="1"></textarea>
+      </div>
+      <div>
+        <button class="add-btn" onclick="addTodoEntry()">➕ Add Entry</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- COLUMNS VIEW -->
+  <div class="section-header">
+    <h2>📌 Entries by Column Order</h2>
+    <div class="download-row">
+      <button class="btn btn-green btn-sm" onclick="downloadTodoExcel()">📊 Excel</button>
+      <button class="btn btn-amber btn-sm" onclick="downloadTodoImage()">🖼️ Image</button>
+    </div>
+  </div>
+
+  <div class="columns-container" id="columnsContainer">
+    <div class="empty-state" style="width:100%;padding:40px 0">
+      <div class="e-icon">📋</div>
+      <p>No entries yet — Add your first entry above!</p>
+      <span>Each entry will appear in its own numbered column</span>
+    </div>
+  </div>
+
+  <!-- ALL DATA TABLE -->
+  <div style="margin-top:28px;">
+    <div class="section-header">
+      <h2>📊 All Entries — Table View</h2>
+      <div class="download-row">
+        <button class="btn btn-green btn-sm" onclick="downloadTodoExcel()">📊 Download Excel</button>
+        <button class="btn btn-amber btn-sm" onclick="downloadTodoImage()">🖼️ Download Image</button>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Column</th>
+              <th>Header / Category</th>
+              <th>Summary / Details</th>
+              <th>Date & Time</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="tTableBody">
+            <tr><td colspan="6"><div class="empty-state"><div class="e-icon">📋</div><p>No data</p></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== IDLE VEHICLES PAGE ===================== -->
+<div class="page" id="page-idle">
+
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="stat-card s1"><div class="stat-icon">🚛</div><div class="stat-info"><p>Total Idle</p><h2 id="i-stat1">0</h2></div></div>
+    <div class="stat-card s2"><div class="stat-icon">⚠️</div><div class="stat-info"><p>High Days (&gt;7)</p><h2 id="i-stat2">0</h2></div></div>
+    <div class="stat-card s3"><div class="stat-icon">📍</div><div class="stat-info"><p>Locations</p><h2 id="i-stat3">0</h2></div></div>
+    <div class="stat-card s4"><div class="stat-icon">📅</div><div class="stat-info"><p>Avg Days Idle</p><h2 id="i-stat4">0</h2></div></div>
+  </div>
+
+  <!-- IDLE FORM -->
+  <div class="form-card">
+    <h2>🚛 Add Idle Vehicle</h2>
+    <div class="idle-form-grid">
+      <div class="form-group">
+        <label>Vehicle No.</label>
+        <input type="text" id="iVehicle" placeholder="e.g. TN 39 AB 1234" maxlength="20">
+      </div>
+      <div class="form-group">
+        <label>Days Idle</label>
+        <input type="number" id="iDays" placeholder="e.g. 5" min="0" max="999">
+      </div>
+      <div class="form-group">
+        <label>Location</label>
+        <input type="text" id="iLocation" placeholder="e.g. Chennai Depot, Madurai..." maxlength="80">
+      </div>
+      <div>
+        <button class="add-btn" onclick="addIdleEntry()">➕ Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IDLE TABLE -->
+  <div class="section-header">
+    <h2>🚛 Idle Vehicles List</h2>
+    <div class="download-row">
+      <button class="btn btn-green btn-sm" onclick="downloadIdleExcel()">📊 Excel</button>
+      <button class="btn btn-amber btn-sm" onclick="downloadIdleImage()">🖼️ Image</button>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="idle-table-wrap">
+      <table class="idle-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Vehicle No.</th>
+            <th>Days Idle</th>
+            <th>Location</th>
+            <th>Recorded On</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="iTableBody">
+          <tr><td colspan="6"><div class="empty-state"><div class="e-icon">🚛</div><p>No idle vehicles recorded yet</p><span>Add vehicle details above</span></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ====== CAPTURE AREAS ====== -->
+<!-- TODO CAPTURE -->
+<div id="cap-todo">
+  <div class="cap-hdr">
+    <div class="cap-hdr-icon">🚛</div>
+    <div>
+      <h1>MMROADWAYS</h1>
+      <p>Todo Tracker — Full Report</p>
+    </div>
+  </div>
+  <div class="cap-meta">
+    <span id="cap-todo-date">📅 —</span>
+    <span id="cap-todo-total">📋 Total: 0</span>
+    <span id="cap-todo-cols">🗂️ Columns: 0</span>
+  </div>
+  <div id="cap-todo-cols-area" class="cap-cols-grid"></div>
+  <div class="cap-section-title">📊 Full Data Table</div>
+  <table class="cap-tbl">
+    <thead>
+      <tr><th style="width:40px">#</th><th style="width:60px">Col</th><th style="width:200px">Header</th><th>Summary</th><th style="width:150px">Date & Time</th></tr>
+    </thead>
+    <tbody id="cap-todo-body"></tbody>
+  </table>
+  <div class="cap-footer">Generated by MMROADWAYS Idle Vehicles Management System &nbsp;|&nbsp; <span id="cap-todo-footer"></span></div>
+</div>
+
+<!-- IDLE CAPTURE -->
+<div id="cap-idle">
+  <div class="cap-hdr">
+    <div class="cap-hdr-icon">🚛</div>
+    <div>
+      <h1>MMROADWAYS</h1>
+      <p>Idle Vehicles — Full Report</p>
+    </div>
+  </div>
+  <div class="cap-meta">
+    <span id="cap-idle-date">📅 —</span>
+    <span id="cap-idle-total">🚛 Total Idle: 0</span>
+    <span id="cap-idle-high">⚠️ High Days: 0</span>
+  </div>
+  <table class="cap-tbl">
+    <thead>
+      <tr><th style="width:40px">#</th><th style="width:160px">Vehicle No.</th><th style="width:100px">Days Idle</th><th>Location</th><th style="width:160px">Recorded On</th></tr>
+    </thead>
+    <tbody id="cap-idle-body"></tbody>
+  </table>
+  <div class="cap-footer">Generated by MMROADWAYS Idle Vehicles Management System &nbsp;|&nbsp; <span id="cap-idle-footer"></span></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+//  DATA
+// ============================================================
+let todoEntries = JSON.parse(localStorage.getItem('mm_todo_v2') || '[]');
+let idleEntries = JSON.parse(localStorage.getItem('mm_idle_v2') || '[]');
+
+function save() {
+  localStorage.setItem('mm_todo_v2', JSON.stringify(todoEntries));
+  localStorage.setItem('mm_idle_v2', JSON.stringify(idleEntries));
+}
+
+// ============================================================
+//  UTILS
+// ============================================================
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+function nowStr() {
+  return new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:true});
+}
+function todayStr() {
+  return new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+}
+
+// ============================================================
+//  TABS
+// ============================================================
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('page-'+tab).classList.add('active');
+}
+
+// ============================================================
+//  TODO MODULE
+// ============================================================
+function addTodoEntry() {
+  const header = document.getElementById('tHeaderText').value.trim();
+  const summary = document.getElementById('tSummary').value.trim();
+  const color = document.getElementById('tHeaderColor').value;
+  if (!header) { toast('⚠️ Enter header/category!'); document.getElementById('tHeaderText').focus(); return; }
+  if (!summary) { toast('⚠️ Enter summary details!'); document.getElementById('tSummary').focus(); return; }
+  const colNum = todoEntries.length + 1;
+  todoEntries.push({ id: Date.now(), header, summary, color, colNum, datetime: nowStr() });
+  save();
+  renderTodo();
+  document.getElementById('tHeaderText').value = '';
+  document.getElementById('tSummary').value = '';
+  document.getElementById('tHeaderColor').value = '#1a5fb4';
+  toast('✅ Entry added to Column ' + colNum + '!');
+}
+
+function deleteTodoEntry(id) {
+  if (!confirm('Delete this entry?')) return;
+  todoEntries = todoEntries.filter(e => e.id !== id);
+  // Re-number columns
+  todoEntries.forEach((e,i) => e.colNum = i+1);
+  save();
+  renderTodo();
+  toast('🗑️ Entry deleted and columns renumbered!');
+}
+
+function renderTodo() {
+  renderColumns();
+  renderTodoTable();
+  updateTodoStats();
+}
+
+function renderColumns() {
+  const container = document.getElementById('columnsContainer');
+  container.innerHTML = '';
+  if (todoEntries.length === 0) {
+    container.innerHTML = `<div class="empty-state" style="width:100%;padding:40px 0"><div class="e-icon">📋</div><p>No entries yet — Add your first entry above!</p><span>Each entry will appear in its own numbered column</span></div>`;
+    return;
+  }
+  todoEntries.forEach(e => {
+    const col = document.createElement('div');
+    col.className = 'col-card';
+    col.innerHTML = `
+      <div class="col-header" style="background:${e.color}">
+        <span>${esc(e.header)}</span>
+        <div class="col-num">${e.colNum}</div>
+      </div>
+      <div class="col-body">
+        <div class="entry-bubble">
+          <button class="del-btn" onclick="deleteTodoEntry(${e.id})">✕</button>
+          <div style="padding-right:20px">${esc(e.summary).replace(/\n/g,'<br>')}</div>
+          <div class="entry-time">🕒 ${e.datetime}</div>
+        </div>
+      </div>
+    `;
+    container.appendChild(col);
+  });
+}
+
+function renderTodoTable() {
+  const tbody = document.getElementById('tTableBody');
+  tbody.innerHTML = '';
+  if (todoEntries.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="e-icon">📋</div><p>No data</p></div></td></tr>`;
+    return;
+  }
+  todoEntries.forEach((e,i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="td-sno">${i+1}</td>
+      <td style="text-align:center;font-family:'Rajdhani',sans-serif;font-weight:800;font-size:16px;color:var(--primary)">Col ${e.colNum}</td>
+      <td><span class="header-badge" style="background:${e.color}">${esc(e.header)}</span></td>
+      <td style="max-width:420px;line-height:1.5">${esc(e.summary).replace(/\n/g,'<br>')}</td>
+      <td class="td-time">📅 ${e.datetime}</td>
+      <td><button class="btn btn-danger" onclick="deleteTodoEntry(${e.id})">🗑️</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function updateTodoStats() {
+  document.getElementById('t-stat1').textContent = todoEntries.length;
+  document.getElementById('t-stat2').textContent = todoEntries.length;
+  const cats = new Set(todoEntries.map(e=>e.header.toLowerCase().trim())).size;
+  document.getElementById('t-stat4').textContent = cats;
+  const today = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('t-stat3').textContent = todoEntries.filter(e=>e.datetime.includes(today.replace(/ /g,' '))||e.datetime.startsWith(today)).length;
+}
+
+// ============================================================
+//  IDLE VEHICLES MODULE
+// ============================================================
+function addIdleEntry() {
+  const vehicle = document.getElementById('iVehicle').value.trim().toUpperCase();
+  const days = parseInt(document.getElementById('iDays').value);
+  const location = document.getElementById('iLocation').value.trim();
+  if (!vehicle) { toast('⚠️ Enter Vehicle No!'); document.getElementById('iVehicle').focus(); return; }
+  if (isNaN(days) || days < 0) { toast('⚠️ Enter valid Days!'); document.getElementById('iDays').focus(); return; }
+  if (!location) { toast('⚠️ Enter Location!'); document.getElementById('iLocation').focus(); return; }
+  idleEntries.unshift({ id: Date.now(), vehicle, days, location, datetime: nowStr() });
+  save();
+  renderIdle();
+  document.getElementById('iVehicle').value = '';
+  document.getElementById('iDays').value = '';
+  document.getElementById('iLocation').value = '';
+  toast('✅ Idle vehicle added!');
+}
+
+function deleteIdleEntry(id) {
+  if (!confirm('Delete this idle vehicle entry?')) return;
+  idleEntries = idleEntries.filter(e => e.id !== id);
+  save();
+  renderIdle();
+  toast('🗑️ Entry deleted!');
+}
+
+function renderIdle() {
+  const tbody = document.getElementById('iTableBody');
+  tbody.innerHTML = '';
+  if (idleEntries.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="e-icon">🚛</div><p>No idle vehicles recorded yet</p><span>Add vehicle details above</span></div></td></tr>`;
+    updateIdleStats();
+    return;
+  }
+  idleEntries.forEach((e,i) => {
+    const cls = e.days > 7 ? 'days-high' : e.days > 3 ? 'days-mid' : 'days-low';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="td-sno">${i+1}</td>
+      <td><span class="vehicle-no">🚛 ${esc(e.vehicle)}</span></td>
+      <td><span class="days-badge ${cls}">${e.days} day${e.days!==1?'s':''}</span></td>
+      <td class="loc-text">📍 ${esc(e.location)}</td>
+      <td class="td-time">📅 ${e.datetime}</td>
+      <td><button class="btn btn-danger" onclick="deleteIdleEntry(${e.id})">🗑️</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  updateIdleStats();
+}
+
+function updateIdleStats() {
+  document.getElementById('i-stat1').textContent = idleEntries.length;
+  document.getElementById('i-stat2').textContent = idleEntries.filter(e=>e.days>7).length;
+  const locs = new Set(idleEntries.map(e=>e.location.toLowerCase().trim())).size;
+  document.getElementById('i-stat3').textContent = locs;
+  const avg = idleEntries.length ? Math.round(idleEntries.reduce((s,e)=>s+e.days,0)/idleEntries.length) : 0;
+  document.getElementById('i-stat4').textContent = avg;
+}
+
+// ============================================================
+//  EXCEL EXPORTS
+// ============================================================
+function downloadTodoExcel() {
+  if (!todoEntries.length) { toast('⚠️ No data to export!'); return; }
+  const data = [['Column #','Header / Category','Summary / Details','Date & Time']];
+  todoEntries.forEach(e => data.push([`Col ${e.colNum}`, e.header, e.summary, e.datetime]));
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:10},{wch:28},{wch:60},{wch:22}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Todo Entries');
+  XLSX.writeFile(wb, `MMROADWAYS_Todo_${new Date().toLocaleDateString('en-IN').replace(/\//g,'-')}.xlsx`);
+  toast('📊 Excel downloaded!');
+}
+
+function downloadIdleExcel() {
+  if (!idleEntries.length) { toast('⚠️ No data to export!'); return; }
+  const data = [['#','Vehicle No.','Days Idle','Location','Recorded On']];
+  idleEntries.forEach((e,i) => data.push([i+1, e.vehicle, e.days, e.location, e.datetime]));
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:5},{wch:20},{wch:12},{wch:40},{wch:22}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Idle Vehicles');
+  XLSX.writeFile(wb, `MMROADWAYS_IdleVehicles_${new Date().toLocaleDateString('en-IN').replace(/\//g,'-')}.xlsx`);
+  toast('📊 Excel downloaded!');
+}
+
+// ============================================================
+//  IMAGE EXPORTS
+// ============================================================
+function captureAndDownload(elId, filename, cb) {
+  const el = document.getElementById(elId);
+  el.style.left = '0'; el.style.top = '0'; el.style.zIndex = '9999';
+  cb && cb();
+  setTimeout(() => {
+    html2canvas(el, { scale:2, useCORS:true, backgroundColor:'#fff', logging:false, windowWidth:1300 }).then(canvas => {
+      el.style.left = '-9999px'; el.style.zIndex = '-1';
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      toast('🖼️ Colorful image downloaded!');
+    });
+  }, 150);
+}
+
+function downloadTodoImage() {
+  if (!todoEntries.length) { toast('⚠️ No data to export!'); return; }
+  captureAndDownload('cap-todo', `MMROADWAYS_Todo_${new Date().toLocaleDateString('en-IN').replace(/\//g,'-')}.png`, () => {
+    const now = new Date();
+    document.getElementById('cap-todo-date').textContent = '📅 Report Date: ' + todayStr();
+    document.getElementById('cap-todo-total').textContent = '📋 Total Entries: ' + todoEntries.length;
+    document.getElementById('cap-todo-cols').textContent = '🗂️ Columns: ' + todoEntries.length;
+    document.getElementById('cap-todo-footer').textContent = now.toLocaleString('en-IN');
+
+    // Build columns grid
+    const colsArea = document.getElementById('cap-todo-cols-area');
+    colsArea.innerHTML = '';
+    todoEntries.forEach(e => {
+      const colEl = document.createElement('div');
+      colEl.className = 'cap-col';
+      colEl.innerHTML = `
+        <div class="cap-col-hdr" style="background:${e.color}">
+          <span>${esc(e.header)}</span>
+          <span style="background:rgba(255,255,255,0.2);width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px">${e.colNum}</span>
+        </div>
+        <div class="cap-col-body">
+          <div class="cap-bubble">
+            <div>${esc(e.summary).replace(/\n/g,'<br>')}</div>
+            <div class="cb-time">🕒 ${e.datetime}</div>
+          </div>
+        </div>
+      `;
+      colsArea.appendChild(colEl);
+    });
+
+    // Build table
+    const tbody = document.getElementById('cap-todo-body');
+    tbody.innerHTML = '';
+    todoEntries.forEach((e,i) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="text-align:center;font-weight:700;color:#64748b">${i+1}</td>
+        <td style="text-align:center;font-weight:800;font-family:'Rajdhani',sans-serif;font-size:15px;color:#1a5fb4">Col ${e.colNum}</td>
+        <td><span style="display:inline-block;background:${e.color};color:#fff;padding:4px 12px;border-radius:16px;font-weight:700;font-size:12px">${esc(e.header)}</span></td>
+        <td style="color:#1e293b;line-height:1.5">${esc(e.summary).replace(/\n/g,'<br>')}</td>
+        <td style="color:#64748b;font-size:11.5px">${e.datetime}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+function downloadIdleImage() {
+  if (!idleEntries.length) { toast('⚠️ No data to export!'); return; }
+  captureAndDownload('cap-idle', `MMROADWAYS_IdleVehicles_${new Date().toLocaleDateString('en-IN').replace(/\//g,'-')}.png`, () => {
+    const now = new Date();
+    document.getElementById('cap-idle-date').textContent = '📅 Report Date: ' + todayStr();
+    document.getElementById('cap-idle-total').textContent = '🚛 Total Idle: ' + idleEntries.length;
+    document.getElementById('cap-idle-high').textContent = '⚠️ High Days (>7): ' + idleEntries.filter(e=>e.days>7).length;
+    document.getElementById('cap-idle-footer').textContent = now.toLocaleString('en-IN');
+
+    const tbody = document.getElementById('cap-idle-body');
+    tbody.innerHTML = '';
+    idleEntries.forEach((e,i) => {
+      const cls = e.days > 7 ? '#fee2e2' : e.days > 3 ? '#fef3c7' : '#d1fae5';
+      const tcls = e.days > 7 ? '#991b1b' : e.days > 3 ? '#92400e' : '#065f46';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="text-align:center;font-weight:700;color:#64748b">${i+1}</td>
+        <td style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:15px;color:#1a5fb4">🚛 ${esc(e.vehicle)}</td>
+        <td><span style="display:inline-block;background:${cls};color:${tcls};padding:3px 12px;border-radius:12px;font-weight:800;font-size:12px">${e.days} day${e.days!==1?'s':''}</span></td>
+        <td style="color:#1e293b">📍 ${esc(e.location)}</td>
+        <td style="color:#64748b;font-size:11.5px">${e.datetime}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  // Header date
+  document.getElementById('hdr-date').textContent = '📅 ' + new Date().toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+
+  // Keyboard shortcuts
+  document.getElementById('tHeaderText').addEventListener('keydown', e => { if(e.key==='Enter'){e.preventDefault();document.getElementById('tSummary').focus();} });
+  document.getElementById('tSummary').addEventListener('keydown', e => { if(e.key==='Enter'&&e.ctrlKey){addTodoEntry();} });
+  document.getElementById('iVehicle').addEventListener('keydown', e => { if(e.key==='Enter'){document.getElementById('iDays').focus();} });
+  document.getElementById('iDays').addEventListener('keydown', e => { if(e.key==='Enter'){document.getElementById('iLocation').focus();} });
+  document.getElementById('iLocation').addEventListener('keydown', e => { if(e.key==='Enter'){addIdleEntry();} });
+
+  renderTodo();
+  renderIdle();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FuelCheck — Transaction Comparator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg:#f0f4f8; --surface:#fff; --surface2:#f7f9fc;
+  --border:#e2e8f0; --border2:#cbd5e1;
+  --accent:#2563eb; --accent-light:#eff6ff;
+  --accent2:#0891b2; --accent2-light:#ecfeff;
+  --success:#059669; --success-light:#ecfdf5;
+  --danger:#dc2626; --danger-light:#fef2f2;
+  --warning:#d97706; --warning-light:#fffbeb;
+  --text:#1e293b; --text2:#64748b; --text3:#94a3b8;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh;font-size:14px}
+
+/* ── HEADER ── */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;height:58px;display:flex;align-items:center;position:sticky;top:0;z-index:300;box-shadow:var(--shadow)}
+.logo{display:flex;align-items:center;gap:.6rem}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#2563eb,#0891b2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem}
+.logo-text{font-size:1.15rem;font-weight:800;color:var(--text)}
+.logo-text span{color:var(--accent)}
+.logo-sub{font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
+
+.main{padding:1.5rem 2rem;max-width:1500px;margin:0 auto}
+
+/* ── UPLOAD ── */
+.upload-section{background:var(--surface);border-radius:14px;padding:1.4rem;box-shadow:var(--shadow);margin-bottom:1.2rem;border:1px solid var(--border)}
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.upload-card{border:2px dashed var(--border2);border-radius:10px;padding:1.1rem;background:var(--surface2);transition:all .2s}
+.upload-card.loaded{border-style:solid}
+.upload-card.f1.loaded{border-color:var(--accent);background:var(--accent-light)}
+.upload-card.f2.loaded{border-color:var(--accent2);background:var(--accent2-light)}
+.card-head{display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem}
+.card-num{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800}
+.f1 .card-num{background:var(--accent-light);color:var(--accent)}
+.f2 .card-num{background:var(--accent2-light);color:var(--accent2)}
+.card-title{font-weight:700;font-size:.88rem}
+.col-tags{display:flex;flex-wrap:wrap;gap:.25rem;margin-bottom:.9rem}
+.col-tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 5px;color:var(--text2)}
+.pick-btn{padding:.42rem .9rem;border-radius:7px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text2);font-size:.78rem;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Nunito',sans-serif;display:inline-flex;align-items:center;gap:.3rem}
+.f1 .pick-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+.f2 .pick-btn:hover{border-color:var(--accent2);color:var(--accent2);background:var(--accent2-light)}
+.file-status{margin-top:.55rem;font-size:.76rem;font-weight:700;min-height:1.1em}
+.f1.loaded .file-status{color:var(--accent)}
+.f2.loaded .file-status{color:var(--accent2)}
+#file1Input,#file2Input{display:none}
+
+.compare-btn{width:100%;padding:.78rem;background:linear-gradient(135deg,#2563eb,#0891b2);color:#fff;border:none;border-radius:10px;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.compare-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,.3)}
+.compare-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* ── DATE FILTER ── */
+.date-filter-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.9rem 1.2rem;box-shadow:var(--shadow);margin-bottom:1.2rem;display:none;align-items:center;gap:1rem;flex-wrap:wrap}
+.date-filter-bar.show{display:flex}
+.filter-lbl{font-weight:800;font-size:.8rem;color:var(--text2);white-space:nowrap}
+.date-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.date-inp{padding:.38rem .7rem;border:1.5px solid var(--border2);border-radius:7px;font-family:'Nunito',sans-serif;font-size:.8rem;color:var(--text);background:var(--surface2);cursor:pointer;transition:border-color .15s}
+.date-inp:focus{outline:none;border-color:var(--accent);background:var(--accent-light)}
+.sep-txt{color:var(--text3);font-size:.78rem;font-weight:700}
+.flt-apply{padding:.38rem 1rem;background:var(--accent);color:#fff;border:none;border-radius:7px;font-family:'Nunito',sans-serif;font-size:.78rem;font-weight:800;cursor:pointer;transition:all .15s}
+.flt-apply:hover{background:#1d4ed8}
+.flt-reset{padding:.38rem .9rem;background:var(--surface2);color:var(--text2);border:1.5px solid var(--border2);border-radius:7px;font-family:'Nunito',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .15s}
+.flt-reset:hover{border-color:var(--danger);color:var(--danger);background:var(--danger-light)}
+.filter-badge{background:var(--warning-light);color:var(--warning);border:1px solid #fde68a;border-radius:6px;padding:3px 10px;font-size:.72rem;font-weight:800;display:none}
+.filter-badge.show{display:inline-block}
+
+/* ── SECTION TITLE ── */
+#dashboard{display:none}
+.sec-title{font-size:.78rem;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:.85rem;display:flex;align-items:center;gap:.5rem}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.85rem;margin-bottom:1.5rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.95rem 1.05rem;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 10px 10px}
+.sc-blue::after{background:var(--accent)} .sc-cyan::after{background:var(--accent2)}
+.sc-red::after{background:var(--danger)} .sc-green::after{background:var(--success)}
+.sc-amber::after{background:var(--warning)}
+.stat-lbl{font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:.25rem}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:500;color:var(--text);line-height:1.15}
+.stat-sub{font-size:.68rem;color:var(--text3);margin-top:.2rem}
+
+/* ── BAR CHART ── */
+.chart-section{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.2rem 1.4rem;box-shadow:var(--shadow);margin-bottom:1.5rem;display:none}
+.chart-section.show{display:block}
+.chart-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
+.chart-legend{display:flex;gap:1rem;flex-wrap:wrap}
+.cleg{display:flex;align-items:center;gap:.35rem;font-size:.75rem;font-weight:700;color:var(--text2)}
+.cleg-dot{width:12px;height:12px;border-radius:3px}
+.chart-wrap{position:relative;height:320px}
+
+/* ── PER DAY PANELS ── */
+.day-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.4rem}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow)}
+.panel-head{padding:.65rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:.8rem}
+.ph1{background:var(--accent-light);color:var(--accent)}
+.ph2{background:var(--accent2-light);color:var(--accent2)}
+.ph-plain{background:var(--surface2);color:var(--text2)}
+.total-badge{font-family:'JetBrains Mono',monospace;font-size:.78rem;padding:2px 8px;border-radius:20px}
+.tb1{background:rgba(37,99,235,.12);color:var(--accent)}
+.tb2{background:rgba(8,145,178,.12);color:var(--accent2)}
+.tbl-wrap{max-height:260px;overflow-y:auto}
+
+/* ── TABLES ── */
+table{width:100%;border-collapse:collapse;font-size:.77rem}
+th{background:var(--surface2);padding:.48rem .8rem;text-align:left;font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--text2);position:sticky;top:0;z-index:2;border-bottom:1px solid var(--border)}
+td{padding:.42rem .8rem;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8fafc}
+
+/* ── RAW TABLE HIGHLIGHT ── */
+/* Row-level highlight for records whose date has a difference */
+.raw-diff-row td{background:#fff7ed !important}
+.raw-diff-row td:first-child{border-left:3px solid var(--warning)}
+.raw-diff-row .diff-amount{color:var(--warning);font-weight:700}
+
+/* Record-level highlight: the actual amount cell that doesn't match partner */
+.raw-mismatch-row td{background:#fef2f2 !important}
+.raw-mismatch-row td:first-child{border-left:3px solid var(--danger)}
+.raw-mismatch-row .diff-amount{color:var(--danger);font-weight:700}
+
+.diff-flag{display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:var(--danger);border-radius:4px;padding:1px 6px;font-size:.65rem;font-weight:800;font-family:'Nunito',sans-serif;margin-left:4px;vertical-align:middle}
+.warn-flag{display:inline-flex;align-items:center;gap:3px;background:#ffedd5;color:#c2410c;border-radius:4px;padding:1px 6px;font-size:.65rem;font-weight:800;font-family:'Nunito',sans-serif;margin-left:4px;vertical-align:middle}
+
+/* ── CMP TABLE ── */
+.cmp-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:1.4rem}
+.cmp-head{padding:.85rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.row-match td{background:#f0fdf4}
+.row-match td:first-child{border-left:3px solid var(--success)}
+.row-diff td{background:#fff5f5}
+.row-diff td:first-child{border-left:3px solid var(--danger)}
+.badge{display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:5px;font-size:.65rem;font-weight:800;font-family:'Nunito',sans-serif}
+.b-match{background:#dcfce7;color:var(--success)}
+.b-diff{background:#fee2e2;color:var(--danger)}
+.diff-ok{color:var(--success);font-weight:700}
+.diff-bad{color:var(--danger);font-weight:700}
+.c-blue{color:var(--accent)} .c-cyan{color:var(--accent2)}
+
+/* ── TAB BUTTONS ── */
+.tab-bar{display:flex;gap:.4rem;flex:1;flex-wrap:wrap;margin:0}
+.tab-btn{padding:.32rem .8rem;border-radius:6px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-size:.75rem;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Nunito',sans-serif}
+.tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tab-btn.tab-diff.active{background:var(--danger);border-color:var(--danger)}
+.tab-btn.tab-ok.active{background:var(--success);border-color:var(--success)}
+.count-chip{display:inline-block;padding:0 6px;border-radius:9px;font-size:.66rem;font-weight:800;margin-left:2px}
+.chip-b{background:var(--accent-light);color:var(--accent)}
+.chip-g{background:#dcfce7;color:var(--success)}
+.chip-r{background:#fee2e2;color:var(--danger)}
+
+/* ── DOWNLOAD BTN ── */
+.dl-btn{padding:.35rem .9rem;border-radius:7px;background:var(--success-light);border:1.5px solid #6ee7b7;color:var(--success);font-size:.75rem;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;display:inline-flex;align-items:center;gap:.3rem;transition:all .15s;white-space:nowrap}
+.dl-btn:hover{background:var(--success);color:#fff;border-color:var(--success)}
+
+/* chart download btn */
+.chart-dl-btn{padding:.35rem 1rem;border-radius:7px;background:#eff6ff;border:1.5px solid #93c5fd;color:var(--accent);font-size:.75rem;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;display:inline-flex;align-items:center;gap:.3rem;transition:all .15s}
+.chart-dl-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* ── RAW LEGEND ── */
+.raw-legend{display:flex;gap:1rem;margin-bottom:.6rem;flex-wrap:wrap}
+.rl{display:flex;align-items:center;gap:.35rem;font-size:.72rem;font-weight:700;color:var(--text2)}
+.rl-box{width:12px;height:12px;border-radius:3px}
+
+/* ── MISC ── */
+.raw-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.empty{text-align:center;padding:1.8rem;color:var(--text3);font-size:.8rem}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--surface2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+@media(max-width:780px){
+  .upload-grid,.day-grid,.raw-grid{grid-template-columns:1fr}
+  .main{padding:1rem}
+  header{padding:0 1rem}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⛽</div>
+    <div>
+      <div class="logo-text">Fuel<span>Check</span></div>
+      <div class="logo-sub">Transaction Comparison System</div>
+    </div>
+  </div>
+</header>
+
+<div class="main">
+  <input type="file" id="file1Input" accept=".xlsx,.xls,.csv">
+  <input type="file" id="file2Input" accept=".xlsx,.xls,.csv">
+
+  <!-- Upload -->
+  <div class="upload-section">
+    <div class="upload-grid">
+      <div class="upload-card f1" id="card1">
+        <div class="card-head"><div class="card-num">1</div><div class="card-title">Internal Records (File 1)</div></div>
+        <div class="col-tags">
+          <span class="col-tag">Vehicle No</span><span class="col-tag">Payment Date</span>
+          <span class="col-tag">Fuel Ltr</span><span class="col-tag">Cost Per Ltr</span><span class="col-tag">Fuel Amount</span>
+        </div>
+        <button class="pick-btn" id="btn1">📂 Choose File 1</button>
+        <div class="file-status" id="status1"></div>
+      </div>
+      <div class="upload-card f2" id="card2">
+        <div class="card-head"><div class="card-num">2</div><div class="card-title">Bank / Raw Transactions (File 2)</div></div>
+        <div class="col-tags">
+          <span class="col-tag">Txn Date</span><span class="col-tag">Merchant Name</span>
+          <span class="col-tag">RSP</span><span class="col-tag">Quantity</span><span class="col-tag">Amount</span>
+        </div>
+        <button class="pick-btn" id="btn2">📂 Choose File 2</button>
+        <div class="file-status" id="status2"></div>
+      </div>
+    </div>
+    <button class="compare-btn" id="compareBtn" disabled>⚡ Compare Files</button>
+  </div>
+
+  <!-- Date Filter -->
+  <div class="date-filter-bar" id="filterBar">
+    <span class="filter-lbl">🗓 Date Filter:</span>
+    <div class="date-row">
+      <input type="date" class="date-inp" id="dateFrom">
+      <span class="sep-txt">→ To</span>
+      <input type="date" class="date-inp" id="dateTo">
+    </div>
+    <button class="flt-apply" id="applyBtn">Apply Filter</button>
+    <button class="flt-reset" id="resetBtn">✕ Reset</button>
+    <span class="filter-badge" id="filterBadge">Filtered</span>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard">
+
+    <div class="sec-title">📊 Overview</div>
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <!-- BAR CHART -->
+    <div class="chart-section" id="chartSection">
+      <div class="chart-title-row">
+        <div class="sec-title" style="margin:0;flex:1">📈 Date-wise Amount Comparison (Bar Chart)</div>
+        <div class="chart-legend">
+          <div class="cleg"><div class="cleg-dot" style="background:#3b82f6"></div>File 1 Amount</div>
+          <div class="cleg"><div class="cleg-dot" style="background:#06b6d4"></div>File 2 Amount</div>
+          <div class="cleg"><div class="cleg-dot" style="background:#f97316"></div>Difference</div>
+        </div>
+        <button class="chart-dl-btn" id="dlChartBtn">⬇ Download Chart (PNG)</button>
+      </div>
+      <div class="chart-wrap" style="position:relative;height:420px"><canvas id="barChart"></canvas></div>
+    </div>
+
+    <div class="sec-title">📅 Per Day Summary</div>
+    <div class="day-grid">
+      <div class="panel">
+        <div class="panel-head ph1"><span>File 1 — Per Day</span><span class="total-badge tb1" id="badge1">₹0</span></div>
+        <div class="tbl-wrap">
+          <table id="dt1"><thead><tr><th>Date</th><th>Entries</th><th>Fuel (L)</th><th>Amount</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head ph2"><span>File 2 — Per Day</span><span class="total-badge tb2" id="badge2">₹0</span></div>
+        <div class="tbl-wrap">
+          <table id="dt2"><thead><tr><th>Date</th><th>Txns</th><th>Qty</th><th>Amount</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-title">🔍 Date-wise Comparison</div>
+    <div class="cmp-section">
+      <div class="cmp-head">
+        <div class="tab-bar">
+          <button class="tab-btn active" data-f="all">All <span class="count-chip chip-b" id="cntAll">0</span></button>
+          <button class="tab-btn tab-ok" data-f="match">✓ Match <span class="count-chip chip-g" id="cntMatch">0</span></button>
+          <button class="tab-btn tab-diff" data-f="diff">✗ Difference <span class="count-chip chip-r" id="cntDiff">0</span></button>
+        </div>
+        <button class="dl-btn" id="dlDiffBtn">⬇ Download Differences (Excel)</button>
+      </div>
+      <div class="tbl-wrap" style="max-height:360px">
+        <table>
+          <thead><tr><th>Date</th><th>F1 Entries</th><th>F1 Amount (₹)</th><th>F2 Txns</th><th>F2 Amount (₹)</th><th>Difference</th><th>Status</th></tr></thead>
+          <tbody id="cmpBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- RAW DATA -->
+    <div class="sec-title">📋 All Records (Differences Highlighted)</div>
+    <div class="raw-legend">
+      <div class="rl"><div class="rl-box" style="background:#fef2f2;border:2px solid #dc2626"></div> Amount Mismatch on this date</div>
+      <div class="rl"><div class="rl-box" style="background:#fff7ed;border:2px solid #f97316"></div> Date exists only in one file</div>
+      <div class="rl"><div class="rl-box" style="background:#f0fdf4;border:2px solid #059669"></div> Matching date</div>
+    </div>
+    <div class="raw-grid">
+      <div class="panel">
+        <div class="panel-head ph-plain">
+          <span>File 1 — All Records</span>
+          <button class="dl-btn" id="dlRaw1">⬇ Excel</button>
+        </div>
+        <div class="tbl-wrap" style="max-height:420px">
+          <table id="raw1"><thead><tr><th>Vehicle No</th><th>Date</th><th>Fuel (L)</th><th>Rate/L</th><th>Amount</th><th>Status</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head ph-plain">
+          <span>File 2 — All Records</span>
+          <button class="dl-btn" id="dlRaw2">⬇ Excel</button>
+        </div>
+        <div class="tbl-wrap" style="max-height:420px">
+          <table id="raw2"><thead><tr><th>Date</th><th>Merchant</th><th>RSP</th><th>Qty</th><th>Amount</th><th>Status</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /dashboard -->
+</div>
+
+<script>
+/* ================================================================
+   STATE
+================================================================ */
+var data1=[],data2=[];
+var cmpRows=[];
+var activeFilter='all';
+var filterFrom=null,filterTo=null,isFiltered=false;
+var barChartInst=null;
+
+/* ================================================================
+   WIRE-UP
+================================================================ */
+document.getElementById('btn1').addEventListener('click',function(e){e.preventDefault();document.getElementById('file1Input').click();});
+document.getElementById('btn2').addEventListener('click',function(e){e.preventDefault();document.getElementById('file2Input').click();});
+document.getElementById('file1Input').addEventListener('change',function(){if(this.files[0])loadFile(this.files[0],1);});
+document.getElementById('file2Input').addEventListener('change',function(){if(this.files[0])loadFile(this.files[0],2);});
+document.getElementById('compareBtn').addEventListener('click',function(){runCompare();});
+document.getElementById('applyBtn').addEventListener('click',function(){applyDateFilter();});
+document.getElementById('resetBtn').addEventListener('click',function(){resetDateFilter();});
+document.getElementById('dlDiffBtn').addEventListener('click',function(){downloadDiffExcel();});
+document.getElementById('dlRaw1').addEventListener('click',function(){downloadRawExcel(1);});
+document.getElementById('dlRaw2').addEventListener('click',function(){downloadRawExcel(2);});
+
+document.querySelectorAll('.tab-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+    this.classList.add('active');
+    activeFilter=this.getAttribute('data-f');
+    renderCmpTable();
+  });
+});
+
+/* ================================================================
+   HELPERS
+================================================================ */
+function parseDate(v){
+  if(v===null||v===undefined||v==='') return null;
+  if(typeof v==='number'){var d=new Date(Math.round((v-25569)*86400000));return isoDate(d);}
+  var s=String(v).trim(),m;
+  m=s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+  if(m) return m[3]+'-'+z(m[2])+'-'+z(m[1]);
+  m=s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
+  if(m) return m[1]+'-'+z(m[2])+'-'+z(m[3]);
+  var d=new Date(s);if(!isNaN(d)) return isoDate(d);
+  return null;
+}
+function isoDate(d){return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());}
+function z(n){return String(n).padStart(2,'0');}
+function dd(iso){if(!iso) return '';var p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+function toN(v){if(v===undefined||v===null||v==='') return 0;return parseFloat(String(v).replace(/[^0-9.\-]/g,''))||0;}
+function fmt(n){return '₹'+Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtN(n){return Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+function findCol(row,cands){
+  var keys=Object.keys(row);
+  for(var i=0;i<cands.length;i++){
+    var c=cands[i].toLowerCase().replace(/[\s_\-]/g,'').replace(/[^a-z0-9]/g,'');
+    var f=keys.find(function(k){var kn=k.toLowerCase().replace(/[\s_\-]/g,'').replace(/[^a-z0-9]/g,'');return kn===c||kn.includes(c)||c.includes(kn);});
+    if(f) return f;
+  }
+  return null;
+}
+
+function processFile1(raw){
+  return raw.map(function(row){
+    var dc=findCol(row,['Payment Date','PaymentDate','Date']);
+    var vc=findCol(row,['Vehicle No','VehicleNo','Vehicle']);
+    var fc=findCol(row,['Fuel Ltr','FuelLtr','Fuel Litre','Litre','Ltr']);
+    var rc=findCol(row,['Cost Pert Ltr','Cost Per Ltr','CostPerLtr','Rate']);
+    var ac=findCol(row,['Fuel Amount','FuelAmount','Amount']);
+    return{vehicleNo:vc?String(row[vc]).trim():'',date:parseDate(dc?row[dc]:''),fuelLtr:toN(fc?row[fc]:0),costPerLtr:toN(rc?row[rc]:0),amount:toN(ac?row[ac]:0)};
+  }).filter(function(r){return r.date;});
+}
+
+function processFile2(raw){
+  return raw.map(function(row){
+    var dc=findCol(row,['Txn Date','TxnDate','Date','Transaction Date']);
+    var mc=findCol(row,['Merchant Name','MerchantName','Merchant']);
+    var rc=findCol(row,['RSP','Rsp']);
+    var qc=findCol(row,['Quantity','Qty','Ltr','Litre']);
+    var ac=findCol(row,['Amount','Amt']);
+    return{date:parseDate(dc?row[dc]:''),merchant:mc?String(row[mc]).trim():'',rsp:toN(rc?row[rc]:0),quantity:toN(qc?row[qc]:0),amount:toN(ac?row[ac]:0)};
+  }).filter(function(r){return r.date;});
+}
+
+/* ================================================================
+   LOAD FILE
+================================================================ */
+function loadFile(file,num){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var wb=XLSX.read(e.target.result,{type:'binary'});
+    var ws=wb.Sheets[wb.SheetNames[0]];
+    var raw=XLSX.utils.sheet_to_json(ws,{defval:''});
+    if(num===1){data1=processFile1(raw);document.getElementById('card1').classList.add('loaded');document.getElementById('status1').textContent='✓ '+file.name+' ('+data1.length+' records)';}
+    else{data2=processFile2(raw);document.getElementById('card2').classList.add('loaded');document.getElementById('status2').textContent='✓ '+file.name+' ('+data2.length+' records)';}
+    if(data1.length&&data2.length) document.getElementById('compareBtn').disabled=false;
+  };
+  reader.readAsBinaryString(file);
+}
+
+/* ================================================================
+   DATE FILTER
+================================================================ */
+function applyDateFilter(){
+  var from=document.getElementById('dateFrom').value;
+  var to=document.getElementById('dateTo').value;
+  if(!from&&!to){resetDateFilter();return;}
+  filterFrom=from||null;filterTo=to||null;isFiltered=true;
+  var badge=document.getElementById('filterBadge');
+  badge.classList.add('show');
+  badge.textContent=(from?dd(from):'...')+' → '+(to?dd(to):'...');
+  rebuildAll();
+}
+function resetDateFilter(){
+  filterFrom=null;filterTo=null;isFiltered=false;
+  document.getElementById('dateFrom').value='';
+  document.getElementById('dateTo').value='';
+  document.getElementById('filterBadge').classList.remove('show');
+  rebuildAll();
+}
+function filteredData(){
+  if(!isFiltered) return{d1:data1,d2:data2};
+  return{
+    d1:data1.filter(function(r){return(!filterFrom||r.date>=filterFrom)&&(!filterTo||r.date<=filterTo);}),
+    d2:data2.filter(function(r){return(!filterFrom||r.date>=filterFrom)&&(!filterTo||r.date<=filterTo);})
+  };
+}
+
+/* ================================================================
+   MAIN
+================================================================ */
+function runCompare(){
+  document.getElementById('dashboard').style.display='block';
+  document.getElementById('filterBar').classList.add('show');
+  rebuildAll();
+  document.getElementById('dashboard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function rebuildAll(){
+  var fd=filteredData();
+  buildStats(fd.d1,fd.d2);
+  buildDayTables(fd.d1,fd.d2);
+  buildCmpRows(fd.d1,fd.d2);
+  renderCmpTable();
+  buildRawTables(fd.d1,fd.d2);
+  buildBarChart(fd.d1,fd.d2);
+}
+
+function groupByDate(data){
+  var map={};
+  data.forEach(function(r){
+    if(!r.date) return;
+    if(!map[r.date]) map[r.date]={entries:[],total:0,qty:0};
+    map[r.date].entries.push(r);
+    map[r.date].total+=r.amount||0;
+    map[r.date].qty+=(r.fuelLtr||r.quantity||0);
+  });
+  return map;
+}
+
+/* ================================================================
+   STATS
+================================================================ */
+function buildStats(d1,d2){
+  var t1=d1.reduce(function(s,r){return s+r.amount;},0);
+  var t2=d2.reduce(function(s,r){return s+r.amount;},0);
+  var diff=t1-t2;
+  var g1=groupByDate(d1);var g2=groupByDate(d2);
+  var days1=Math.max(Object.keys(g1).length,1);var days2=Math.max(Object.keys(g2).length,1);
+  var h='';
+  h+=sc('sc-blue','File 1 Total Amount',fmt(t1),d1.length+' transactions');
+  h+=sc('sc-cyan','File 2 Total Amount',fmt(t2),d2.length+' transactions');
+  h+=sc(Math.abs(diff)<0.01?'sc-green':'sc-red','Overall Difference',(diff>=0?'+':'')+fmt(diff),Math.abs(diff)<0.01?'Files balance ✓':'Discrepancy found');
+  h+=sc('sc-blue','Avg Daily — File 1',fmt(t1/days1),'per active day');
+  h+=sc('sc-cyan','Avg Daily — File 2',fmt(t2/days2),'per active day');
+  h+=sc('sc-amber','Total Fuel (Ltr)',d1.reduce(function(s,r){return s+r.fuelLtr;},0).toFixed(1)+' L','from File 1');
+  document.getElementById('statsGrid').innerHTML=h;
+}
+function sc(cls,lbl,val,sub){return '<div class="stat-card '+cls+'"><div class="stat-lbl">'+lbl+'</div><div class="stat-val">'+val+'</div><div class="stat-sub">'+sub+'</div></div>';}
+
+/* ================================================================
+   BAR CHART — with amount labels on bars + PNG download
+================================================================ */
+function buildBarChart(d1,d2){
+  var g1=groupByDate(d1);var g2=groupByDate(d2);
+  var allDates={};
+  Object.keys(g1).forEach(function(d){allDates[d]=1;});
+  Object.keys(g2).forEach(function(d){allDates[d]=1;});
+  var dates=Object.keys(allDates).sort();
+
+  var section=document.getElementById('chartSection');
+  if(!dates.length){section.classList.remove('show');return;}
+  section.classList.add('show');
+
+  var labels=dates.map(function(d){return dd(d);});
+  var f1Vals=dates.map(function(d){return g1[d]?parseFloat(g1[d].total.toFixed(2)):0;});
+  var f2Vals=dates.map(function(d){return g2[d]?parseFloat(g2[d].total.toFixed(2)):0;});
+  var diffVals=dates.map(function(d,i){return parseFloat(Math.abs(f1Vals[i]-f2Vals[i]).toFixed(2));});
+
+  if(barChartInst){barChartInst.destroy();barChartInst=null;}
+
+  /* register datalabels plugin if available */
+  if(window.ChartDataLabels) Chart.register(ChartDataLabels);
+
+  function shortAmt(v){
+    if(v===0) return '';
+    if(v>=100000) return '₹'+(v/100000).toFixed(1)+'L';
+    if(v>=1000)   return '₹'+(v/1000).toFixed(1)+'K';
+    return '₹'+v.toFixed(0);
+  }
+
+  var ctx=document.getElementById('barChart').getContext('2d');
+  barChartInst=new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:labels,
+      datasets:[
+        {
+          label:'File 1 Amount (₹)',
+          data:f1Vals,
+          backgroundColor:'rgba(59,130,246,0.78)',
+          borderColor:'rgba(37,99,235,1)',
+          borderWidth:1.5,
+          borderRadius:5,
+          borderSkipped:false
+        },
+        {
+          label:'File 2 Amount (₹)',
+          data:f2Vals,
+          backgroundColor:'rgba(6,182,212,0.78)',
+          borderColor:'rgba(8,145,178,1)',
+          borderWidth:1.5,
+          borderRadius:5,
+          borderSkipped:false
+        },
+        {
+          label:'Difference (₹)',
+          data:diffVals,
+          backgroundColor:'rgba(249,115,22,0.82)',
+          borderColor:'rgba(234,88,12,1)',
+          borderWidth:1.5,
+          borderRadius:5,
+          borderSkipped:false
+        }
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      layout:{padding:{top:32}},
+      plugins:{
+        legend:{
+          display:true,
+          position:'top',
+          labels:{
+            color:'#475569',
+            font:{size:12,weight:'700',family:'Nunito'},
+            padding:18,
+            usePointStyle:true,
+            pointStyleWidth:12
+          }
+        },
+        tooltip:{
+          backgroundColor:'rgba(15,23,42,0.93)',
+          titleColor:'#f1f5f9',
+          bodyColor:'#cbd5e1',
+          padding:14,
+          cornerRadius:10,
+          callbacks:{
+            label:function(c){
+              if(c.raw===0) return null;
+              return '  '+c.dataset.label+': ₹'+Number(c.raw).toLocaleString('en-IN',{minimumFractionDigits:2});
+            }
+          }
+        },
+        datalabels: window.ChartDataLabels ? {
+          display:function(ctx){return ctx.dataset.data[ctx.dataIndex]>0;},
+          anchor:'end',
+          align:'end',
+          offset:2,
+          formatter:function(value){return shortAmt(value);},
+          font:{size:10,weight:'700',family:'JetBrains Mono'},
+          color:function(ctx){
+            var colors=['#1d4ed8','#0e7490','#c2410c'];
+            return colors[ctx.datasetIndex]||'#334155';
+          },
+          rotation:dates.length>8?-60:0
+        } : false
+      },
+      scales:{
+        x:{
+          grid:{color:'rgba(226,232,240,0.5)',drawBorder:false},
+          ticks:{
+            color:'#64748b',
+            font:{size:11,family:'JetBrains Mono'},
+            maxRotation:dates.length>6?45:0,
+            minRotation:0
+          }
+        },
+        y:{
+          grid:{color:'rgba(226,232,240,0.5)',drawBorder:false},
+          ticks:{
+            color:'#64748b',
+            font:{size:11,family:'Nunito'},
+            callback:function(v){
+              if(v>=100000) return '₹'+(v/100000).toFixed(0)+'L';
+              if(v>=1000)   return '₹'+(v/1000).toFixed(0)+'K';
+              return '₹'+v;
+            }
+          }
+        }
+      }
+    }
+  });
+
+  /* wire download button */
+  var dlBtn=document.getElementById('dlChartBtn');
+  dlBtn.onclick=function(){
+    /* draw on a white-background canvas then save */
+    var orig=document.getElementById('barChart');
+    var tempCanvas=document.createElement('canvas');
+    tempCanvas.width=orig.width;
+    tempCanvas.height=orig.height;
+    var tctx=tempCanvas.getContext('2d');
+    tctx.fillStyle='#ffffff';
+    tctx.fillRect(0,0,tempCanvas.width,tempCanvas.height);
+    tctx.drawImage(orig,0,0);
+    var link=document.createElement('a');
+    link.download='FuelCheck_Chart.png';
+    link.href=tempCanvas.toDataURL('image/png');
+    link.click();
+  };
+}
+
+/* ================================================================
+   PER DAY TABLES
+================================================================ */
+function buildDayTables(d1,d2){
+  var g1=groupByDate(d1);var tb1=document.querySelector('#dt1 tbody');tb1.innerHTML='';var t1=0;
+  Object.keys(g1).sort().forEach(function(d){var g=g1[d];t1+=g.total;tb1.innerHTML+='<tr><td>'+dd(d)+'</td><td>'+g.entries.length+'</td><td>'+g.qty.toFixed(2)+'</td><td class="c-blue">'+fmt(g.total)+'</td></tr>';});
+  if(!Object.keys(g1).length) tb1.innerHTML='<tr><td colspan="4" class="empty">No data</td></tr>';
+  document.getElementById('badge1').textContent=fmt(t1);
+
+  var g2=groupByDate(d2);var tb2=document.querySelector('#dt2 tbody');tb2.innerHTML='';var t2=0;
+  Object.keys(g2).sort().forEach(function(d){var g=g2[d];t2+=g.total;tb2.innerHTML+='<tr><td>'+dd(d)+'</td><td>'+g.entries.length+'</td><td>'+g.qty.toFixed(2)+'</td><td class="c-cyan">'+fmt(g.total)+'</td></tr>';});
+  if(!Object.keys(g2).length) tb2.innerHTML='<tr><td colspan="4" class="empty">No data</td></tr>';
+  document.getElementById('badge2').textContent=fmt(t2);
+}
+
+/* ================================================================
+   CMP ROWS
+================================================================ */
+function buildCmpRows(d1,d2){
+  var g1=groupByDate(d1);var g2=groupByDate(d2);
+  var allDates={};
+  Object.keys(g1).forEach(function(d){allDates[d]=1;});
+  Object.keys(g2).forEach(function(d){allDates[d]=1;});
+  cmpRows=[];
+  Object.keys(allDates).sort().forEach(function(d){
+    var f1=g1[d]||{entries:[],total:0,qty:0};
+    var f2=g2[d]||{entries:[],total:0,qty:0};
+    var diff=f1.total-f2.total;
+    cmpRows.push({date:d,f1Count:f1.entries.length,f1Amt:f1.total,f2Count:f2.entries.length,f2Amt:f2.total,diff:diff,status:Math.abs(diff)<0.01?'match':'diff'});
+  });
+  var all=cmpRows.length;
+  var match=cmpRows.filter(function(r){return r.status==='match';}).length;
+  document.getElementById('cntAll').textContent=all;
+  document.getElementById('cntMatch').textContent=match;
+  document.getElementById('cntDiff').textContent=all-match;
+}
+
+function renderCmpTable(){
+  var rows=cmpRows;
+  if(activeFilter==='match') rows=rows.filter(function(r){return r.status==='match';});
+  if(activeFilter==='diff')  rows=rows.filter(function(r){return r.status==='diff';});
+  var tb=document.getElementById('cmpBody');
+  if(!rows.length){tb.innerHTML='<tr><td colspan="7" class="empty">No records found</td></tr>';return;}
+  tb.innerHTML=rows.map(function(r){
+    var cls=r.status==='match'?'row-match':'row-diff';
+    var badge=r.status==='match'?'<span class="badge b-match">✓ MATCH</span>':'<span class="badge b-diff">✗ DIFF</span>';
+    var dh=Math.abs(r.diff)<0.01?'<span class="diff-ok">0.00</span>':'<span class="diff-bad">'+(r.diff>0?'+':'')+fmtN(r.diff)+'</span>';
+    return '<tr class="'+cls+'"><td>'+dd(r.date)+'</td><td>'+r.f1Count+'</td><td class="c-blue">'+fmtN(r.f1Amt)+'</td><td>'+r.f2Count+'</td><td class="c-cyan">'+fmtN(r.f2Amt)+'</td><td>'+dh+'</td><td>'+badge+'</td></tr>';
+  }).join('');
+}
+
+/* ================================================================
+   RAW TABLES — CORRECT PER-RECORD AMOUNT MATCHING
+   Logic per record:
+   ① date not in other file           → orange  "Only Fx"
+   ② date in both, BUT this specific
+      amount has NO match in partner   → red     "✗ DIFF"
+   ③ date in both AND this amount
+      is matched by a partner record   → green   "✓"
+
+   Matching is done by building a frequency map of amounts for
+   each date in the partner file, then ticking them off one-by-one
+   so duplicate amounts are handled correctly.
+================================================================ */
+function buildRawTables(d1,d2){
+  var g1=groupByDate(d1);
+  var g2=groupByDate(d2);
+
+  /* ── per-record status for File 1 ── */
+  /* Build a mutable freq-map of File2 amounts per date */
+  var f2AmtMap={};
+  Object.keys(g2).forEach(function(dt){
+    var freq={};
+    g2[dt].entries.forEach(function(r){
+      var key=Math.round(r.amount*100); // round to avoid float drift
+      freq[key]=(freq[key]||0)+1;
+    });
+    f2AmtMap[dt]=freq;
+  });
+
+  /* Clone so we can tick off matched amounts */
+  var f2Used=JSON.parse(JSON.stringify(f2AmtMap));
+
+  var row1Status=d1.map(function(r){
+    if(!g2[r.date]) return 'only1';       // date missing in F2
+    var key=Math.round(r.amount*100);
+    if(f2Used[r.date]&&f2Used[r.date][key]>0){
+      f2Used[r.date][key]--;              // consume the match
+      return 'match';
+    }
+    return 'diff';                        // no partner amount found
+  });
+
+  /* ── per-record status for File 2 ── */
+  var f1AmtMap={};
+  Object.keys(g1).forEach(function(dt){
+    var freq={};
+    g1[dt].entries.forEach(function(r){
+      var key=Math.round(r.amount*100);
+      freq[key]=(freq[key]||0)+1;
+    });
+    f1AmtMap[dt]=freq;
+  });
+
+  var f1Used=JSON.parse(JSON.stringify(f1AmtMap));
+
+  var row2Status=d2.map(function(r){
+    if(!g1[r.date]) return 'only2';
+    var key=Math.round(r.amount*100);
+    if(f1Used[r.date]&&f1Used[r.date][key]>0){
+      f1Used[r.date][key]--;
+      return 'match';
+    }
+    return 'diff';
+  });
+
+  /* ── render File 1 ── */
+  var tb1=document.querySelector('#raw1 tbody');tb1.innerHTML='';
+  d1.forEach(function(r,i){
+    var st=row1Status[i];
+    var rowCls='',amtCls='c-blue',flag='';
+    if(st==='diff'){
+      rowCls='raw-mismatch-row';amtCls='diff-amount';
+      flag='<span class="diff-flag">✗ DIFF</span>';
+    }else if(st==='only1'){
+      rowCls='raw-diff-row';amtCls='warn-amount';
+      flag='<span class="warn-flag">⚠ Only F1</span>';
+    }
+    tb1.innerHTML+='<tr class="'+rowCls+'"><td>'+r.vehicleNo+'</td><td>'+dd(r.date)+'</td><td>'+r.fuelLtr.toFixed(2)+'</td><td>'+fmtN(r.costPerLtr)+'</td><td class="'+amtCls+'">'+fmtN(r.amount)+flag+'</td><td>'+statusBadgeRaw(st,'1')+'</td></tr>';
+  });
+  if(!d1.length) tb1.innerHTML='<tr><td colspan="6" class="empty">No data</td></tr>';
+
+  /* ── render File 2 ── */
+  var tb2=document.querySelector('#raw2 tbody');tb2.innerHTML='';
+  d2.forEach(function(r,i){
+    var st=row2Status[i];
+    var rowCls='',amtCls='c-cyan',flag='';
+    if(st==='diff'){
+      rowCls='raw-mismatch-row';amtCls='diff-amount';
+      flag='<span class="diff-flag">✗ DIFF</span>';
+    }else if(st==='only2'){
+      rowCls='raw-diff-row';amtCls='warn-amount';
+      flag='<span class="warn-flag">⚠ Only F2</span>';
+    }
+    tb2.innerHTML+='<tr class="'+rowCls+'"><td>'+dd(r.date)+'</td><td>'+r.merchant+'</td><td>'+r.rsp.toFixed(2)+'</td><td>'+r.quantity.toFixed(2)+'</td><td class="'+amtCls+'">'+fmtN(r.amount)+flag+'</td><td>'+statusBadgeRaw(st,'2')+'</td></tr>';
+  });
+  if(!d2.length) tb2.innerHTML='<tr><td colspan="6" class="empty">No data</td></tr>';
+}
+
+function statusBadgeRaw(st,fileNum){
+  if(st==='match') return '<span class="badge b-match">✓</span>';
+  if(st==='diff')  return '<span class="badge b-diff">✗ DIFF</span>';
+  if(st==='only1'||st==='only2') return '<span style="display:inline-flex;align-items:center;padding:2px 6px;border-radius:5px;font-size:.65rem;font-weight:800;background:#ffedd5;color:#c2410c;">⚠ Only F'+fileNum+'</span>';
+  return '';
+}
+
+/* ================================================================
+   EXCEL DOWNLOAD — DIFFERENCES
+================================================================ */
+function xlsColor(rgb){return{patternType:'solid',fgColor:{rgb:rgb}};}
+
+function applyStyles(ws,rows,cols,headerBg,evenBg,oddBg){
+  for(var c=0;c<cols;c++){
+    var cell=XLSX.utils.encode_cell({r:0,c:c});
+    if(!ws[cell]) continue;
+    ws[cell].s={fill:xlsColor(headerBg),font:{bold:true,color:{rgb:'FFFFFF'},sz:11},alignment:{horizontal:'center',wrapText:true}};
+  }
+  for(var r=1;r<rows;r++){
+    for(var c=0;c<cols;c++){
+      var cell=XLSX.utils.encode_cell({r:r,c:c});
+      if(!ws[cell]) continue;
+      ws[cell].s={fill:xlsColor(r%2===0?evenBg:oddBg),border:{bottom:{style:'thin',color:{rgb:'E2E8F0'}}}};
+    }
+  }
+}
+
+function downloadDiffExcel(){
+  var diffRows=cmpRows.filter(function(r){return r.status==='diff';});
+  if(!diffRows.length){alert('No differences found! All dates match.');return;}
+  var wb=XLSX.utils.book_new();
+
+  var s1=[['Date','File 1 Entries','File 1 Amount (₹)','File 2 Txns','File 2 Amount (₹)','Difference (₹)','Status']];
+  diffRows.forEach(function(r){s1.push([dd(r.date),r.f1Count,parseFloat(r.f1Amt.toFixed(2)),r.f2Count,parseFloat(r.f2Amt.toFixed(2)),parseFloat(r.diff.toFixed(2)),'DIFFERENCE']);});
+  var ws1=XLSX.utils.aoa_to_sheet(s1);
+  ws1['!cols']=[{wch:14},{wch:13},{wch:20},{wch:12},{wch:20},{wch:18},{wch:14}];
+  applyStyles(ws1,s1.length,7,'1E3A8A','FFF1F2','FEE2E2');
+  for(var i=1;i<s1.length;i++){var c=XLSX.utils.encode_cell({r:i,c:5});if(ws1[c])ws1[c].s={fill:xlsColor('FEE2E2'),font:{color:{rgb:'DC2626'},bold:true}};}
+  XLSX.utils.book_append_sheet(wb,ws1,'Differences Summary');
+
+  var diffDates=diffRows.map(function(r){return r.date;});
+  var f1d=data1.filter(function(r){return diffDates.indexOf(r.date)!==-1;});
+  var s2=[['Vehicle No','Date','Fuel (Ltr)','Cost Per Ltr (₹)','Fuel Amount (₹)']];
+  f1d.forEach(function(r){s2.push([r.vehicleNo,dd(r.date),parseFloat(r.fuelLtr.toFixed(2)),parseFloat(r.costPerLtr.toFixed(2)),parseFloat(r.amount.toFixed(2))]);});
+  var ws2=XLSX.utils.aoa_to_sheet(s2);ws2['!cols']=[{wch:14},{wch:14},{wch:12},{wch:16},{wch:18}];
+  applyStyles(ws2,s2.length,5,'1E40AF','EFF6FF','DBEAFE');
+  XLSX.utils.book_append_sheet(wb,ws2,'File1 - Diff Records');
+
+  var f2d=data2.filter(function(r){return diffDates.indexOf(r.date)!==-1;});
+  var s3=[['Date','Merchant Name','RSP','Quantity','Amount (₹)']];
+  f2d.forEach(function(r){s3.push([dd(r.date),r.merchant,parseFloat(r.rsp.toFixed(2)),parseFloat(r.quantity.toFixed(2)),parseFloat(r.amount.toFixed(2))]);});
+  var ws3=XLSX.utils.aoa_to_sheet(s3);ws3['!cols']=[{wch:14},{wch:26},{wch:10},{wch:12},{wch:18}];
+  applyStyles(ws3,s3.length,5,'0C4A6E','ECFEFF','CFFAFE');
+  XLSX.utils.book_append_sheet(wb,ws3,'File2 - Diff Records');
+
+  XLSX.writeFile(wb,'FuelCheck_Differences.xlsx');
+}
+
+/* ================================================================
+   EXCEL DOWNLOAD — RAW  (per-record amount matching)
+================================================================ */
+function downloadRawExcel(num){
+  var wb=XLSX.utils.book_new();
+  var g1=groupByDate(data1);var g2=groupByDate(data2);
+
+  /* build freq maps */
+  function makeFreq(grp){
+    var map={};
+    Object.keys(grp).forEach(function(dt){
+      var freq={};
+      grp[dt].entries.forEach(function(r){var k=Math.round(r.amount*100);freq[k]=(freq[k]||0)+1;});
+      map[dt]=freq;
+    });
+    return map;
+  }
+
+  if(num===1){
+    var f2freq=JSON.parse(JSON.stringify(makeFreq(g2)));
+    var rows=[['Vehicle No','Date','Fuel (Ltr)','Cost Per Ltr (₹)','Fuel Amount (₹)','Status']];
+    var rowStatus=[];
+    data1.forEach(function(r){
+      var st;
+      if(!g2[r.date]) st='only1';
+      else{var k=Math.round(r.amount*100);if(f2freq[r.date]&&f2freq[r.date][k]>0){f2freq[r.date][k]--;st='match';}else st='diff';}
+      var lbl=st==='match'?'MATCH':st==='diff'?'DIFFERENCE':'ONLY IN FILE 1';
+      rows.push([r.vehicleNo,dd(r.date),parseFloat(r.fuelLtr.toFixed(2)),parseFloat(r.costPerLtr.toFixed(2)),parseFloat(r.amount.toFixed(2)),lbl]);
+      rowStatus.push(st);
+    });
+    var ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:14},{wch:14},{wch:12},{wch:16},{wch:18},{wch:16}];
+    ['A','B','C','D','E','F'].forEach(function(col){var cell=col+'1';if(ws[cell])ws[cell].s={fill:xlsColor('1E40AF'),font:{bold:true,color:{rgb:'FFFFFF'},sz:11},alignment:{horizontal:'center'}};});
+    rowStatus.forEach(function(st,i){
+      var bg=st==='match'?'F0FDF4':st==='diff'?'FEF2F2':'FFF7ED';
+      ['A','B','C','D','E','F'].forEach(function(col){var cell=col+(i+2);if(ws[cell])ws[cell].s={fill:xlsColor(bg),border:{bottom:{style:'thin',color:{rgb:'E2E8F0'}}}};});
+      if(st==='diff'){var c='E'+(i+2);if(ws[c])ws[c].s={fill:xlsColor('FEE2E2'),font:{color:{rgb:'DC2626'},bold:true}};}
+    });
+    XLSX.utils.book_append_sheet(wb,ws,'File1 Records');
+    XLSX.writeFile(wb,'File1_Records.xlsx');
+  } else {
+    var f1freq=JSON.parse(JSON.stringify(makeFreq(g1)));
+    var rows=[['Date','Merchant Name','RSP','Quantity','Amount (₹)','Status']];
+    var rowStatus=[];
+    data2.forEach(function(r){
+      var st;
+      if(!g1[r.date]) st='only2';
+      else{var k=Math.round(r.amount*100);if(f1freq[r.date]&&f1freq[r.date][k]>0){f1freq[r.date][k]--;st='match';}else st='diff';}
+      var lbl=st==='match'?'MATCH':st==='diff'?'DIFFERENCE':'ONLY IN FILE 2';
+      rows.push([dd(r.date),r.merchant,parseFloat(r.rsp.toFixed(2)),parseFloat(r.quantity.toFixed(2)),parseFloat(r.amount.toFixed(2)),lbl]);
+      rowStatus.push(st);
+    });
+    var ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:14},{wch:26},{wch:10},{wch:12},{wch:18},{wch:16}];
+    ['A','B','C','D','E','F'].forEach(function(col){var cell=col+'1';if(ws[cell])ws[cell].s={fill:xlsColor('0C4A6E'),font:{bold:true,color:{rgb:'FFFFFF'},sz:11},alignment:{horizontal:'center'}};});
+    rowStatus.forEach(function(st,i){
+      var bg=st==='match'?'ECFEFF':st==='diff'?'FEF2F2':'FFF7ED';
+      ['A','B','C','D','E','F'].forEach(function(col){var cell=col+(i+2);if(ws[cell])ws[cell].s={fill:xlsColor(bg),border:{bottom:{style:'thin',color:{rgb:'E2E8F0'}}}};});
+      if(st==='diff'){var c='E'+(i+2);if(ws[c])ws[c].s={fill:xlsColor('FEE2E2'),font:{color:{rgb:'DC2626'},bold:true}};}
+    });
+    XLSX.utils.book_append_sheet(wb,ws,'File2 Records');
+    XLSX.writeFile(wb,'File2_Records.xlsx');
+  }
+}
+</script>
+</body>
+</html>

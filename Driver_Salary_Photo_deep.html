@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MMROADWAYS Drivers Salary</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+    <style>
+        body { margin: 0; }
+        #root { min-height: 100vh; }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .animate-in { animation: fadeIn 0.2s ease-out; }
+        .slide-up { animation: slideUp 0.3s ease-out; }
+        
+        /* Modal backdrop blur */
+        .backdrop-blur-sm { backdrop-filter: blur(4px); }
+        
+        /* Image hover effects */
+        .img-hover-zoom { transition: transform 0.3s ease; }
+        .img-hover-zoom:hover { transform: scale(1.05); }
+        
+        /* Hidden class */
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // --- ICONS (Using emojis as fallback since we can't import lucide) ---
+        const Icons = {
+            Upload: '📤',
+            User: '👤',
+            FileSpreadsheet: '📊',
+            ImageIcon: '🖼️',
+            Download: '📥',
+            Trash2: '🗑️',
+            Loader2: '⏳',
+            Plus: '➕',
+            X: '✖️',
+            Maximize2: '🔍',
+            ExternalLink: '🔗',
+            Save: '💾',
+            CheckCircle: '✅',
+            Search: '🔍'
+        };
+
+        // --- TYPES ---
+        const Driver = {
+            id: '',
+            sno: '',
+            name: '',
+            netBalance: '',
+            photos: []
+        };
+
+        // --- UTILS ---
+        const bufferToBase64 = (buffer) => {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            const len = bytes.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return window.btoa(binary);
+        };
+
+        // --- MAIN APP COMPONENT ---
+        const App = () => {
+            const [drivers, setDrivers] = React.useState([]);
+            const [filteredDrivers, setFilteredDrivers] = React.useState([]);
+            const [isProcessing, setIsProcessing] = React.useState(false);
+            const [processStatus, setProcessStatus] = React.useState('');
+            const [viewingDriverId, setViewingDriverId] = React.useState(null);
+            const [fullScreenImage, setFullScreenImage] = React.useState(null);
+            const [searchQuery, setSearchQuery] = React.useState('');
+
+            // Search functionality
+            React.useEffect(() => {
+                if (!searchQuery.trim()) {
+                    setFilteredDrivers(drivers);
+                    return;
+                }
+                
+                const query = searchQuery.toLowerCase().trim();
+                const filtered = drivers.filter(driver => 
+                    driver.name.toLowerCase().includes(query) || 
+                    driver.sno.toString().toLowerCase().includes(query) ||
+                    driver.netBalance.toLowerCase().includes(query)
+                );
+                setFilteredDrivers(filtered);
+            }, [searchQuery, drivers]);
+
+            // 1. ADVANCED IMPORT (Reads Images from Excel)
+            const handleImport = async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+
+                setIsProcessing(true);
+                setProcessStatus('Reading Excel file...');
+
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const workbook = new ExcelJS.Workbook();
+                    await workbook.xlsx.load(arrayBuffer);
+
+                    // Find Main Sheet
+                    let mainSheet = workbook.getWorksheet('Main Sheet');
+                    if (!mainSheet) {
+                        mainSheet = workbook.worksheets[0];
+                    }
+                    
+                    if (!mainSheet) {
+                        throw new Error("No sheets found in Excel file");
+                    }
+
+                    setProcessStatus('Parsing driver list...');
+                    const newDrivers = [];
+                    
+                    // Parse Rows
+                    mainSheet.eachRow((row, rowNumber) => {
+                        if (rowNumber === 1) return; // Skip header
+
+                        const snoCell = row.getCell(1).value;
+                        const sno = snoCell?.toString() || '';
+                        
+                        const nameCell = row.getCell(2).value;
+                        let cleanName = '';
+
+                        // Robust Name Extraction
+                        if (nameCell && typeof nameCell === 'object') {
+                            if (nameCell.text) cleanName = nameCell.text;
+                            else if (nameCell.result) cleanName = nameCell.result;
+                            else if (nameCell.richText) cleanName = nameCell.richText.map(t => t.text).join('');
+                            else cleanName = nameCell.toString();
+                        } else {
+                            cleanName = nameCell?.toString() || '';
+                        }
+
+                        // Get Net Balance from column 4
+                        const netBalanceCell = row.getCell(4)?.value;
+                        let netBalance = '';
+                        if (netBalanceCell) {
+                            if (typeof netBalanceCell === 'object') {
+                                if (netBalanceCell.text) netBalance = netBalanceCell.text;
+                                else if (netBalanceCell.result) netBalance = netBalanceCell.result;
+                                else if (netBalanceCell.richText) netBalance = netBalanceCell.richText.map(t => t.text).join('');
+                                else netBalance = netBalanceCell.toString();
+                            } else {
+                                netBalance = netBalanceCell.toString();
+                            }
+                        }
+
+                        if (cleanName && cleanName !== '[object Object]') {
+                            newDrivers.push({
+                                id: `d-${Date.now()}-${rowNumber}`,
+                                sno: sno,
+                                name: cleanName,
+                                netBalance: netBalance,
+                                photos: []
+                            });
+                        }
+                    });
+
+                    setProcessStatus('Extracting images from sheets...');
+                    
+                    // Extract Images from Individual Sheets
+                    for (let driver of newDrivers) {
+                        const sheetName = driver.name.replace(/[*?:\/\[\]\\']/g, '').trim().substring(0, 30);
+                        
+                        let driverSheet = workbook.getWorksheet(sheetName);
+                        
+                        if (!driverSheet) {
+                            driverSheet = workbook.worksheets.find(ws => ws.name.toLowerCase() === sheetName.toLowerCase());
+                        }
+
+                        if (driverSheet) {
+                            const images = driverSheet.getImages();
+                            
+                            if (images && images.length > 0) {
+                                for (const image of images) {
+                                    try {
+                                        const imgId = parseInt(image.imageId, 10);
+                                        const mediaList = workbook.model?.media || workbook.media;
+                                        
+                                        if (mediaList) {
+                                            const media = mediaList.find((m) => m.index == imgId);
+                                            
+                                            if (media) {
+                                                const base64 = bufferToBase64(media.buffer);
+                                                const extension = media.extension || 'png';
+                                                const fullBase64 = `data:image/${extension};base64,${base64}`;
+                                                driver.photos.push(fullBase64);
+                                            }
+                                        }
+                                    } catch (imgErr) {
+                                        console.warn("Failed to extract an image", imgErr);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    setDrivers(newDrivers);
+                    setFilteredDrivers(newDrivers);
+                    setProcessStatus('');
+                    
+                } catch (error) {
+                    console.error('Import Error:', error);
+                    alert(`Error importing file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                } finally {
+                    setIsProcessing(false);
+                    if (e.target) e.target.value = '';
+                }
+            };
+
+            // 2. EXPORT LOGIC (With Links & Images)
+            const exportToExcel = async () => {
+                if (drivers.length === 0) return;
+                setIsProcessing(true);
+                setProcessStatus('Generating Excel...');
+
+                try {
+                    const workbook = new ExcelJS.Workbook();
+                    
+                    // Main Sheet
+                    const mainSheet = workbook.addWorksheet('Main Sheet', {
+                        properties: { tabColor: { argb: 'FF2563EB' } },
+                        views: [{ state: 'frozen', ySplit: 1 }]
+                    });
+
+                    // Columns with Net Balance
+                    mainSheet.columns = [
+                        { header: 'S.No', key: 'sno', width: 10 },
+                        { header: 'Driver Name', key: 'name', width: 40 },
+                        { header: 'Photo Count', key: 'count', width: 15 },
+                        { header: 'Net Balance', key: 'netBalance', width: 20 },
+                        { header: 'Direct Link', key: 'link', width: 20 }
+                    ];
+
+                    // Header Style with full color
+                    const headerRow = mainSheet.getRow(1);
+                    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' }, size: 12 };
+                    headerRow.fill = { 
+                        type: 'pattern', 
+                        pattern: 'solid', 
+                        fgColor: { argb: 'FF2563EB' } 
+                    };
+                    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+                    
+                    // Apply fill to all header cells
+                    for(let i = 1; i <= 5; i++) {
+                        const cell = headerRow.getCell(i);
+                        cell.fill = { 
+                            type: 'pattern', 
+                            pattern: 'solid', 
+                            fgColor: { argb: 'FF2563EB' } 
+                        };
+                    }
+
+                    const usedSheetNames = new Set();
+                    usedSheetNames.add('main sheet');
+
+                    // Loop Drivers
+                    for (let i = 0; i < drivers.length; i++) {
+                        setProcessStatus(`Processing ${i + 1}/${drivers.length}...`);
+                        const d = drivers[i];
+
+                        // Create Safe Sheet Name
+                        let safeName = d.name.replace(/[*?:\/\[\]\\']/g, '').trim().substring(0, 30);
+                        if (safeName.length === 0) safeName = `Driver ${d.sno}`;
+                        
+                        let sheetName = safeName;
+                        let counter = 1;
+                        while (usedSheetNames.has(sheetName.toLowerCase())) {
+                            sheetName = `${safeName} ${counter}`;
+                            counter++;
+                        }
+                        usedSheetNames.add(sheetName.toLowerCase());
+
+                        // Driver Sheet
+                        const dSheet = workbook.addWorksheet(sheetName);
+                        
+                        // Back Link
+                        dSheet.getCell('A1').value = { text: '⬅ Back to Main List', hyperlink: "#'Main Sheet'!A1" };
+                        dSheet.getCell('A1').font = { color: { argb: 'FF2563EB' }, underline: true, bold: true, size: 12 };
+                        
+                        // Info
+                        dSheet.getCell('A3').value = `Driver: ${d.name}`;
+                        dSheet.getCell('A3').font = { size: 16, bold: true };
+                        
+                        // Net Balance in driver sheet
+                        dSheet.getCell('A4').value = `Net Balance: ${d.netBalance || 'Not Set'}`;
+                        dSheet.getCell('A4').font = { size: 12, color: { argb: 'FF666666' } };
+                        
+                        dSheet.getCell('A6').value = "Insert Photos Below (Please keep inside cells roughly)";
+                        dSheet.getCell('A6').font = { italic: true, color: { argb: 'FF666666' } };
+
+                        // Embed Existing Photos
+                        if (d.photos.length > 0) {
+                            let currentRow = 8;
+                            for (const photoBase64 of d.photos) {
+                                const base64Data = photoBase64.split(',')[1];
+                                const extension = photoBase64.split(';')[0].split('/')[1] || 'png';
+                                
+                                const imageId = workbook.addImage({
+                                    base64: base64Data,
+                                    extension: extension
+                                });
+
+                                dSheet.addImage(imageId, {
+                                    tl: { col: 0, row: currentRow - 1 },
+                                    ext: { width: 500, height: 400 }
+                                });
+
+                                currentRow += 21;
+                            }
+                        }
+
+                        // Add to Main Sheet
+                        const mainRow = mainSheet.addRow({
+                            sno: d.sno,
+                            name: d.name,
+                            count: d.photos.length,
+                            netBalance: d.netBalance || '',
+                            link: 'Open Sheet 🔗'
+                        });
+
+                        // Hyperlink Logic
+                        mainRow.getCell('name').value = {
+                            text: d.name,
+                            hyperlink: `#'${sheetName}'!A1`,
+                            tooltip: 'Click to open driver sheet'
+                        };
+                        mainRow.getCell('name').font = { color: { argb: 'FF2563EB' }, underline: true };
+                        
+                        mainRow.getCell('link').value = {
+                            text: 'Go to Sheet ➔',
+                            hyperlink: `#'${sheetName}'!A1`
+                        };
+                        mainRow.getCell('link').font = { color: { argb: 'FF2563EB' }, underline: true };
+                        
+                        // Apply color to Net Balance cell if negative
+                        const netBalanceValue = d.netBalance?.toString() || '';
+                        const netBalanceCell = mainRow.getCell('netBalance');
+                        
+                        // Check if net balance is negative (starts with - or contains negative number)
+                        if (netBalanceValue.trim().startsWith('-')) {
+                            netBalanceCell.font = { 
+                                color: { argb: 'FFFF0000' }, // Red color
+                                bold: true 
+                            };
+                        } else {
+                            netBalanceCell.font = { 
+                                color: { argb: 'FF000000' } // Black color
+                            };
+                        }
+                    }
+
+                    // Download
+                    const buffer = await workbook.xlsx.writeBuffer();
+                    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `Driver_Data_Link_${new Date().toISOString().slice(0,10)}.xlsx`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+
+                } catch (err) {
+                    console.error(err);
+                    alert('Export failed.');
+                } finally {
+                    setIsProcessing(false);
+                    setProcessStatus('');
+                }
+            };
+
+            // 3. PHOTO UPLOAD (Web Side)
+            const handlePhotoUpload = (driverId, files) => {
+                if (!files) return;
+                Array.from(files).forEach(file => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        setDrivers(prev => prev.map(d => 
+                            d.id === driverId ? { ...d, photos: [...d.photos, reader.result] } : d
+                        ));
+                        // Update filtered drivers
+                        setFilteredDrivers(prev => prev.map(d => 
+                            d.id === driverId ? { ...d, photos: [...d.photos, reader.result] } : d
+                        ));
+                    };
+                    reader.readAsDataURL(file);
+                });
+            };
+
+            // Update Net Balance
+            const updateNetBalance = (driverId, value) => {
+                setDrivers(prev => prev.map(d => 
+                    d.id === driverId ? { ...d, netBalance: value } : d
+                ));
+                // Update filtered drivers
+                setFilteredDrivers(prev => prev.map(d => 
+                    d.id === driverId ? { ...d, netBalance: value } : d
+                ));
+            };
+
+            // Delete Photo
+            const deletePhoto = (driverId, photoIndex) => {
+                if (confirm('Delete this photo?')) {
+                    setDrivers(prev => prev.map(d => 
+                        d.id === driverId 
+                            ? { ...d, photos: d.photos.filter((_, i) => i !== photoIndex) }
+                            : d
+                    ));
+                    // Update filtered drivers
+                    setFilteredDrivers(prev => prev.map(d => 
+                        d.id === driverId 
+                            ? { ...d, photos: d.photos.filter((_, i) => i !== photoIndex) }
+                            : d
+                    ));
+                }
+            };
+
+            // Delete Driver
+            const deleteDriver = (driverId) => {
+                if (confirm('Delete this driver?')) {
+                    setDrivers(prev => prev.filter(d => d.id !== driverId));
+                    setFilteredDrivers(prev => prev.filter(d => d.id !== driverId));
+                    setViewingDriverId(null);
+                }
+            };
+
+            const viewingDriver = viewingDriverId ? drivers.find(d => d.id === viewingDriverId) : null;
+
+            return (
+                <div className="min-h-screen bg-gray-50 p-6 font-sans text-gray-900">
+                    <div className="max-w-7xl mx-auto space-y-6">
+                        
+                        {/* HEADER */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4">
+                            <div>
+                                <h1 className="text-2xl font-bold flex items-center gap-3 text-gray-800">
+                                    <span className="p-2 bg-blue-600 text-white rounded-lg"><img src="MM-removebg-preview.png" alt="Logo" className="w-6 h-6" /></span>
+                                    MMROADWAYS Drivers Salary
+                                </h1>
+                                <p className="text-gray-500 text-sm mt-1">Export with Links • Manual Insert • Auto Import</p>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button 
+                                    onClick={() => { if(confirm('Clear all data?')) { setDrivers([]); setFilteredDrivers([]); setSearchQuery(''); } }}
+                                    className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors border border-transparent hover:border-red-100"
+                                >
+                                    Reset
+                                </button>
+                                
+                                <div className="flex gap-2">
+                                    <label className={`
+                                        flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium cursor-pointer shadow-sm transition-all
+                                        ${isProcessing ? 'bg-gray-100 text-gray-400' : 'bg-white border border-gray-300 hover:bg-gray-50 text-gray-700'}
+                                    `}>
+                                        {isProcessing ? Icons.Loader2 : Icons.Upload}
+                                        Import Excel
+                                        <input type="file" accept=".xlsx,.xls" onChange={handleImport} className="hidden" disabled={isProcessing} />
+                                    </label>
+
+                                    <button 
+                                        onClick={exportToExcel}
+                                        disabled={isProcessing || drivers.length === 0}
+                                        className={`
+                                            flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold shadow-sm transition-all text-white
+                                            ${isProcessing || drivers.length === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 hover:scale-105'}
+                                        `}
+                                    >
+                                        {isProcessing ? Icons.Loader2 : Icons.Download}
+                                        Export Data
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* SEARCH BAR */}
+                        {drivers.length > 0 && (
+                            <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                                <div className="flex items-center gap-3">
+                                    <div className="relative flex-1">
+                                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                                            {Icons.Search}
+                                        </span>
+                                        <input
+                                            type="text"
+                                            placeholder="Search drivers by name, S.No, or Net Balance..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        />
+                                        {searchQuery && (
+                                            <button
+                                                onClick={() => setSearchQuery('')}
+                                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                            >
+                                                {Icons.X}
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="text-sm text-gray-500 bg-gray-100 px-3 py-2 rounded-lg">
+                                        {filteredDrivers.length} of {drivers.length} drivers
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* LOADING STATUS */}
+                        {isProcessing && (
+                            <div className="bg-blue-50 text-blue-700 px-6 py-4 rounded-xl flex items-center gap-3 border border-blue-100 animate-pulse">
+                                {Icons.Loader2}
+                                <span className="font-medium">{processStatus}</span>
+                            </div>
+                        )}
+
+                        {/* DATA TABLE */}
+                        {filteredDrivers.length > 0 ? (
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead className="bg-gray-50 border-b border-gray-200">
+                                            <tr>
+                                                <th className="p-4 font-semibold text-gray-600 w-20">S.No</th>
+                                                <th className="p-4 font-semibold text-gray-600">Driver Name</th>
+                                                <th className="p-4 font-semibold text-gray-600">Photos</th>
+                                                <th className="p-4 font-semibold text-gray-600">Net Balance</th>
+                                                <th className="p-4 font-semibold text-gray-600 text-right">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100">
+                                            {filteredDrivers.map((driver) => (
+                                                <tr key={driver.id} className="hover:bg-blue-50/30 transition-colors group">
+                                                    <td className="p-4 text-gray-500 font-mono">{driver.sno}</td>
+                                                    <td className="p-4 font-medium text-gray-900 text-lg">
+                                                        {driver.name}
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <div className="flex items-center gap-2">
+                                                            {driver.photos.slice(0, 4).map((p, i) => (
+                                                                <button 
+                                                                    key={i}
+                                                                    onClick={() => setFullScreenImage(p)}
+                                                                    className="w-12 h-12 rounded-lg border border-gray-200 overflow-hidden hover:ring-2 ring-blue-500 transition-all relative group/img"
+                                                                >
+                                                                    <img src={p} alt="" className="w-full h-full object-cover" />
+                                                                    <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors" />
+                                                                </button>
+                                                            ))}
+                                                            {driver.photos.length > 4 && (
+                                                                <button 
+                                                                    onClick={() => setViewingDriverId(driver.id)}
+                                                                    className="w-12 h-12 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center text-xs font-bold text-gray-500 hover:bg-gray-50"
+                                                                >
+                                                                    +{driver.photos.length - 4}
+                                                                </button>
+                                                            )}
+                                                            {driver.photos.length === 0 && (
+                                                                <span className="text-gray-400 text-sm italic">No photos</span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="p-4">
+                                                        <input
+                                                            type="text"
+                                                            value={driver.netBalance || ''}
+                                                            onChange={(e) => updateNetBalance(driver.id, e.target.value)}
+                                                            placeholder="Enter net balance"
+                                                            className="w-32 px-3 py-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-center"
+                                                            style={{
+                                                                color: driver.netBalance?.startsWith?.('-') ? '#dc2626' : '#000000',
+                                                                fontWeight: driver.netBalance?.startsWith?.('-') ? '600' : '400'
+                                                            }}
+                                                        />
+                                                    </td>
+                                                    <td className="p-4 text-right">
+                                                        <div className="flex justify-end gap-2">
+                                                            <button 
+                                                                onClick={() => deleteDriver(driver.id)}
+                                                                className="text-red-600 hover:text-red-800 font-medium px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors"
+                                                            >
+                                                                {Icons.Trash2} Delete
+                                                            </button>
+                                                            <button 
+                                                                onClick={() => setViewingDriverId(driver.id)}
+                                                                className="text-blue-600 hover:text-blue-800 font-medium px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors"
+                                                            >
+                                                                Open Gallery
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ) : drivers.length > 0 && searchQuery ? (
+                            <div className="text-center py-12 bg-white rounded-xl border border-gray-200 flex flex-col items-center justify-center text-gray-500">
+                                <div className="text-4xl mb-4 text-gray-300">{Icons.Search}</div>
+                                <h3 className="text-lg font-semibold text-gray-600">No drivers found</h3>
+                                <p className="max-w-sm mt-2">No drivers match your search for "{searchQuery}"</p>
+                                <button 
+                                    onClick={() => setSearchQuery('')}
+                                    className="mt-4 text-blue-600 hover:text-blue-800 font-medium px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors"
+                                >
+                                    Clear search
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="text-center py-24 bg-white rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400">
+                                <div className="text-5xl mb-4 text-gray-300">{Icons.FileSpreadsheet}</div>
+                                <h3 className="text-lg font-semibold text-gray-600">List is Empty</h3>
+                                <p className="max-w-sm mt-2">Import an Excel file with S.No and Name, or manually add drivers to start.</p>
+                            </div>
+                        )}
+
+                        {/* ADD NEW DRIVER FORM */}
+                        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                            <h3 className="text-lg font-semibold mb-4">Add New Driver Manually</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <input 
+                                    type="text" 
+                                    id="newDriverSno"
+                                    placeholder="S.No" 
+                                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                <input 
+                                    type="text" 
+                                    id="newDriverName"
+                                    placeholder="Driver Name" 
+                                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                <input 
+                                    type="text" 
+                                    id="newDriverNetBalance"
+                                    placeholder="Net Balance" 
+                                    className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                                <button 
+                                    onClick={() => {
+                                        const sno = document.getElementById('newDriverSno').value;
+                                        const name = document.getElementById('newDriverName').value;
+                                        const netBalance = document.getElementById('newDriverNetBalance').value;
+                                        if (name.trim()) {
+                                            const newDriver = {
+                                                id: `d-${Date.now()}`,
+                                                sno: sno || (drivers.length + 1),
+                                                name: name,
+                                                netBalance: netBalance,
+                                                photos: []
+                                            };
+                                            setDrivers(prev => [...prev, newDriver]);
+                                            setFilteredDrivers(prev => [...prev, newDriver]);
+                                            document.getElementById('newDriverSno').value = '';
+                                            document.getElementById('newDriverName').value = '';
+                                            document.getElementById('newDriverNetBalance').value = '';
+                                        }
+                                    }}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium flex items-center gap-2 justify-center"
+                                >
+                                    {Icons.Plus} Add Driver
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    {/* DRIVER GALLERY MODAL */}
+                    {viewingDriver && (
+                        <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in">
+                            <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[85vh] slide-up">
+                                <div className="p-5 border-b flex justify-between items-center bg-white">
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-gray-900">{viewingDriver.name}</h2>
+                                        <div className="flex gap-4 mt-1">
+                                            <p className="text-gray-500 text-sm">Total Photos: {viewingDriver.photos.length}</p>
+                                            <p className="text-gray-500 text-sm">
+                                                Net Balance: 
+                                                <span className={`ml-1 font-semibold ${viewingDriver.netBalance?.startsWith?.('-') ? 'text-red-600' : 'text-green-600'}`}>
+                                                    {viewingDriver.netBalance || 'Not Set'}
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <label className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium cursor-pointer flex items-center gap-2 shadow-sm transition-transform active:scale-95">
+                                            {Icons.Plus} Add New
+                                            <input 
+                                                type="file" 
+                                                accept="image/*" 
+                                                multiple 
+                                                className="hidden" 
+                                                onChange={(e) => handlePhotoUpload(viewingDriver.id, e.target.files)} 
+                                            />
+                                        </label>
+                                        <button 
+                                            onClick={() => setViewingDriverId(null)}
+                                            className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg font-medium transition-colors"
+                                        >
+                                            Close
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+                                    {viewingDriver.photos.length === 0 ? (
+                                        <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                                            <div className="text-6xl opacity-20 mb-4"><span className="opacity-20">{Icons.ImageIcon}</span></div>
+                                            <p>No photos uploaded yet.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                            {viewingDriver.photos.map((photo, idx) => (
+                                                <div key={idx} className="group relative aspect-square bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden cursor-zoom-in" onClick={() => setFullScreenImage(photo)}>
+                                                    <img src={photo} className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-500 img-hover-zoom" />
+                                                    
+                                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all flex items-start justify-end p-2 opacity-0 group-hover:opacity-100">
+                                                        <button 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deletePhoto(viewingDriver.id, idx);
+                                                            }}
+                                                            className="bg-white text-red-600 p-2 rounded-full shadow-lg hover:bg-red-50 transition-colors"
+                                                        >
+                                                            {Icons.Trash2}
+                                                        </button>
+                                                    </div>
+                                                    <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <span className="bg-black/50 text-white p-1 rounded-md">{Icons.Maximize2}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* FULL SCREEN IMAGE PREVIEW */}
+                    {fullScreenImage && (
+                        <div className="fixed inset-0 z-[60] bg-black/95 flex items-center justify-center p-4 animate-in">
+                            <button 
+                                onClick={() => setFullScreenImage(null)}
+                                className="absolute top-6 right-6 text-white/70 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all"
+                            >
+                                {Icons.X}
+                            </button>
+                            <img 
+                                src={fullScreenImage} 
+                                className="max-w-full max-h-[90vh] object-contain shadow-2xl rounded-sm"
+                                alt="Full screen preview"
+                            />
+                        </div>
+                    )}
+
+                </div>
+            );
+        };
+
+        // --- MOUNT THE APP ---
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚗 Vehicle merge · excel upload & table</title>
+    <!-- Font Awesome 6 (free) for icons & clean UI -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- google font for modern sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
+    <!-- SheetJS (XLSX) for excel parsing & export -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <!-- html2canvas for image download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* === SAAS / SCSS inspired nested style (plain CSS but structured) === */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f0f4fa 0%, #e6ecf5 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3), inset 0 1px 2px rgba(255,255,255,0.8);
+            width: min(1300px, 98%);
+            padding: 2rem 2rem 2.2rem;
+            border: 1px solid rgba(255,255,255,0.5);
+            transition: all 0.2s;
+        }
+
+        h1 {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            font-size: 2.2rem;
+            letter-spacing: -0.02em;
+            color: #11212e;
+            margin-bottom: 1rem;
+            padding-left: 0.5rem;
+            border-left: 8px solid #2b6c9e;
+        }
+        h1 i {
+            color: #1e4b6e;
+            font-size: 2rem;
+        }
+        .sub {
+            color: #2c455b;
+            margin-left: 1rem;
+            margin-bottom: 2rem;
+            font-weight: 400;
+            font-size: 1.05rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #e1e9f2b3;
+            padding: 0.6rem 1.4rem;
+            border-radius: 60px;
+            width: fit-content;
+            backdrop-filter: blur(2px);
+        }
+
+        /* upload area */
+        .upload-card {
+            background: white;
+            border-radius: 2rem;
+            padding: 1.6rem 2rem;
+            margin: 1.5rem 0 2rem 0;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 8px 18px -6px rgba(0,32,64,0.2);
+            border: 1px solid rgba(255,255,255,0.7);
+        }
+        .file-label {
+            background: #1a3d5c;
+            color: white;
+            padding: 0.9rem 2rem;
+            border-radius: 50px;
+            font-weight: 500;
+            font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.15s;
+            border: 1px solid #30658a;
+            box-shadow: 0 8px 14px -8px #102433;
+        }
+        .file-label i {
+            font-size: 1.4rem;
+        }
+        .file-label:hover {
+            background: #12344d;
+            transform: scale(1.02);
+            border-color: #5787af;
+        }
+        #fileInput {
+            display: none;
+        }
+        .upload-hint {
+            color: #2f4b6b;
+            background: #deeaf6;
+            padding: 0.6rem 1.5rem;
+            border-radius: 40px;
+            font-size: 0.95rem;
+        }
+        .upload-hint i {
+            margin-right: 8px;
+            color: #136b5e;
+        }
+
+        /* action buttons (image / excel) */
+        .action-bar {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin: 1.8rem 0 1rem 0;
+            flex-wrap: wrap;
+        }
+        .btn {
+            border: none;
+            background: white;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1rem;
+            box-shadow: 0 8px 16px -10px #1f3b4e;
+            cursor: pointer;
+            transition: 0.1s;
+            border: 1px solid rgba(72, 119, 157, 0.3);
+            color: #153e58;
+        }
+        .btn i {
+            font-size: 1.3rem;
+        }
+        .btn:hover {
+            background: #f0f8ff;
+            border-color: #517f9f;
+            transform: translateY(-2px);
+        }
+        .btn-excel {
+            background: #1d694b;
+            color: white;
+            border-color: #116b4a;
+        }
+        .btn-excel:hover {
+            background: #155a40;
+        }
+        .btn-image {
+            background: #354f6d;
+            color: white;
+            border-color: #28445c;
+        }
+        .btn-image:hover {
+            background: #223b54;
+        }
+
+        /* ---------- TABLE ZONE (modern card) ---------- */
+        .table-wrapper {
+            background: #ffffffd9;
+            backdrop-filter: blur(4px);
+            border-radius: 2rem;
+            padding: 1.8rem 1rem 1rem 1rem;
+            box-shadow: inset 0 2px 4px #0000000d, 0 20px 30px -12px #1e3f5a;
+            border: 1px solid #ffffff;
+            overflow-x: auto;
+            margin-top: 1.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            border-radius: 1.8rem;
+            background: transparent;
+            font-size: 0.98rem;
+            min-width: 680px;
+        }
+
+        /* header */
+        thead tr {
+            background: #1f3b4f;
+            color: white;
+            border-radius: 20px 20px 0 0;
+        }
+        th {
+            padding: 1.2rem 1rem;
+            font-weight: 600;
+            font-size: 1.05rem;
+            letter-spacing: 0.3px;
+            text-align: left;
+        }
+        th:first-child {
+            border-top-left-radius: 1.4rem;
+        }
+        th:last-child {
+            border-top-right-radius: 1.4rem;
+        }
+
+        /* rows */
+        td {
+            padding: 1rem 1rem;
+            background: white;
+            border-bottom: 1px solid #d7e2ec;
+            color: #122b3c;
+            vertical-align: middle;
+        }
+        /* vehicle column merged style (visually grouped) */
+        td.vehicle-cell {
+            background-color: #eaf1fa;
+            font-weight: 600;
+            color: #0d3b55;
+            border-right: 2px solid #a3c0da;
+            box-shadow: 0 0 0 1px #edf5ff;
+            font-size: 1.05rem;
+        }
+        /* regular cells soft background */
+        td:not(.vehicle-cell) {
+            background-color: #fefefe;
+        }
+        /* row hover effect */
+        tr:hover td {
+            background-color: #f4faff;
+        }
+        tr:hover td.vehicle-cell {
+            background-color: #deecfd;
+        }
+
+        /* no data placeholder */
+        .no-data {
+            text-align: center;
+            padding: 4rem 1rem;
+            color: #5d7388;
+            font-style: italic;
+            background: #f2f8ff;
+            border-radius: 1rem;
+        }
+        .no-data i {
+            font-size: 3rem;
+            opacity: 0.5;
+            margin-bottom: 0.5rem;
+        }
+
+        /* image download (hidden capture zone) */
+        #captureArea {
+            display: flex;
+            flex-direction: column;
+        }
+        /* minor responsive */
+        @media (max-width: 650px) {
+            .glass-panel { padding: 1.2rem; }
+            .upload-card { flex-direction: column; align-items: start; gap: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="glass-panel">
+        <h1>
+            <i class="fas fa-merge"></i> 
+            Vehicle merge studio
+        </h1>
+        <div class="sub">
+            <i class="fas fa-file-excel"></i> upload excel · same vehicles merge · best table
+        </div>
+
+        <!-- upload section -->
+        <div class="upload-card">
+            <label for="fileInput" class="file-label">
+                <i class="fas fa-cloud-upload-alt"></i> Choose Excel file
+            </label>
+            <input type="file" id="fileInput" accept=".xlsx, .xls, .csv">
+            <span class="upload-hint"><i class="fas fa-info-circle"></i> columns: Vehicle, (any) → merge by Vehicle</span>
+        </div>
+
+        <!-- download action buttons -->
+        <div class="action-bar">
+            <button class="btn btn-image" id="downloadImageBtn"><i class="fas fa-camera"></i> Download as Image</button>
+            <button class="btn btn-excel" id="downloadExcelBtn"><i class="fas fa-file-excel"></i> Export merged Excel</button>
+        </div>
+
+        <!-- table wrapper with id for image capture -->
+        <div id="captureArea" class="table-wrapper">
+            <table id="mergedTable">
+                <thead>
+                    <tr id="tableHeaderRow">
+                        <!-- dynamic header will be inserted from excel columns, but we keep vehicle first -->
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="10" class="no-data">
+                            <i class="fas fa-car-side"></i><br>
+                            No data yet. Upload an excel file.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <small style="display: block; margin-top: 0.8rem; color: #3f5b74;"><i class="far fa-gem"></i> Rows with same vehicle name merge automatically. Other columns show combined (unique values).</small>
+    </div>
+
+    <script>
+        (function() {
+            // ----- state -----
+            let currentHeaders = [];               // original header order (including 'Vehicle')
+            let mergedRows = [];                    // array of objects { Vehicle: '...', [col]: value or combined }
+            let originalDataRows = [];              // raw row objects for reference
+
+            const fileInput = document.getElementById('fileInput');
+            const tableHead = document.querySelector('#mergedTable thead tr');
+            const tableBody = document.getElementById('tableBody');
+            const downloadImageBtn = document.getElementById('downloadImageBtn');
+            const downloadExcelBtn = document.getElementById('downloadExcelBtn');
+
+            // helper: render table from mergedRows & headers
+            function renderTable() {
+                if (!currentHeaders.length || mergedRows.length === 0) {
+                    // show empty placeholder
+                    tableHead.innerHTML = ''; // keep empty header
+                    tableBody.innerHTML = `<tr><td colspan="10" class="no-data"><i class="fas fa-car-side"></i><br>No data yet. Upload an excel file.</td></tr>`;
+                    return;
+                }
+
+                // build thead
+                let headerHtml = '';
+                currentHeaders.forEach(h => {
+                    headerHtml += `<th>${escapeHtml(h)}</th>`;
+                });
+                tableHead.innerHTML = headerHtml;
+
+                // build tbody with merged vehicles + other columns
+                let tbodyHtml = '';
+                for (let i = 0; i < mergedRows.length; i++) {
+                    const row = mergedRows[i];
+                    tbodyHtml += '<tr>';
+                    currentHeaders.forEach((header, idx) => {
+                        const cellValue = row[header] !== undefined ? row[header] : '';
+                        // format array values nicely (if merge produced array)
+                        let displayValue = cellValue;
+                        if (Array.isArray(cellValue)) {
+                            // unique array (already filtered) join with comma
+                            displayValue = cellValue.join(', ');
+                        } else if (cellValue === null || cellValue === undefined) {
+                            displayValue = '';
+                        }
+                        // add special class for Vehicle column for distinct visual merge
+                        const vehicleClass = (header === 'Vehicle') ? 'class="vehicle-cell"' : '';
+                        tbodyHtml += `<td ${vehicleClass}>${escapeHtml(displayValue)}</td>`;
+                    });
+                    tbodyHtml += '</tr>';
+                }
+                tableBody.innerHTML = tbodyHtml;
+            }
+
+            // simple escape for innerHTML safety
+            function escapeHtml(unsafe) {
+                if (unsafe === undefined || unsafe === null) return '';
+                return String(unsafe).replace(/[&<>"]/g, function(m) {
+                    if (m === '&') return '&amp;';
+                    if (m === '<') return '&lt;';
+                    if (m === '>') return '&gt;';
+                    if (m === '"') return '&quot;';
+                    return m;
+                });
+            }
+
+            // merging function: takes rows (array of objects) & headers -> merge by Vehicle
+            function mergeRowsByVehicle(rows, headers) {
+                if (!rows.length) return [];
+
+                const vehicleMap = new Map(); // key: vehicle name (string)
+
+                rows.forEach(row => {
+                    const vehicleVal = row['Vehicle'] ? row['Vehicle'].toString().trim() : '';
+                    // if vehicle empty? treat as own group? we still merge empty but keep consistent
+                    const key = vehicleVal || '__EMPTY_VEH__'; 
+
+                    if (!vehicleMap.has(key)) {
+                        // initialize with a copy of the row (but all fields as array or single?)
+                        const newRow = {};
+                        headers.forEach(h => {
+                            if (h === 'Vehicle') {
+                                newRow[h] = vehicleVal; // store raw vehicle string
+                            } else {
+                                // store as array to collect multiple values
+                                const val = row[h];
+                                newRow[h] = (val !== undefined && val !== null && val !== '') ? [val] : [];
+                            }
+                        });
+                        vehicleMap.set(key, newRow);
+                    } else {
+                        // merge: for each non-vehicle column, push value if not empty and not duplicate
+                        const existing = vehicleMap.get(key);
+                        headers.forEach(h => {
+                            if (h === 'Vehicle') return; // skip vehicle
+                            const currentVal = row[h];
+                            if (currentVal !== undefined && currentVal !== null && currentVal !== '') {
+                                // ensure existing field is array
+                                if (!Array.isArray(existing[h])) {
+                                    existing[h] = existing[h] ? [existing[h]] : [];
+                                }
+                                // avoid duplicates (simple string comparison)
+                                if (!existing[h].includes(currentVal)) {
+                                    existing[h].push(currentVal);
+                                }
+                            }
+                        });
+                    }
+                });
+
+                // convert map to array, and post-process arrays (maybe join later at render)
+                const mergedArray = [];
+                for (let [key, rowObj] of vehicleMap.entries()) {
+                    // if vehicle was empty placeholder, set empty string
+                    if (key === '__EMPTY_VEH__') rowObj['Vehicle'] = '';
+                    mergedArray.push(rowObj);
+                }
+                return mergedArray;
+            }
+
+            // process workbook using SheetJS
+            function processExcel(data) {
+                try {
+                    const workbook = XLSX.read(data, { type: 'binary' });
+                    const firstSheet = workbook.SheetNames[0];
+                    const sheet = workbook.Sheets[firstSheet];
+                    // get raw rows as array of arrays
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+                    if (rows.length < 1) {
+                        alert('Excel file seems empty');
+                        return;
+                    }
+
+                    // extract headers from first row (ensure 'Vehicle' column exists, else use first column as vehicle? we follow requirement: assume Vehicle column present)
+                    let headers = rows[0].map(h => (h || '').toString().trim());
+                    if (!headers.includes('Vehicle')) {
+                        alert('Warning: "Vehicle" column not found. Using first column as Vehicle (please rename header to Vehicle if needed)');
+                        // we still continue, but might assign first column as vehicle? better adjust:
+                        // For safety, if no 'Vehicle', treat first column as Vehicle.
+                        if (headers.length > 0) {
+                            headers[0] = 'Vehicle'; // force rename
+                        } else {
+                            alert('no columns');
+                            return;
+                        }
+                    }
+
+                    // ensure Vehicle column index
+                    const vehicleIdx = headers.indexOf('Vehicle');
+                    if (vehicleIdx === -1) return; // but we forced above
+
+                    // convert rows to objects
+                    const rowObjects = [];
+                    for (let i = 1; i < rows.length; i++) {
+                        const row = rows[i];
+                        if (!row || row.length === 0) continue; // skip empty
+                        const obj = {};
+                        headers.forEach((h, idx) => {
+                            obj[h] = row[idx] !== undefined ? row[idx] : '';
+                        });
+                        rowObjects.push(obj);
+                    }
+
+                    if (rowObjects.length === 0) {
+                        alert('No data rows found.');
+                        return;
+                    }
+
+                    // store headers & run merge
+                    currentHeaders = headers.slice(); // copy
+                    mergedRows = mergeRowsByVehicle(rowObjects, headers);
+                    renderTable();
+
+                } catch (e) {
+                    alert('Error parsing excel: ' + e.message);
+                    console.error(e);
+                }
+            }
+
+            // File change handler
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = function(loadEvent) {
+                    const binary = loadEvent.target.result;
+                    processExcel(binary);
+                };
+                reader.readAsBinaryString(file);
+            });
+
+            // ---------- Image download (html2canvas) ----------
+            downloadImageBtn.addEventListener('click', function() {
+                const element = document.getElementById('captureArea');
+                if (!element) return;
+                if (!currentHeaders.length || mergedRows.length === 0) {
+                    alert('No data to capture. Upload an excel first.');
+                    return;
+                }
+                html2canvas(element, {
+                    scale: 1.8,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    allowTaint: false,
+                    useCORS: true
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = 'merged-vehicle-table.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                }).catch(err => {
+                    alert('Screenshot failed: ' + err);
+                });
+            });
+
+            // ---------- Excel download (merged data) ----------
+            downloadExcelBtn.addEventListener('click', function() {
+                if (!currentHeaders.length || mergedRows.length === 0) {
+                    alert('No merged data to export. Upload excel first.');
+                    return;
+                }
+
+                // Prepare data for SheetJS: format merged rows (convert arrays to comma string)
+                const exportRows = [];
+                // header
+                exportRows.push(currentHeaders.slice());
+
+                // body
+                mergedRows.forEach(row => {
+                    const rowArray = [];
+                    currentHeaders.forEach(h => {
+                        let val = row[h];
+                        if (Array.isArray(val)) {
+                            val = val.join(', ');
+                        } else if (val === undefined || val === null) {
+                            val = '';
+                        }
+                        rowArray.push(val);
+                    });
+                    exportRows.push(rowArray);
+                });
+
+                // create workbook
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet(exportRows);
+                XLSX.utils.book_append_sheet(wb, ws, 'Merged vehicles');
+                XLSX.writeFile(wb, 'merged_vehicles.xlsx');
+            });
+
+            // initial placeholder render
+            renderTable();
+        })();
+    </script>
+
+</body>
+</html>

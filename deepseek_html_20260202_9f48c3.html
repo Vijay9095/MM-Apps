@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transport Management Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            min-height: 100vh; 
+            padding: 20px; 
+        }
+        
+        .header-section { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            padding: 30px; 
+            border-radius: 15px; 
+            margin-bottom: 30px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2); 
+        }
+        .header-content { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; text-align: center; }
+        .header-item h3 { font-size: 2rem; font-weight: bold; }
+        .header-item .label { font-size: 0.85rem; opacity: 0.8; text-transform: uppercase; }
+
+        .upload-section { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 15px; 
+            margin-bottom: 30px; 
+            text-align: center; 
+            border: 2px dashed #667eea; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .upload-section input { max-width: 400px; }
+        .date-input-container { max-width: 300px; margin: 0 auto 15px; }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+        }
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .btn-image {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+        }
+        .btn-word {
+            background: linear-gradient(45deg, #185abd, #2a74e5);
+            color: white;
+        }
+        .btn-excel {
+            background: linear-gradient(45deg, #1d6f42, #2e8b57);
+            color: white;
+        }
+
+        .module-selection {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .module-selection h5 {
+            margin-bottom: 15px;
+            color: #333;
+            text-align: center;
+        }
+        .module-checkboxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        .module-checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .module-checkbox-item:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+        .module-checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .module-checkbox-item label {
+            cursor: pointer;
+            font-weight: 500;
+            color: #495057;
+            flex-grow: 1;
+        }
+        .select-all-btn {
+            margin-top: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: 0.3s;
+        }
+        .select-all-btn:hover {
+            background: linear-gradient(45deg, #764ba2, #667eea);
+        }
+
+        .module-card { 
+            border-radius: 12px; 
+            border: none; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            margin-bottom: 25px; 
+            background: white; 
+            transition: transform 0.3s;
+        }
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .card-header { 
+            border-radius: 12px 12px 0 0 !important; 
+            color: white; 
+            font-weight: bold; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 12px 15px; 
+        }
+        .btn-group-custom { display: flex; gap: 5px; }
+        .download-btn { 
+            background: rgba(255,255,255,0.25); 
+            border: none; 
+            color: white; 
+            padding: 6px 10px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-size: 0.8rem; 
+            transition: 0.3s; 
+        }
+        .download-btn:hover { background: rgba(255,255,255,0.4); }
+
+        .sub-counts { 
+            background: #f8f9fa; 
+            padding: 12px; 
+            border-radius: 8px; 
+            margin-bottom: 12px; 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); 
+            gap: 8px; 
+        }
+        .sub-count-item { 
+            background: white; 
+            padding: 8px; 
+            border-radius: 6px; 
+            text-align: center; 
+            border-left: 3px solid; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .sub-count-item .label { font-size: 0.7rem; color: #666; text-transform: uppercase; }
+        .sub-count-item .value { font-size: 1.3rem; font-weight: bold; }
+
+        .chart-container { height: 200px; position: relative; margin-bottom: 12px; }
+        .table-container { max-height: 500px; overflow-y: auto; margin-bottom: 12px; }
+        .table { font-size: 0.85rem; margin-bottom: 0; }
+        .table thead th { 
+            position: sticky; 
+            top: 0; 
+            background: #f8f9fa; 
+            z-index: 2; 
+            color: #333;
+        }
+        .table tbody tr { height: 40px; } 
+        .table tbody tr:hover { background-color: rgba(102, 126, 234, 0.1); }
+
+        .pagination-nav { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+        .pagination-nav button { 
+            background: linear-gradient(45deg, #667eea, #764ba2); 
+            color: white; 
+            border: none; 
+            padding: 6px 12px; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-size: 0.8rem; 
+            font-weight: bold; 
+        }
+        .pagination-nav button:hover { background: linear-gradient(45deg, #764ba2, #667eea); }
+        .pagination-nav button:disabled { background: #ccc; cursor: not-allowed; }
+        .pagination-info { 
+            text-align: center; 
+            font-size: 0.8rem; 
+            color: #666; 
+            margin-top: 8px; 
+        }
+
+        /* Different Colors for Each Module */
+        .bg-km { background: linear-gradient(45deg, #FF6B6B, #FF8E8E); }
+        .bg-trip { background: linear-gradient(45deg, #4ECDC4, #44A08D); }
+        .bg-workshop { background: linear-gradient(45deg, #FFD166, #FFB347); }
+        .bg-mileage { background: linear-gradient(45deg, #06D6A0, #0CB48A); }
+        .bg-fuel { background: linear-gradient(45deg, #118AB2, #0A6C8F); }
+        .bg-location { background: linear-gradient(45deg, #073B4C, #052A37); }
+        .bg-advance { background: linear-gradient(45deg, #7209B7, #560BAD); }
+        .bg-fastag { background: linear-gradient(45deg, #FF6B35, #FF9E6D); }
+
+        /* Sub-count item colors matching module */
+        .km-color { color: #FF6B6B; border-left-color: #FF6B6B; }
+        .trip-color { color: #4ECDC4; border-left-color: #4ECDC4; }
+        .workshop-color { color: #FFD166; border-left-color: #FFD166; }
+        .mileage-color { color: #06D6A0; border-left-color: #06D6A0; }
+        .fuel-color { color: #118AB2; border-left-color: #118AB2; }
+        .location-color { color: #073B4C; border-left-color: #073B4C; }
+        .advance-color { color: #7209B7; border-left-color: #7209B7; }
+        .fastag-color { color: #FF6B35; border-left-color: #FF6B35; }
+
+        .card-body { padding: 15px; }
+        .container-fluid { 
+            background: white; 
+            border-radius: 15px; 
+            padding: 25px; 
+            margin-top: -15px; 
+            position: relative; 
+            z-index: 1; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            .header-content { grid-template-columns: 1fr; }
+            .sub-counts { grid-template-columns: 1fr; }
+            .module-checkboxes { grid-template-columns: 1fr; }
+            .action-buttons { flex-direction: column; }
+            .action-btn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="header-section">
+        <div class="header-content">
+            <div class="header-item">
+                <p class="label">Report Date</p>
+                <h3 id="todayDate">--/--/----</h3>
+            </div>
+            <div class="header-item">
+                <p class="label">Total Records</p>
+                <h3 id="totalCount">0</h3>
+            </div>
+            <div class="header-item">
+                <p class="label">Data Status</p>
+                <h3 id="dataStatus" style="color: #ffd700;">Awaiting Upload</h3>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload & Actions -->
+    <div class="upload-section">
+        <div class="date-input-container">
+            <label for="manualDate" class="form-label fw-bold">Select Report Date:</label>
+            <input type="date" id="manualDate" class="form-control" onchange="updateDisplayDate()">
+        </div>
+        <h4 class="mb-3">Upload Daily2.xlsx</h4>
+        <div class="d-flex justify-content-center gap-3 align-items-center flex-wrap">
+            <input type="file" id="excelUpload" class="form-control" accept=".xlsx, .xls">
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons" id="actionButtons" style="display: none;">
+            <button class="action-btn btn-image" onclick="downloadSelectedReportImage()">
+                <i class="fas fa-file-image me-2"></i>Download Image Report
+            </button>
+            <button class="action-btn btn-word" onclick="downloadSelectedReportWord()">
+                <i class="fas fa-file-word me-2"></i>Download Word Report
+            </button>
+            <button class="action-btn btn-excel" onclick="downloadSelectedReportExcel()">
+                <i class="fas fa-file-excel me-2"></i>Download Excel Report
+            </button>
+        </div>
+    </div>
+
+    <!-- Module Selection -->
+    <div class="module-selection" id="moduleSelection" style="display: none;">
+        <h5>Select Modules to Export (Check all that apply):</h5>
+        <div class="module-checkboxes">
+            <div class="module-checkbox-item">
+                <input type="checkbox" id="check-km" name="module" value="km" checked>
+                <label for="check-km">1. Kilometer Summary</label>
+            </div>
+            <div class="module-checkbox-item">
+                <input type="checkbox" id="check-trip" name="module" value="trip" checked>
+                <label for="check-trip">2. Trip Section</label>
+            </div>
+            <div class="module-checkbox-item">
+                <input type="checkbox" id="check-workshop" name="module" value="workshop" checked>
+                <label for="check-workshop">3. Workshop</label>
+            </div>
+            <div class="module-checkbox-item">
+                <input type="checkbox" id="check-mileage" name="module" value="mileage" checked>
+                <label for="check-mileage">4. Mileage</label>
+            </div>
+            <div class="module-checkbox-item">
+                <input type="checkbox" id="check-fuel" name="module" value="fuel" checked>
+                <label for="check-fuel">5. Fuel Refill Expenses</label>
+            </div>
+            <div class="module-checkbox-item">
+                <input type="checkbox" id="check-location" name="module" value="location" checked>
+                <label for="check-location">6. Location & Time</label>
+            </div>
+            <div class="module-checkbox-item">
+                <input type="checkbox" id="check-advance" name="module" value="advance" checked>
+                <label for="check-advance">7. Advance</label>
+            </div>
+            <div class="module-checkbox-item">
+                <input type="checkbox" id="check-fastag" name="module" value="fastag" checked>
+                <label for="check-fastag">8. FasTag Expenses</label>
+            </div>
+        </div>
+        <div class="text-center mt-3">
+            <button class="select-all-btn" onclick="selectAllModules(true)">Select All</button>
+            <button class="select-all-btn" onclick="selectAllModules(false)" style="margin-left: 10px; background: linear-gradient(45deg, #FF6B6B, #FF8E8E);">Deselect All</button>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboardContent" style="display: none;">
+        <div class="row">
+            <!-- 1. Kilometer Summary -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card module-card" id="card-km">
+                    <div class="card-header bg-km">
+                        <span>1. Kilometer Summary</span>
+                        <div class="btn-group-custom">
+                            <button class="download-btn" title="Download Image" onclick="downloadModuleImage('km')"><i class="fas fa-image"></i></button>
+                            <button class="download-btn" title="Download CSV" onclick="downloadCSV('km')"><i class="fas fa-file-csv"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="sub-counts">
+                            <div class="sub-count-item km-color"><div class="label">Total Vehicles</div><div class="value" id="kmVehicles">0</div></div>
+                            <div class="sub-count-item km-color"><div class="label">Total KM</div><div class="value" id="kmTotal">0</div></div>
+                        </div>
+                        <div class="chart-container"><canvas id="chartKM"></canvas></div>
+                        <div class="table-container">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>S.No</th>
+                                        <th>Vehicle</th>
+                                        <th>KM</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="kmTable"></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-nav" id="kmNav"></div>
+                        <div class="pagination-info" id="kmInfo"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Trip Section -->
+            <div class="col-lg-8 col-md-12">
+                <div class="card module-card" id="card-trip">
+                    <div class="card-header bg-trip">
+                        <span>2. Trip Section</span>
+                        <div class="btn-group-custom">
+                            <button class="download-btn" title="Download Image" onclick="downloadModuleImage('trip')"><i class="fas fa-image"></i></button>
+                            <button class="download-btn" title="Download CSV" onclick="downloadCSV('trip')"><i class="fas fa-file-csv"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="sub-counts">
+                            <div class="sub-count-item trip-color"><div class="label">Total Count</div><div class="value" id="tripVehicles">0</div></div>
+                            <div class="sub-count-item trip-color"><div class="label">Loading</div><div class="value" id="tripLoading">0</div></div>
+                            <div class="sub-count-item trip-color"><div class="label">Unloading</div><div class="value" id="tripUnloading">0</div></div>
+                            <div class="sub-count-item trip-color"><div class="label">In Transit</div><div class="value" id="tripTransit">0</div></div>
+                            <div class="sub-count-item trip-color"><div class="label">Completed</div><div class="value" id="tripCompleted">0</div></div>
+                            <div class="sub-count-item trip-color"><div class="label">Empty Transit</div><div class="value" id="tripEmpty">0</div></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4"><div class="chart-container"><canvas id="chartTrip"></canvas></div></div>
+                            <div class="col-md-8">
+                                <div class="table-container">
+                                    <table class="table table-sm table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>S.No</th>
+                                                <th>Vehicle</th>
+                                                <th>Driver</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="tripTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pagination-nav" id="tripNav"></div>
+                        <div class="pagination-info" id="tripInfo"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Workshop -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card module-card" id="card-workshop">
+                    <div class="card-header bg-workshop text-dark">
+                        <span>3. Workshop</span>
+                        <div class="btn-group-custom">
+                            <button class="download-btn" style="color: #333;" title="Download Image" onclick="downloadModuleImage('workshop')"><i class="fas fa-image"></i></button>
+                            <button class="download-btn" style="color: #333;" title="Download CSV" onclick="downloadCSV('workshop')"><i class="fas fa-file-csv"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container"><canvas id="chartWorkshop"></canvas></div>
+                        <div class="table-container">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>S.No</th>
+                                        <th>Vehicle</th>
+                                        <th>Location</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="workshopTable"></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-nav" id="workshopNav"></div>
+                        <div class="pagination-info" id="workshopInfo"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Mileage -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card module-card" id="card-mileage">
+                    <div class="card-header bg-mileage">
+                        <span>4. Mileage</span>
+                        <div class="btn-group-custom">
+                            <button class="download-btn" title="Download Image" onclick="downloadModuleImage('mileage')"><i class="fas fa-image"></i></button>
+                            <button class="download-btn" title="Download CSV" onclick="downloadCSV('mileage')"><i class="fas fa-file-csv"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="sub-counts">
+                            <div class="sub-count-item mileage-color"><div class="label">Total Vehicles</div><div class="value" id="mileageVehicles">0</div></div>
+                            <div class="sub-count-item mileage-color"><div class="label">Total Mileage</div><div class="value" id="mileageTotal">0</div></div>
+                        </div>
+                        <div class="chart-container"><canvas id="chartMileage"></canvas></div>
+                        <div class="table-container">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>S.No</th>
+                                        <th>Vehicle</th>
+                                        <th>Mileage</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mileageTable"></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-nav" id="mileageNav"></div>
+                        <div class="pagination-info" id="mileageInfo"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Fuel -->
+            <div class="col-lg-4 col-md-6">
+                <div class="card module-card" id="card-fuel">
+                    <div class="card-header bg-fuel">
+                        <span>5. Fuel Refill Expenses</span>
+                        <div class="btn-group-custom">
+                            <button class="download-btn" title="Download Image" onclick="downloadModuleImage('fuel')"><i class="fas fa-image"></i></button>
+                            <button class="download-btn" title="Download CSV" onclick="downloadCSV('fuel')"><i class="fas fa-file-csv"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="sub-counts">
+                            <div class="sub-count-item fuel-color"><div class="label">Total Vehicles</div><div class="value" id="fuelVehicles">0</div></div>
+                            <div class="sub-count-item fuel-color"><div class="label">Total Liters</div><div class="value" id="fuelTotal">0</div></div>
+                        </div>
+                        <div class="chart-container"><canvas id="chartFuel"></canvas></div>
+                        <div class="table-container">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>S.No</th>
+                                        <th>Vehicle</th>
+                                        <th>Liters</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fuelTable"></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-nav" id="fuelNav"></div>
+                        <div class="pagination-info" id="fuelInfo"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Location & Time -->
+            <div class="col-lg-6 col-md-12">
+                <div class="card module-card" id="card-location">
+                    <div class="card-header bg-location">
+                        <span>6. Location & Time</span>
+                        <div class="btn-group-custom">
+                            <button class="download-btn" title="Download Image" onclick="downloadModuleImage('location')"><i class="fas fa-image"></i></button>
+                            <button class="download-btn" title="Download CSV" onclick="downloadCSV('location')"><i class="fas fa-file-csv"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="sub-counts">
+                            <div class="sub-count-item location-color"><div class="label">Total Vehicles</div><div class="value" id="locationVehicles">0</div></div>
+                            <div class="sub-count-item location-color"><div class="label">Total Records</div><div class="value" id="locationRecords">0</div></div>
+                        </div>
+                        <div class="table-container">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>S.No</th>
+                                        <th>Vehicle</th>
+                                        <th>Start Location</th>
+                                        <th>End Location</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="locationTable"></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-nav" id="locationNav"></div>
+                        <div class="pagination-info" id="locationInfo"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. Advance -->
+            <div class="col-lg-6 col-md-12">
+                <div class="card module-card" id="card-advance">
+                    <div class="card-header bg-advance">
+                        <span>7. Advance</span>
+                        <div class="btn-group-custom">
+                            <button class="download-btn" title="Download Image" onclick="downloadModuleImage('advance')"><i class="fas fa-image"></i></button>
+                            <button class="download-btn" title="Download CSV" onclick="downloadCSV('advance')"><i class="fas fa-file-csv"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="sub-counts">
+                            <div class="sub-count-item advance-color"><div class="label">Total Vehicles</div><div class="value" id="advanceVehicles">0</div></div>
+                            <div class="sub-count-item advance-color"><div class="label">Total Amount</div><div class="value" id="advanceTotal">0</div></div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-5"><div class="chart-container"><canvas id="chartAdvance"></canvas></div></div>
+                            <div class="col-md-7">
+                                <div class="table-container">
+                                    <table class="table table-sm table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>S.No</th>
+                                                <th>Vehicle</th>
+                                                <th>Driver</th>
+                                                <th>Source</th>
+                                                <th>Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="advanceTable"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pagination-nav" id="advanceNav"></div>
+                        <div class="pagination-info" id="advanceInfo"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 8. FasTag Expenses (New Module) -->
+            <div class="col-lg-6 col-md-12">
+                <div class="card module-card" id="card-fastag">
+                    <div class="card-header bg-fastag">
+                        <span>8. FasTag Expenses</span>
+                        <div class="btn-group-custom">
+                            <button class="download-btn" title="Download Image" onclick="downloadModuleImage('fastag')"><i class="fas fa-image"></i></button>
+                            <button class="download-btn" title="Download CSV" onclick="downloadCSV('fastag')"><i class="fas fa-file-csv"></i></button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="sub-counts">
+                            <div class="sub-count-item fastag-color"><div class="label">Total Vehicles</div><div class="value" id="fastagVehicles">0</div></div>
+                            <div class="sub-count-item fastag-color"><div class="label">Total Expense</div><div class="value" id="fastagTotal">0</div></div>
+                        </div>
+                        <div class="chart-container"><canvas id="chartFastag"></canvas></div>
+                        <div class="table-container">
+                            <table class="table table-sm table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>S.No</th>
+                                        <th>Vehicle No</th>
+                                        <th>Toll Expense</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="fastagTable"></tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-nav" id="fastagNav"></div>
+                        <div class="pagination-info" id="fastagInfo"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const ITEMS_PER_PAGE = 10;
+    let data = { km: [], trip: [], workshop: [], mileage: [], fuel: [], location: [], advance: [], fastag: [] };
+    let pages = { km: 0, trip: 0, workshop: 0, mileage: 0, fuel: 0, location: 0, advance: 0, fastag: 0 };
+    let charts = {};
+
+    // Module color mapping
+    const moduleColors = {
+        km: { primary: '#FF6B6B', secondary: '#FF8E8E', name: 'Kilometer Summary' },
+        trip: { primary: '#4ECDC4', secondary: '#44A08D', name: 'Trip Section' },
+        workshop: { primary: '#FFD166', secondary: '#FFB347', name: 'Workshop' },
+        mileage: { primary: '#06D6A0', secondary: '#0CB48A', name: 'Mileage' },
+        fuel: { primary: '#118AB2', secondary: '#0A6C8F', name: 'Fuel Refill Expenses' },
+        location: { primary: '#073B4C', secondary: '#052A37', name: 'Location & Time' },
+        advance: { primary: '#7209B7', secondary: '#560BAD', name: 'Advance' },
+        fastag: { primary: '#FF6B35', secondary: '#FF9E6D', name: 'FasTag Expenses' }
+    };
+
+    function initDate() {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+        document.getElementById('manualDate').value = dateStr;
+        updateDisplayDate();
+    }
+
+    function updateDisplayDate() {
+        const dateVal = document.getElementById('manualDate').value;
+        if (!dateVal) return;
+        const dateObj = new Date(dateVal);
+        const options = { year: 'numeric', month: 'long', day: 'numeric' };
+        const formattedDate = dateObj.toLocaleDateString('en-US', options);
+        document.getElementById('todayDate').textContent = formattedDate;
+    }
+
+    // Ensure DOM is ready before init
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDate);
+    } else {
+        initDate();
+    }
+
+    document.getElementById('excelUpload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                const arr = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(arr, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+                processData(rows);
+                document.getElementById('actionButtons').style.display = 'flex';
+                document.getElementById('moduleSelection').style.display = 'block';
+            } catch (err) { 
+                console.error('Error reading file:', err);
+                alert('Error reading file. Please make sure it is a valid Excel file.'); 
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    });
+
+    function selectAllModules(select) {
+        const checkboxes = document.querySelectorAll('input[name="module"]');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = select;
+        });
+    }
+
+    function processData(rows) {
+        // Reset all data
+        data = { km: [], trip: [], workshop: [], mileage: [], fuel: [], location: [], advance: [], fastag: [] };
+        pages = { km: 0, trip: 0, workshop: 0, mileage: 0, fuel: 0, location: 0, advance: 0, fastag: 0 };
+        
+        let kmTotal = 0, mileageTotal = 0, fuelTotal = 0, advanceTotal = 0, fastagTotal = 0;
+        let kmVehicles = new Set(), mileageVehicles = new Set(), fuelVehicles = new Set(), advanceVehicles = new Set(), fastagVehicles = new Set();
+        let tripCounts = { Loading: 0, Unloading: 0, 'In Transit': 0, Completed: 0, 'Empty Transit': 0 };
+        let workshopCounts = {};
+        let tripTotalCount = 0;
+        let locationVehicles = new Set();
+        let locationRecords = 0;
+
+        // Start from row 2 (index 2) to skip headers
+        for (let i = 2; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length === 0) continue;
+            
+            // 1. Kilometer Summary (assuming columns 0 and 1)
+            if (row[0] && !isNaN(parseFloat(row[1]))) {
+                const kmVal = parseFloat(row[1]) || 0;
+                data.km.push({ vehicle: String(row[0]), km: kmVal });
+                kmTotal += kmVal; 
+                kmVehicles.add(String(row[0]));
+            }
+            
+            // 2. Trip Section
+            const tripMaps = [
+                { v: 2, d: 3, s: 'Loading' }, 
+                { v: 5, d: 6, s: 'Unloading' }, 
+                { v: 8, d: 9, s: 'In Transit' }, 
+                { v: 11, d: 12, s: 'Completed' }, 
+                { v: 14, d: 15, s: 'Empty Transit' }
+            ];
+            tripMaps.forEach(m => {
+                if (row[m.v] && row[m.d]) {
+                    data.trip.push({ 
+                        vehicle: String(row[m.v]), 
+                        driver: String(row[m.d]), 
+                        status: m.s 
+                    });
+                    tripCounts[m.s]++; 
+                    tripTotalCount++;
+                }
+            });
+            
+            // 3. Workshop (assuming columns 17 and 18)
+            if (row[17] && row[18]) {
+                data.workshop.push({ 
+                    vehicle: String(row[17]), 
+                    location: String(row[18]) 
+                });
+                workshopCounts[String(row[18])] = (workshopCounts[String(row[18])] || 0) + 1;
+            }
+            
+            // 4. Mileage (assuming columns 19 and 20)
+            if (row[19] && !isNaN(parseFloat(row[20]))) {
+                const mileageVal = parseFloat(row[20]) || 0;
+                data.mileage.push({ 
+                    vehicle: String(row[19]), 
+                    mileage: mileageVal 
+                });
+                mileageTotal += mileageVal; 
+                mileageVehicles.add(String(row[19]));
+            }
+            
+            // 5. Fuel (assuming columns 21 and 22)
+            if (row[21] && !isNaN(parseFloat(row[22]))) {
+                const fuelVal = parseFloat(row[22]) || 0;
+                data.fuel.push({ 
+                    vehicle: String(row[21]), 
+                    liters: fuelVal 
+                });
+                fuelTotal += fuelVal; 
+                fuelVehicles.add(String(row[21]));
+            }
+            
+            // 6. Location & Time (assuming columns 23, 24, 25)
+            if (row[23] && row[24] && row[25]) { 
+                data.location.push({ 
+                    vehicle: String(row[23]), 
+                    start: String(row[24]), 
+                    end: String(row[25]) 
+                });
+                locationVehicles.add(String(row[23]));
+                locationRecords++;
+            }
+            
+            // 7. Advance (assuming columns 26, 27, 28, 29)
+            if (row[26] && row[27] && !isNaN(parseFloat(row[29]))) {
+                const advanceVal = parseFloat(row[29]) || 0;
+                data.advance.push({ 
+                    vehicle: String(row[26]), 
+                    driver: String(row[27]), 
+                    source: row[28] ? String(row[28]) : '-', 
+                    amount: advanceVal 
+                });
+                advanceTotal += advanceVal; 
+                advanceVehicles.add(String(row[26]));
+            }
+            
+            // 8. FasTag Expenses (assuming columns 30 and 31)
+            if (row[30] && !isNaN(parseFloat(row[31]))) {
+                const fastagVal = parseFloat(row[31]) || 0;
+                data.fastag.push({ 
+                    vehicle: String(row[30]), 
+                    expense: fastagVal 
+                });
+                fastagTotal += fastagVal; 
+                fastagVehicles.add(String(row[30]));
+            }
+        }
+
+        // Update display for all modules
+        document.getElementById('kmVehicles').textContent = kmVehicles.size;
+        document.getElementById('kmTotal').textContent = kmTotal.toFixed(2);
+        document.getElementById('tripVehicles').textContent = tripTotalCount;
+        document.getElementById('tripLoading').textContent = tripCounts.Loading;
+        document.getElementById('tripUnloading').textContent = tripCounts.Unloading;
+        document.getElementById('tripTransit').textContent = tripCounts['In Transit'];
+        document.getElementById('tripCompleted').textContent = tripCounts.Completed;
+        document.getElementById('tripEmpty').textContent = tripCounts['Empty Transit'];
+        document.getElementById('mileageVehicles').textContent = mileageVehicles.size;
+        document.getElementById('mileageTotal').textContent = mileageTotal.toFixed(2);
+        document.getElementById('fuelVehicles').textContent = fuelVehicles.size;
+        document.getElementById('fuelTotal').textContent = fuelTotal.toFixed(2);
+        document.getElementById('advanceVehicles').textContent = advanceVehicles.size;
+        document.getElementById('advanceTotal').textContent = advanceTotal.toFixed(2);
+        document.getElementById('locationVehicles').textContent = locationVehicles.size;
+        document.getElementById('locationRecords').textContent = locationRecords;
+        document.getElementById('fastagVehicles').textContent = fastagVehicles.size;
+        document.getElementById('fastagTotal').textContent = fastagTotal.toFixed(2);
+
+        const totalRecords = Object.values(data).reduce((sum, arr) => sum + arr.length, 0);
+        document.getElementById('totalCount').textContent = totalRecords;
+        document.getElementById('dataStatus').textContent = 'Data Loaded ✓';
+        document.getElementById('dataStatus').style.color = '#4caf50';
+
+        // Show all pages
+        ['km', 'trip', 'workshop', 'mileage', 'fuel', 'location', 'advance', 'fastag'].forEach(type => showPage(type, 0));
+        updateCharts(tripCounts, workshopCounts);
+        document.getElementById('dashboardContent').style.display = 'block';
+    }
+
+    function showPage(type, pageNum) {
+        const items = data[type];
+        const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
+        if (pageNum >= totalPages) pageNum = totalPages - 1;
+        if (pageNum < 0) pageNum = 0;
+        pages[type] = pageNum;
+        const start = pageNum * ITEMS_PER_PAGE;
+        const end = start + ITEMS_PER_PAGE;
+        const pageItems = items.slice(start, end);
+        const tbody = document.getElementById(type + 'Table');
+        tbody.innerHTML = '';
+        
+        pageItems.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            
+            // Add Serial Number
+            const snoTd = document.createElement('td');
+            snoTd.textContent = start + index + 1;
+            tr.appendChild(snoTd);
+            
+            // Add other columns
+            Object.values(item).forEach(val => {
+                const td = document.createElement('td');
+                td.textContent = val;
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+        
+        document.getElementById(type + 'Info').textContent = `Page ${pageNum + 1} of ${totalPages} | ${pageItems.length} of ${items.length} records`;
+        let navHtml = '';
+        if (pageNum > 0) { 
+            navHtml += `<button onclick="showPage('${type}', 0)">First</button><button onclick="showPage('${type}', ${pageNum - 1})">Prev</button>`; 
+        }
+        if (pageNum < totalPages - 1) { 
+            navHtml += `<button onclick="showPage('${type}', ${pageNum + 1})">Next</button><button onclick="showPage('${type}', ${totalPages - 1})">Last</button>`; 
+        }
+        document.getElementById(type + 'Nav').innerHTML = navHtml;
+    }
+
+    function updateCharts(tripCounts, workshopCounts) {
+        const opts = { 
+            maintainAspectRatio: false, 
+            plugins: { legend: { display: false } }, 
+            scales: { y: { beginAtZero: true } } 
+        };
+        
+        // Destroy existing charts
+        Object.values(charts).forEach(c => {
+            if (c && c.destroy) c.destroy();
+        });
+        charts = {};
+        
+        // Create new charts
+        if (data.km.length > 0) {
+            charts.km = new Chart(document.getElementById('chartKM'), { 
+                type: 'bar', 
+                data: { 
+                    labels: data.km.slice(0, 10).map(x => x.vehicle), 
+                    datasets: [{ 
+                        label: 'KM', 
+                        data: data.km.slice(0, 10).map(x => x.km), 
+                        backgroundColor: moduleColors.km.primary,
+                        borderColor: moduleColors.km.secondary,
+                        borderWidth: 1
+                    }] 
+                }, 
+                options: opts 
+            });
+        }
+        
+        if (Object.keys(tripCounts).length > 0) {
+            charts.trip = new Chart(document.getElementById('chartTrip'), { 
+                type: 'pie', 
+                data: { 
+                    labels: Object.keys(tripCounts), 
+                    datasets: [{ 
+                        data: Object.values(tripCounts), 
+                        backgroundColor: [
+                            moduleColors.trip.primary,
+                            moduleColors.trip.secondary,
+                            '#36b9cc',
+                            '#e74a3b',
+                            '#4e73df'
+                        ] 
+                    }] 
+                }, 
+                options: { 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { position: 'bottom' } } 
+                } 
+            });
+        }
+        
+        if (Object.keys(workshopCounts).length > 0) {
+            charts.workshop = new Chart(document.getElementById('chartWorkshop'), { 
+                type: 'doughnut', 
+                data: { 
+                    labels: Object.keys(workshopCounts), 
+                    datasets: [{ 
+                        data: Object.values(workshopCounts), 
+                        backgroundColor: [
+                            moduleColors.workshop.primary,
+                            moduleColors.workshop.secondary,
+                            '#e74a3b',
+                            '#4e73df',
+                            '#1cc88a'
+                        ] 
+                    }] 
+                }, 
+                options: { 
+                    maintainAspectRatio: false, 
+                    plugins: { legend: { position: 'bottom' } } 
+                } 
+            });
+        }
+        
+        if (data.mileage.length > 0) {
+            charts.mileage = new Chart(document.getElementById('chartMileage'), { 
+                type: 'line', 
+                data: { 
+                    labels: data.mileage.slice(0, 10).map(x => x.vehicle), 
+                    datasets: [{ 
+                        label: 'Mileage', 
+                        data: data.mileage.slice(0, 10).map(x => x.mileage), 
+                        borderColor: moduleColors.mileage.primary,
+                        backgroundColor: moduleColors.mileage.secondary + '20',
+                        tension: 0.1,
+                        fill: true
+                    }] 
+                }, 
+                options: opts 
+            });
+        }
+        
+        if (data.fuel.length > 0) {
+            charts.fuel = new Chart(document.getElementById('chartFuel'), { 
+                type: 'bar', 
+                data: { 
+                    labels: data.fuel.slice(0, 10).map(x => x.vehicle), 
+                    datasets: [{ 
+                        label: 'Liters', 
+                        data: data.fuel.slice(0, 10).map(x => x.liters), 
+                        backgroundColor: moduleColors.fuel.primary,
+                        borderColor: moduleColors.fuel.secondary,
+                        borderWidth: 1
+                    }] 
+                }, 
+                options: opts 
+            });
+        }
+        
+        if (data.advance.length > 0) {
+            charts.advance = new Chart(document.getElementById('chartAdvance'), { 
+                type: 'bar', 
+                data: { 
+                    labels: data.advance.slice(0, 10).map(x => x.driver), 
+                    datasets: [{ 
+                        label: 'Amount', 
+                        data: data.advance.slice(0, 10).map(x => x.amount), 
+                        backgroundColor: moduleColors.advance.primary,
+                        borderColor: moduleColors.advance.secondary,
+                        borderWidth: 1
+                    }] 
+                }, 
+                options: opts 
+            });
+        }
+        
+        if (data.fastag.length > 0) {
+            charts.fastag = new Chart(document.getElementById('chartFastag'), { 
+                type: 'bar', 
+                data: { 
+                    labels: data.fastag.slice(0, 10).map(x => x.vehicle), 
+                    datasets: [{ 
+                        label: 'Toll Expense', 
+                        data: data.fastag.slice(0, 10).map(x => x.expense), 
+                        backgroundColor: moduleColors.fastag.primary,
+                        borderColor: moduleColors.fastag.secondary,
+                        borderWidth: 1
+                    }] 
+                }, 
+                options: opts 
+            });
+        }
+    }
+
+    function downloadCSV(type) {
+        const items = data[type];
+        if (items.length === 0) { 
+            alert('No data to download'); 
+            return; 
+        }
+        
+        let csv = 'S.No,' + Object.keys(items[0]).join(',') + '\n';
+        items.forEach((item, index) => { 
+            const row = [index + 1, ...Object.values(item)];
+            csv += row.map(v => `"${v}"`).join(',') + '\n'; 
+        });
+        
+        const link = document.createElement('a');
+        link.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+        link.download = `${type}_${document.getElementById('manualDate').value}.csv`;
+        link.click();
+    }
+
+    async function downloadModuleImage(type) {
+        const originalCard = document.getElementById('card-' + type);
+        if (!originalCard) {
+            alert('Module not found');
+            return;
+        }
+        
+        try {
+            const canvas = await html2canvas(originalCard, { 
+                scale: 2, 
+                backgroundColor: '#ffffff',
+                useCORS: true
+            });
+            
+            const link = document.createElement('a');
+            link.download = `MMROADWAYS_${moduleColors[type].name.replace(/[^a-z0-9]/gi, '_')}_${document.getElementById('manualDate').value}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } catch (err) { 
+            console.error('Export failed:', err);
+            alert('Export failed. Please try again.'); 
+        }
+    }
+
+    async function downloadSelectedReportImage() {
+        // Get selected modules
+        const selectedModules = [];
+        document.querySelectorAll('input[name="module"]:checked').forEach(checkbox => {
+            selectedModules.push(checkbox.value);
+        });
+        
+        if (selectedModules.length === 0) {
+            alert('Please select at least one module to export.');
+            return;
+        }
+        
+        // Sort modules to maintain order
+        const moduleOrder = ['km', 'trip', 'workshop', 'mileage', 'fuel', 'location', 'advance', 'fastag'];
+        selectedModules.sort((a, b) => moduleOrder.indexOf(a) - moduleOrder.indexOf(b));
+        
+        // Create a container for all selected modules
+        const container = document.createElement('div');
+        container.style.backgroundColor = 'white';
+        container.style.padding = '20px';
+        
+        // Add header
+        const header = document.createElement('div');
+        header.style.textAlign = 'center';
+        header.style.marginBottom = '30px';
+        header.style.borderBottom = '2px solid #667eea';
+        header.style.paddingBottom = '20px';
+        
+        const title = document.createElement('h1');
+        title.textContent = 'MMROADWAYS Daily Report';
+        title.style.color = '#667eea';
+        title.style.fontWeight = 'bold';
+        title.style.marginBottom = '5px';
+        
+        const date = document.createElement('p');
+        date.textContent = document.getElementById('todayDate').textContent;
+        date.style.color = '#666';
+        date.style.fontSize = '1.1rem';
+        
+        header.appendChild(title);
+        header.appendChild(date);
+        container.appendChild(header);
+        
+        // Add selected modules
+        selectedModules.forEach(type => {
+            const originalCard = document.getElementById('card-' + type);
+            if (originalCard) {
+                const cardClone = originalCard.cloneNode(true);
+                cardClone.style.marginBottom = '25px';
+                cardClone.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                container.appendChild(cardClone);
+            }
+        });
+        
+        // Add container to body temporarily
+        document.body.appendChild(container);
+        
+        try {
+            const canvas = await html2canvas(container, { 
+                scale: 2, 
+                backgroundColor: '#ffffff',
+                useCORS: true
+            });
+            
+            const link = document.createElement('a');
+            
+            // Create filename
+            let filename = 'MMROADWAYS_Report';
+            if (selectedModules.length < 8) {
+                filename += '_' + selectedModules.join('_');
+            } else {
+                filename += '_Full';
+            }
+            filename += '_' + document.getElementById('manualDate').value + '.png';
+            
+            link.download = filename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } catch (err) { 
+            console.error('Export failed:', err);
+            alert('Export failed: ' + err.message); 
+        } finally {
+            // Remove temporary container
+            document.body.removeChild(container);
+        }
+    }
+
+    function downloadSelectedReportWord() {
+        // Get selected modules
+        const selectedModules = [];
+        document.querySelectorAll('input[name="module"]:checked').forEach(checkbox => {
+            selectedModules.push(checkbox.value);
+        });
+        
+        if (selectedModules.length === 0) {
+            alert('Please select at least one module to export.');
+            return;
+        }
+        
+        // Sort modules to maintain order
+        const moduleOrder = ['km', 'trip', 'workshop', 'mileage', 'fuel', 'location', 'advance', 'fastag'];
+        selectedModules.sort((a, b) => moduleOrder.indexOf(a) - moduleOrder.indexOf(b));
+        
+        // Create Word document content
+        const reportDate = document.getElementById('todayDate').textContent;
+        
+        let wordContent = '<!DOCTYPE html>' +
+            '<html><head><meta charset="UTF-8">' +
+            '<title>MMROADWAYS Daily Report<\/title>' +
+            '<style>' +
+            'body{font-family:Arial,sans-serif;margin:20px;}' +
+            '.report-header{text-align:center;border-bottom:2px solid #667eea;padding-bottom:20px;margin-bottom:30px;}' +
+            '.report-header h1{color:#667eea;font-weight:bold;margin-bottom:5px;}' +
+            '.report-header p{color:#666;font-size:1.1rem;}' +
+            '.module-section{margin-bottom:30px;border:1px solid #ddd;border-radius:8px;padding:20px;}' +
+            '.module-title{font-weight:bold;color:#333;margin-bottom:15px;border-bottom:2px solid #f0f0f0;padding-bottom:8px;font-size:1.1rem;}' +
+            '.stats-container{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:15px;}' +
+            '.stat-item{background:#f8f9fa;padding:6px 10px;border-radius:4px;border-left:4px solid;min-width:120px;}' +
+            '.stat-label{color:#666;text-transform:uppercase;font-size:0.65rem;display:block;}' +
+            '.stat-value{font-weight:bold;font-size:1rem;}' +
+            '.module-table{width:100%;border-collapse:collapse;font-size:0.85rem;margin-top:10px;}' +
+            '.module-table th{background:#f8f9fa;border:1px solid #dee2e6;padding:8px;color:#333;text-align:left;}' +
+            '.module-table td{border:1px solid #dee2e6;padding:8px;}' +
+            '.page-break{page-break-after:always;}' +
+            '<\/style><\/head><body>' +
+            '<div class="report-header">' +
+            '<h1>MMROADWAYS Daily Report<\/h1>' +
+            '<p>' + reportDate + '<\/p>' +
+            '<\/div>';
+        
+        // Add each selected module to the Word document
+        selectedModules.forEach((type, index) => {
+            const originalCard = document.getElementById('card-' + type);
+            if (!originalCard) return;
+            
+            const title = originalCard.querySelector('.card-header span').textContent;
+            const color = moduleColors[type].primary;
+            
+            wordContent += `<div class="module-section">`;
+            wordContent += `<div class="module-title" style="color: ${color};">${title}</div>`;
+            
+            // Add statistics if available
+            const subCounts = originalCard.querySelector('.sub-counts');
+            if (subCounts) {
+                wordContent += `<div class="stats-container">`;
+                subCounts.querySelectorAll('.sub-count-item').forEach(item => {
+                    const label = item.querySelector('.label').textContent;
+                    const value = item.querySelector('.value').textContent;
+                    wordContent += `
+                        <div class="stat-item" style="border-left-color: ${color};">
+                            <span class="stat-label">${label}</span>
+                            <span class="stat-value" style="color: ${color};">${value}</span>
+                        </div>
+                    `;
+                });
+                wordContent += `</div>`;
+            }
+            
+            // Add table data (show all data, not just paginated)
+            const table = document.createElement('table');
+            table.className = 'module-table';
+            
+            // Create table header
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            
+            // Add S.No header
+            const snoTh = document.createElement('th');
+            snoTh.textContent = 'S.No';
+            headerRow.appendChild(snoTh);
+            
+            // Get column headers from the first data item
+            if (data[type].length > 0) {
+                Object.keys(data[type][0]).forEach(key => {
+                    const th = document.createElement('th');
+                    th.textContent = key.charAt(0).toUpperCase() + key.slice(1);
+                    headerRow.appendChild(th);
+                });
+            }
+            
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+            
+            // Create table body with all data
+            const tbody = document.createElement('tbody');
+            data[type].forEach((item, idx) => {
+                const tr = document.createElement('tr');
+                
+                // Add serial number
+                const snoTd = document.createElement('td');
+                snoTd.textContent = idx + 1;
+                tr.appendChild(snoTd);
+                
+                // Add data values
+                Object.values(item).forEach(value => {
+                    const td = document.createElement('td');
+                    td.textContent = value;
+                    tr.appendChild(td);
+                });
+                
+                tbody.appendChild(tr);
+            });
+            
+            table.appendChild(tbody);
+            wordContent += table.outerHTML;
+            wordContent += `</div>`;
+            
+            // Add page break after every 2 modules
+            if ((index + 1) % 2 === 0 && (index + 1) !== selectedModules.length) {
+                wordContent += `<div class="page-break"></div>`;
+            }
+        });
+        
+        wordContent += '<\/body><\/html>';
+        
+        // Create and download the Word document
+        try {
+            // Convert HTML to Word document
+            const blob = new Blob(['\ufeff', wordContent], {
+                type: 'application/msword'
+            });
+            
+            // Create filename
+            let filename = 'MMROADWAYS_Report';
+            if (selectedModules.length < 8) {
+                filename += '_' + selectedModules.join('_');
+            } else {
+                filename += '_Full';
+            }
+            filename += '_' + document.getElementById('manualDate').value + '.doc';
+            
+            // Download the file
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            
+            // Clean up
+            URL.revokeObjectURL(link.href);
+        } catch (err) {
+            console.error('Error creating Word document:', err);
+            alert('Error creating Word document. Please try again.');
+        }
+    }
+
+    function downloadSelectedReportExcel() {
+        // Get selected modules
+        const selectedModules = [];
+        document.querySelectorAll('input[name="module"]:checked').forEach(checkbox => {
+            selectedModules.push(checkbox.value);
+        });
+        
+        if (selectedModules.length === 0) {
+            alert('Please select at least one module to export.');
+            return;
+        }
+        
+        // Create a new workbook
+        const wb = XLSX.utils.book_new();
+        
+        selectedModules.forEach(type => {
+            if (data[type].length > 0) {
+                // Prepare data for Excel
+                const excelData = data[type].map((item, index) => {
+                    return {
+                        'S.No': index + 1,
+                        ...item
+                    };
+                });
+                
+                // Create worksheet
+                const ws = XLSX.utils.json_to_sheet(excelData);
+                
+                // Add worksheet to workbook
+                XLSX.utils.book_append_sheet(wb, ws, moduleColors[type].name.substring(0, 31)); // Sheet name max 31 chars
+            }
+        });
+        
+        // Generate Excel file
+        const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        
+        // Create filename
+        let filename = 'MMROADWAYS_Report';
+        if (selectedModules.length < 8) {
+            filename += '_' + selectedModules.join('_');
+        } else {
+            filename += '_Full';
+        }
+        filename += '_' + document.getElementById('manualDate').value + '.xlsx';
+        
+        // Download the file
+        const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+        
+        // Clean up
+        URL.revokeObjectURL(link.href);
+    }
+</script>
+
+</body>
+</html>
