@@ -42,7 +42,7 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-
 .scard-ico{font-size:18px}
 .scard-ttl{font-size:13px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent)}
 .scard-sub{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-left:auto;display:flex;align-items:center;gap:8px}
-.scard-body{padding:20px}
+.scard-body{padding:80px}
 
 /* UPLOAD */
 .upload-zone{border:2px dashed var(--border2);border-radius:12px;padding:36px 24px;text-align:center;transition:all .2s;background:var(--bg2);cursor:pointer}
@@ -88,7 +88,7 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-
 .sc-teal .sc-val{color:var(--teal)}
 .sc-sub{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted2);margin-top:4px}
 
-/* SAVE TO MILEAGE TABLE BUTTON - prominent */
+/* SAVE TO MILEAGE TABLE BUTTON */
 .save-mileage-btn{
   display:inline-flex;align-items:center;gap:8px;
   padding:10px 24px;
@@ -124,9 +124,10 @@ body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-
 .mp-clr{padding:4px 12px;background:transparent;border:1.5px solid var(--border2);color:var(--muted);font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;border-radius:7px;cursor:pointer;transition:all .15s}
 .mp-clr:hover{border-color:var(--red);color:var(--red)}
 .mp-entries{display:flex;flex-direction:column;gap:6px}
-.mp-entry{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--accent2-lt);border:1px solid #ffd699;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px}
+.mp-entry{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--accent2-lt);border:1px solid #ffd699;border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;flex-wrap:wrap}
 .me-date{color:var(--text2);min-width:90px}.me-odo{color:var(--accent);min-width:80px}
 .me-fuel{color:var(--accent2);font-weight:700;min-width:70px}
+.me-driver{color:var(--purple);font-weight:700;min-width:80px}
 .me-note{color:var(--muted);flex:1;font-size:11px}
 .me-del{margin-left:auto;background:transparent;border:none;cursor:pointer;color:var(--muted2);font-size:13px;padding:2px 6px;border-radius:4px;transition:color .15s}
 .me-del:hover{color:var(--red)}
@@ -170,6 +171,8 @@ tbody td{padding:9px 12px;font-size:13px;font-weight:600;white-space:nowrap;vert
 .legend{display:flex;gap:14px;flex-wrap:wrap;padding:10px 16px;background:var(--bg2);border-bottom:1px solid var(--border)}
 .leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);font-weight:600}
 .leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.driver-cell{color:var(--purple);font-weight:700;font-size:13px}
+.driver-cell.empty{color:var(--muted2);font-style:italic;font-weight:400;font-size:12px}
 
 /* ═══════════ MILEAGE TABLE PAGE ═══════════ */
 .mtbl-banner{
@@ -191,9 +194,7 @@ tbody td{padding:9px 12px;font-size:13px;font-weight:600;white-space:nowrap;vert
 .mtbl-empty-hint{margin-top:16px;display:inline-block;background:var(--green-lt);border:1.5px solid var(--green);color:var(--green);padding:8px 20px;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;transition:all .2s}
 .mtbl-empty-hint:hover{background:var(--green);color:#fff}
 
-/* Mileage summary table */
 .mtbl-wrap{background:#fff;border-radius:16px;box-shadow:var(--shadow2);border:1px solid var(--border);overflow:hidden;margin-bottom:20px}
-
 .mtbl-toolbar{display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid var(--border);background:linear-gradient(90deg,var(--green-lt),#fff);flex-wrap:wrap}
 .mtbl-ttl{font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--green);flex:1}
 .mtbl-count{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin-right:auto}
@@ -201,7 +202,6 @@ tbody td{padding:9px 12px;font-size:13px;font-weight:600;white-space:nowrap;vert
 .mtbl-dl-btn:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(26,158,92,.45)}
 .mtbl-clr-btn{padding:9px 16px;background:#fff;border:1.5px solid var(--border2);color:var(--muted);font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;border-radius:9px;cursor:pointer;transition:all .2s}
 .mtbl-clr-btn:hover{border-color:var(--red);color:var(--red)}
-
 .mtbl-scroll{overflow-x:auto}
 .mtbl{width:100%;border-collapse:collapse}
 .mtbl thead tr{background:linear-gradient(135deg,#0d5c2e,#1a9e5c)}
@@ -212,7 +212,6 @@ tbody td{padding:9px 12px;font-size:13px;font-weight:600;white-space:nowrap;vert
 .mtbl tbody tr:hover{background:var(--green-lt)}
 .mtbl tbody td{padding:13px 16px;font-size:13px;font-weight:600;vertical-align:middle}
 
-/* Rank badges in mileage table */
 .rank-1{background:linear-gradient(135deg,#ffd700,#ffb300);color:#7a5000;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:900;box-shadow:0 2px 8px rgba(255,193,7,.4)}
 .rank-2{background:linear-gradient(135deg,#e8e8e8,#c0c0c0);color:#555;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:900}
 .rank-3{background:linear-gradient(135deg,#f0c080,#cd7f32);color:#5c2d00;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:900}
@@ -227,10 +226,8 @@ tbody td{padding:9px 12px;font-size:13px;font-weight:600;white-space:nowrap;vert
 .del-row-btn{background:transparent;border:none;color:var(--muted2);cursor:pointer;font-size:13px;padding:4px 8px;border-radius:6px;transition:all .15s}
 .del-row-btn:hover{background:var(--red-lt);color:var(--red)}
 
-/* Summary totals row */
 .mtbl-sum-row td{background:linear-gradient(90deg,#0d5c2e,#1a9e5c)!important;color:#fff!important;font-weight:800!important;font-size:13px!important;padding:13px 16px!important}
 
-/* Stats bar above mileage table */
 .mtbl-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-bottom:20px}
 .mtbl-stat{background:#fff;border-radius:12px;padding:14px 16px;box-shadow:var(--shadow);border:1px solid var(--border);border-top:3px solid transparent;transition:transform .15s}
 .mtbl-stat:hover{transform:translateY(-2px)}
@@ -291,9 +288,11 @@ tbody td{padding:9px 12px;font-size:13px;font-weight:600;white-space:nowrap;vert
 
 .footer{text-align:center;padding:20px;font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;border-top:1px solid var(--border);margin-top:20px}
 .footer strong{color:var(--accent)}
+/* DEBUG PANEL */
+.debug-panel{display:none;margin-top:12px;padding:12px 16px;background:#fffbe6;border:1.5px solid #ffe082;border-radius:10px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);line-height:2}
+.debug-ttl{font-size:10px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;color:#c07000;margin-bottom:6px}
 .lib-badge{position:fixed;bottom:12px;right:12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);background:#fff;padding:4px 11px;border-radius:6px;border:1px solid var(--border);z-index:999;box-shadow:var(--shadow)}
 
-/* Toast notification */
 .toast{position:fixed;bottom:60px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a2636;color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:700;font-family:'Nunito',sans-serif;z-index:9999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap;box-shadow:0 4px 24px rgba(0,0,0,.3)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast.success{background:linear-gradient(135deg,#0d5c2e,#1a9e5c)}
@@ -343,11 +342,15 @@ tbody td{padding:9px 12px;font-size:13px;font-weight:600;white-space:nowrap;vert
         <span class="ico">📁</span>
         <h3>Upload Excel (.xlsx / .xls) or CSV</h3>
         <p>Drag & drop or click the button below</p>
-        <div class="col-tag">Vehicle No · Payment Date · Vehicle Odo · Fuel Ltr · Full Tank</div><br>
+        <div class="col-tag">Vehicle No · Driver Name · Payment Date · Vehicle Odo · Fuel Ltr · Full Tank</div><br>
         <button class="up-btn" id="chooseBtn">Choose File</button>
       </div>
       <div class="file-status" id="fileStatus"></div>
       <div class="err-msg" id="errMsg"></div>
+      <div class="debug-panel" id="debugPanel">
+        <div class="debug-ttl">🔍 Column Detection Result</div>
+        <div id="debugContent"></div>
+      </div>
     </div>
   </div>
 
@@ -380,7 +383,6 @@ tbody td{padding:9px 12px;font-size:13px;font-weight:600;white-space:nowrap;vert
       <div class="sum-card sc-purple"><div class="sc-lbl">Total Fuel</div><div class="sc-val" id="sFuel">—</div><div class="sc-sub">liters</div></div>
       <div class="sum-card sc-green"><div class="sc-lbl">Mileage</div><div class="sc-val" id="sMileage">—</div><div class="sc-sub">km / liter</div></div>
     </div>
-    <!-- PROMINENT SAVE TO MILEAGE TABLE BUTTON -->
     <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
       <button class="save-mileage-btn" id="saveMileageBtn">
         📊 Save to Mileage Table
@@ -401,6 +403,7 @@ tbody td{padding:9px 12px;font-size:13px;font-weight:600;white-space:nowrap;vert
         <div class="mp-field"><label>Time (opt.)</label><input type="time" class="mp-inp" id="mpTime"></div>
         <div class="mp-field"><label>ODO (km)</label><input type="number" class="mp-inp" id="mpOdo" placeholder="e.g. 54200" min="0"></div>
         <div class="mp-field"><label>Fuel Liters</label><input type="number" class="mp-inp" id="mpFuel" placeholder="e.g. 45.50" min="0" step="0.01"></div>
+        <div class="mp-field"><label>Driver Name</label><input type="text" class="mp-inp" id="mpDriver" placeholder="e.g. Rajan"></div>
         <div class="mp-field"><label>Note (opt.)</label><input type="text" class="mp-inp" id="mpNote" placeholder="Highway bunk…"></div>
         <button class="mp-add" id="mpAddBtn">+ Add</button>
       </div>
@@ -439,6 +442,7 @@ tbody td{padding:9px 12px;font-size:13px;font-weight:600;white-space:nowrap;vert
         <thead>
           <tr>
             <th class="tc">ODO</th><th>#</th><th>Vehicle No</th>
+            <th>Driver Name</th>
             <th>Payment Date</th><th>Vehicle ODO (km)</th>
             <th>Fuel Ltr</th><th>Type</th>
           </tr>
@@ -484,6 +488,7 @@ tbody td{padding:9px 12px;font-size:13px;font-weight:600;white-space:nowrap;vert
             <tr>
               <th class="tc">#</th>
               <th>Vehicle No</th>
+              <th>Driver Name</th>
               <th>Start ODO (km)</th>
               <th>End ODO (km)</th>
               <th>Distance (km)</th>
@@ -530,7 +535,7 @@ tbody td{padding:9px 12px;font-size:13px;font-weight:600;white-space:nowrap;vert
         <table class="rpt-tbl">
           <thead>
             <tr>
-              <th class="tc">#</th><th>Vehicle No</th><th>Date / Time</th>
+              <th class="tc">#</th><th>Vehicle No</th><th>Driver Name</th><th>Date / Time</th>
               <th>Vehicle ODO (km)</th><th>Fuel Ltr</th>
               <th>Full Tank / Type</th><th>Source</th><th>Mark</th><th>Note</th>
             </tr>
@@ -554,7 +559,7 @@ var xlsxReady=false,hiddenInput=null;
 var allVehicles=[],filteredVehicles=[],selVehicle='';
 var mpOpen=true;
 var reportData=null;
-var mileageTableData=[]; /* array of {vehicle, startOdo, endOdo, dist, fuel, mileage, savedAt} */
+var mileageTableData=[];
 
 /* ══════════ PAGE SWITCH ══════════ */
 function showPage(p){
@@ -647,7 +652,11 @@ function initUI(){
     filteredVehicles=q?allVehicles.filter(function(v){return v.toLowerCase().indexOf(q)>=0}):allVehicles.slice();
     renderDrop(q);if(!this.value.trim())clearVehicle();
   });
-  srch.addEventListener('focus',function(){filteredVehicles=allVehicles.slice();renderDrop('');drop.classList.add('open')});
+  srch.addEventListener('focus',function(){
+    filteredVehicles=allVehicles.slice();
+    renderDrop(this.value.trim().toLowerCase());
+    drop.classList.add('open');
+  });
   document.addEventListener('click',function(e){if(!G('vCard').contains(e.target))drop.classList.remove('open')});
   G('vBadge').addEventListener('click',function(){clearVehicle();G('vSearch').value='';G('vSearch').focus()});
   G('resetBtn').addEventListener('click',resetAll);
@@ -679,9 +688,12 @@ function addManual(){
     if(timeVal){var tp=timeVal.split(':');dt=new Date(+p[0],+p[1]-1,+p[2],+tp[0],+tp[1],0)}
     else dt=new Date(+p[0],+p[1]-1,+p[2],0,0,0)}
   manualEntries.push({_id:'m'+Date.now(),vehicleNo:selVehicle,payDate:dt,
-    odo:parseFloat(G('mpOdo').value)||0,fuel:fuelVal,note:G('mpNote').value.trim(),
+    odo:parseFloat(G('mpOdo').value)||0,fuel:fuelVal,
+    driverName:(G('mpDriver').value||'').trim(),
+    note:G('mpNote').value.trim(),
     _manual:true,_checked:true,fullTank:'no',rawDate:''});
-  G('mpDate').value='';G('mpTime').value='';G('mpOdo').value='';G('mpFuel').value='';G('mpNote').value='';
+  G('mpDate').value='';G('mpTime').value='';G('mpOdo').value='';G('mpFuel').value='';
+  G('mpDriver').value='';G('mpNote').value='';
   G('mpFuel').focus();
   renderManualList();buildCombined();renderTable();updateSummary();
 }
@@ -694,6 +706,7 @@ function renderManualList(){
     d.innerHTML='<span class="me-date">'+(e.payDate?fmtDateOnly(e.payDate):'No date')+'</span>'+
       '<span class="me-odo">'+(e.odo>0?e.odo.toLocaleString()+' km':'—')+'</span>'+
       '<span class="me-fuel">'+e.fuel.toFixed(2)+' L</span>'+
+      (e.driverName?'<span class="me-driver">👤 '+esc(e.driverName)+'</span>':'')+
       (e.note?'<span class="me-note">'+esc(e.note)+'</span>':'')+
       '<button class="me-del" data-i="'+i+'">✕</button>';
     d.querySelector('.me-del').addEventListener('click',function(){
@@ -742,6 +755,7 @@ function clearVehicle(){
 function readFile(file){
   setErr('');var ext=(file.name.split('.').pop()||'').toLowerCase();
   G('fileStatus').textContent='Reading: '+file.name+' …';
+  hideDebug();
   var reader=new FileReader();
   if(ext==='csv'){reader.onload=function(e){try{procCSV(e.target.result,file.name)}catch(er){setErr('CSV: '+er.message)}};reader.readAsText(file,'UTF-8');return}
   if(!xlsxReady){setErr('SheetJS not ready. Please wait.');return}
@@ -749,16 +763,29 @@ function readFile(file){
     try{
       var data=new Uint8Array(e.target.result);
       var wb=XLSX.read(data,{type:'array',cellDates:false,raw:true});
+      /* show all sheet names in debug */
       var ws=wb.Sheets[wb.SheetNames[0]];
       var aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''});
       if(!aoa||!aoa.length){setErr('Sheet is empty');return}
+      /* Search up to row 20 for header */
       var hRow=-1,hData=null;
-      for(var r=0;r<Math.min(10,aoa.length);r++){var txt=aoa[r].map(function(c){return(c+'').toLowerCase()}).join('|');if(txt.indexOf('vehicle')>=0||txt.indexOf('odo')>=0||txt.indexOf('fuel')>=0||txt.indexOf('date')>=0){hRow=r;hData=aoa[r];break}}
+      for(var r=0;r<Math.min(20,aoa.length);r++){
+        var txt=aoa[r].map(function(c){return(c+'').toLowerCase()}).join('|');
+        if(txt.indexOf('vehicle')>=0||txt.indexOf('odo')>=0||txt.indexOf('fuel')>=0||txt.indexOf('date')>=0||txt.indexOf('driver')>=0){
+          hRow=r;hData=aoa[r];break;
+        }
+      }
       if(hRow<0){hRow=0;hData=aoa[0]}
       var hdrs=hData.map(function(h){return(h+'').trim()});
       var objs=[];
-      for(var i=hRow+1;i<aoa.length;i++){var row=aoa[i];if(!row.some(function(c){return c!==''&&c!==null&&c!==undefined}))continue;var obj={};for(var j=0;j<hdrs.length;j++)obj[hdrs[j]]=(row[j]!==undefined&&row[j]!==null)?row[j]:'';objs.push(obj)}
-      procObjs(objs,file.name);
+      for(var i=hRow+1;i<aoa.length;i++){
+        var row=aoa[i];
+        if(!row.some(function(c){return c!==''&&c!==null&&c!==undefined}))continue;
+        var obj={};
+        for(var j=0;j<hdrs.length;j++)obj[hdrs[j]]=(row[j]!==undefined&&row[j]!==null)?row[j]:'';
+        objs.push(obj);
+      }
+      procObjs(objs,file.name,hdrs,wb.SheetNames);
     }catch(er){setErr('Excel error: '+er.message);G('fileStatus').textContent='';console.error(er)}
   };
   reader.readAsArrayBuffer(file);
@@ -769,27 +796,96 @@ function procCSV(text,fn){
   if(hi<0){setErr('CSV empty');return}
   var hdrs=csvLn(lines[hi]),objs=[];
   for(var j=hi+1;j<lines.length;j++){if(!lines[j].trim())continue;var vals=csvLn(lines[j]),obj={};for(var k=0;k<hdrs.length;k++)obj[hdrs[k]]=vals[k]!==undefined?vals[k]:'';objs.push(obj)}
-  procObjs(objs,fn);
+  procObjs(objs,fn,hdrs,[]);
 }
 function csvLn(l){var r=[],c='',q=false;for(var i=0;i<l.length;i++){var ch=l[i];if(ch==='"'){q=!q}else if(ch===','&&!q){r.push(c.trim());c=''}else c+=ch}r.push(c.trim());return r}
 
-function procObjs(objs,fn){
-  if(!objs.length){setErr('No data rows found');return}
-  var VK=['vehicleno','vehiclenumber','vehicle','vehno','vehiclenum','vehicleid','regno','regnum','truckno','lorryno','busno','carno'];
-  var DK=['paymentdate','paydate','date','paiddate','transactiondate','fueldate','billdate','entrydate','dated'];
-  var OK=['vehicleodo','odo','odometer','vehicleodometer','odometerreading','kmreading','km','kms','reading','closingodo','closingkm','odokm'];
-  var FK=['fuelltr','fuelliter','fuelliters','fuel','litres','liters','ltr','ltrs','quantity','qty','fuelqty','fuelfilled'];
-  var TK=['fulltank','fulltankdata','fullfuel','tankfull','full','fullfilltank','tankstatus','filledtank'];
+/* ── Smart column finder: returns best matching header key or null ── */
+function findCol(hdrs,aliases){
+  var nk2=function(s){return(s+'').toLowerCase().replace(/[\s_\-\.\/\(\)]/g,'')};
+  /* 1. Exact normalized match */
+  for(var a=0;a<aliases.length;a++)
+    for(var k=0;k<hdrs.length;k++)
+      if(nk2(hdrs[k])===aliases[a])return hdrs[k];
+  /* 2. Contains match */
+  for(var a2=0;a2<aliases.length;a2++)
+    for(var k2=0;k2<hdrs.length;k2++)
+      if(nk2(hdrs[k2]).indexOf(aliases[a2])>=0)return hdrs[k2];
+  /* 3. Alias contains header */
+  for(var a3=0;a3<aliases.length;a3++)
+    for(var k3=0;k3<hdrs.length;k3++)
+      if(hdrs[k3].length>1&&aliases[a3].indexOf(nk2(hdrs[k3]))>=0)return hdrs[k3];
+  return null;
+}
+
+function procObjs(objs,fn,hdrs,sheetNames){
+  if(!objs.length){setErr('No data rows found');G('fileStatus').textContent='';return}
+
+  var VK=['vehicleno','vehiclenumber','vehicle','vehno','vehiclenum','vehicleid','regno','regnum','truckno','lorryno','busno','carno','vehiclename','vno','vnum'];
+  var DRK=['drivername','driver','driverno','driverid','name','operatorname','operator','chauffeur','drivernam'];
+  var DK=['paymentdate','paydate','date','paiddate','transactiondate','fueldate','billdate','entrydate','dated','datetime','filldate'];
+  var OK=['vehicleodo','odo','odometer','vehicleodometer','odometerreading','kmreading','km','kms','reading','closingodo','closingkm','odokm','currentodo','presentodo','meterreading'];
+  var FK=['fuelltr','fuelliter','fuelliters','fuel','litres','liters','ltr','ltrs','quantity','qty','fuelqty','fuelfilled','fuelquantity','filledltr','filledliter'];
+  var TK=['fulltank','fulltankdata','fullfuel','tankfull','full','fullfilltank','tankstatus','filledtank','tankfilled'];
+
+  /* Detect which header maps to which field */
+  var vcol=findCol(hdrs,VK);
+  var drcol=findCol(hdrs,DRK);
+  var dcol=findCol(hdrs,DK);
+  var ocol=findCol(hdrs,OK);
+  var fcol=findCol(hdrs,FK);
+  var tcol=findCol(hdrs,TK);
+
+  /* Always show debug info */
+  showDebug(hdrs,sheetNames,{
+    'Vehicle No':vcol,'Driver Name':drcol,'Date':dcol,
+    'ODO (km)':ocol,'Fuel Ltr':fcol,'Full Tank':tcol
+  });
+
+  /* If vehicle col not found, try to auto-detect: pick the column
+     whose values look like vehicle numbers (letters+digits, mostly unique) */
+  if(!vcol){
+    var colScores={};
+    hdrs.forEach(function(h){if(!h)return;
+      var vals=objs.map(function(o){return(o[h]+'').trim()}).filter(function(v){return v&&v!==''});
+      if(!vals.length)return;
+      var uniq={}; vals.forEach(function(v){uniq[v]=1});
+      var uniqueRatio=Object.keys(uniq).length/vals.length;
+      /* vehicle numbers often have letters + numbers pattern */
+      var looksVeh=vals.filter(function(v){return /[a-zA-Z]/.test(v)&&/[0-9]/.test(v)}).length/vals.length;
+      colScores[h]=(uniqueRatio*0.4)+(looksVeh*0.6);
+    });
+    var best=null,bestScore=0;
+    Object.keys(colScores).forEach(function(h){if(colScores[h]>bestScore){bestScore=colScores[h];best=h}});
+    if(best&&bestScore>0.3){vcol=best;}
+  }
+
   var parsed=[];
   for(var i=0;i<objs.length;i++){
-    var row=objs[i];var vno=(fv(row,VK)+'').trim();if(!vno)continue;
-    var rawD=fv(row,DK);var dt=parseDate(rawD);
-    var odo=parseNum(fv(row,OK));var fuel=parseNum(fv(row,FK));
-    var ft=(fv(row,TK)+'').trim().toLowerCase();
-    var ftY=(ft==='yes'||ft==='y'||ft==='1'||ft==='true'||ft==='full');
-    parsed.push({vehicleNo:vno,payDate:dt,rawDate:rawD,odo:odo,fuel:fuel,fullTank:ftY?'yes':'no',_checked:false,_manual:false});
+    var row=objs[i];
+    var vno=vcol?(row[vcol]+'').trim():'';
+    /* fallback: use first non-empty string cell if still empty */
+    if(!vno){
+      var keys=Object.keys(row);
+      for(var ki=0;ki<keys.length;ki++){var v2=(row[keys[ki]]+'').trim();if(v2&&v2.length>1&&isNaN(Number(v2))){vno=v2;break}}
+    }
+    if(!vno)continue;
+    var rawD=dcol?row[dcol]:'';
+    var dt=parseDate(rawD);
+    var odo=ocol?parseNum(row[ocol]):0;
+    var fuel=fcol?parseNum(row[fcol]):0;
+    var driverName=drcol?(row[drcol]+'').trim():'';
+    var ftRaw=tcol?(row[tcol]+'').trim().toLowerCase():'';
+    var ftY=(ftRaw==='yes'||ftRaw==='y'||ftRaw==='1'||ftRaw==='true'||ftRaw==='full');
+    parsed.push({vehicleNo:vno,driverName:driverName,payDate:dt,rawDate:rawD,odo:odo,fuel:fuel,fullTank:ftY?'yes':'no',_checked:false,_manual:false});
   }
-  if(!parsed.length){setErr('Could not parse. Check columns.');G('fileStatus').textContent='';return}
+
+  if(!parsed.length){
+    setErr('⚠ Could not find Vehicle No data. See column debug below ↓');
+    G('fileStatus').textContent='';
+    return;
+  }
+
   allData=parsed;
   var seen={};allVehicles=[];
   allData.forEach(function(r){if(!seen[r.vehicleNo]){seen[r.vehicleNo]=true;allVehicles.push(r.vehicleNo)}});
@@ -798,7 +894,32 @@ function procObjs(objs,fn){
   G('vCard').style.display='block';
   G('sumSection').style.display='none';G('tblCard').style.display='none';G('manualPanel').style.display='none';
   G('vBadge').classList.remove('show');G('vSearch').value='';G('vCnt').textContent='';selVehicle='';setErr('');manualEntries=[];
+  /* render dropdown immediately so user sees vehicles */
+  filteredVehicles=allVehicles.slice();renderDrop('');
 }
+
+/* ══════════ DEBUG PANEL ══════════ */
+function showDebug(hdrs,sheets,mapping){
+  var panel=G('debugPanel');
+  if(!panel)return;
+  var sheetsHtml=sheets&&sheets.length?'<div style="margin-bottom:6px;color:var(--teal)">📋 Sheets: <strong>'+sheets.map(esc).join(', ')+'</strong></div>':'';
+  var colsHtml='<div style="margin-bottom:6px"><span style="color:var(--text2);font-weight:700">All columns found: </span>'+
+    hdrs.filter(function(h){return h}).map(function(h){
+      return'<span style="background:#fff;border:1px solid var(--border2);padding:1px 8px;border-radius:4px;margin:2px;display:inline-block;color:var(--text)">'+esc(h)+'</span>'
+    }).join('')+'</div>';
+  var mapHtml='<div><span style="color:var(--text2);font-weight:700">Field mapping: </span><div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:5px">';
+  Object.keys(mapping).forEach(function(field){
+    var col=mapping[field];
+    var ok=!!col;
+    mapHtml+='<span style="padding:3px 10px;border-radius:6px;font-size:11px;font-weight:700;border:1px solid '+(ok?'rgba(26,158,92,.35)':'rgba(217,48,37,.35)')+';background:'+(ok?'#e6f7ef':'#fce8e6')+';color:'+(ok?'#1a9e5c':'#d93025')+'">'+
+      (ok?'✅ ':'❌ ')+field+(col?' → <em>'+esc(col)+'</em>':' (not found)')+
+    '</span>';
+  });
+  mapHtml+='</div></div>';
+  panel.innerHTML='<div class="debug-ttl">🔍 Column Detection Result</div>'+sheetsHtml+colsHtml+mapHtml;
+  panel.style.display='block';
+}
+function hideDebug(){var p=G('debugPanel');if(p)p.style.display='none';}
 
 /* ══════════ LOAD VEHICLE ══════════ */
 function loadVehicle(v){
@@ -815,7 +936,7 @@ function loadVehicle(v){
 /* ══════════ RENDER TABLE ══════════ */
 function renderTable(){
   var tb=G('tBody');tb.innerHTML='';
-  if(!combinedRows.length){tb.innerHTML='<tr><td colspan="7"><div class="empty-msg">No records found.</div></td></tr>';return}
+  if(!combinedRows.length){tb.innerHTML='<tr><td colspan="8"><div class="empty-msg">No records found.</div></td></tr>';return}
   combinedRows.forEach(function(r,idx){
     var tr=document.createElement('tr');
     if(idx===startIdx)tr.classList.add('r-start');
@@ -828,6 +949,9 @@ function renderTable(){
     var fStr=r.fuel>0?r.fuel.toFixed(2):'—';
     var fCls=isM?'fuel-num manual':r._checked?'fuel-num on':'fuel-num';
     var oStr=r.odo>0?r.odo.toLocaleString():'—';
+    var driverHtml=r.driverName?
+      '<span class="driver-cell">👤 '+esc(r.driverName)+'</span>':
+      '<span class="driver-cell empty">—</span>';
     var fuelCell=isM?'<span class="fuel-num manual">'+fStr+' L</span>':
       '<div class="fuel-wrap"><span class="'+fCls+'" id="fn'+idx+'">'+fStr+'</span><input type="checkbox" class="fuel-chk" data-i="'+idx+'" '+(r._checked?'checked':'')+' /></div>';
     var typeCell=isM?'<span class="tag tag-m">MANUAL</span>':(r.fullTank==='yes'?'<span class="tag tag-y">Full Tank</span>':'<span class="tag tag-n">Partial</span>');
@@ -835,6 +959,7 @@ function renderTable(){
       '<td style="text-align:center"><div class="'+obc+'"'+(isM?'':' data-i="'+idx+'"')+'>'+obl+'</div></td>'+
       '<td style="color:var(--muted);font-family:\'JetBrains Mono\',monospace;font-size:12px">'+(idx+1)+'</td>'+
       '<td style="font-weight:800">'+esc(r.vehicleNo)+'</td>'+
+      '<td>'+driverHtml+'</td>'+
       '<td>'+fmtDate(r.payDate)+bdg+(isM&&r.note?'<br><span style="font-size:11px;color:var(--accent2)">'+esc(r.note)+'</span>':'')+'</td>'+
       '<td style="font-family:\'JetBrains Mono\',monospace">'+oStr+'</td>'+
       '<td>'+fuelCell+'</td>'+
@@ -903,15 +1028,31 @@ function resetAll(){
   renderTable();updateSummary();
 }
 
+/* ══════════ GET DRIVER NAME FOR VEHICLE ══════════ */
+function getDriverForVehicle(vehicleNo, rows){
+  /* Collect all driver names from the rows for this vehicle, pick most common non-empty */
+  var counts={};
+  rows.forEach(function(r){
+    if(r.driverName){
+      counts[r.driverName]=(counts[r.driverName]||0)+1;
+    }
+  });
+  var best='',bestN=0;
+  Object.keys(counts).forEach(function(k){if(counts[k]>bestN){bestN=counts[k];best=k}});
+  return best;
+}
+
 /* ══════════ SAVE TO MILEAGE TABLE ══════════ */
 function saveToMileageTable(){
   if(!selVehicle){showToast('⚠ Vehicle select பண்ணுங்க','error');return}
   var c=calcSummary();
   if(c.sO===null||c.eO===null){showToast('⚠ Start & End ODO marks set பண்ணுங்க','error');return}
   if(c.totalFuel===0){showToast('⚠ Fuel rows check பண்ணுங்க or manual entry add பண்ணுங்க','error');return}
+  var driverName=getDriverForVehicle(selVehicle, combinedRows);
   var entry={
     id:'mt'+Date.now(),
     vehicle:selVehicle,
+    driverName:driverName,
     startOdo:c.sO,
     endOdo:c.eO,
     dist:c.dist,
@@ -921,7 +1062,6 @@ function saveToMileageTable(){
     mileage:c.mil,
     savedAt:new Date()
   };
-  /* Update if same vehicle already exists, else push */
   var existing=-1;
   for(var i=0;i<mileageTableData.length;i++){if(mileageTableData[i].vehicle===selVehicle){existing=i;break}}
   if(existing>=0){
@@ -943,7 +1083,6 @@ function renderMileageTable(){
   }
   G('mtblEmpty').style.display='none';G('mtblContent').style.display='block';
 
-  /* Banner meta */
   var totalVeh=mileageTableData.length;
   var totalDist=mileageTableData.reduce(function(s,r){return s+(r.dist||0)},0);
   var totalFuel=mileageTableData.reduce(function(s,r){return s+(r.totalFuel||0)},0);
@@ -954,7 +1093,6 @@ function renderMileageTable(){
     '<span>⛽ Total Fuel: '+totalFuel.toFixed(2)+' L</span>'+
     '<span>📈 Avg Mileage: '+avgMil.toFixed(2)+' km/L</span>';
 
-  /* Stats */
   var mils=mileageTableData.map(function(r){return r.mileage}).filter(function(m){return m!==null&&m!==undefined&&!isNaN(m)});
   var bestMil=mils.length?Math.max.apply(null,mils):0;
   var worstMil=mils.length?Math.min.apply(null,mils):0;
@@ -968,11 +1106,8 @@ function renderMileageTable(){
 
   G('mtblCountLbl').textContent=totalVeh+' vehicle'+(totalVeh!==1?'s':'');
 
-  /* Sort by mileage desc for rank */
   var sorted=mileageTableData.slice().sort(function(a,b){return(b.mileage||0)-(a.mileage||0)});
   var rankMap={};sorted.forEach(function(r,i){rankMap[r.id]=i+1});
-
-  /* Max mileage for bar */
   var maxMil=bestMil||1;
 
   var tb=G('mtblBody');tb.innerHTML='';
@@ -985,10 +1120,14 @@ function renderMileageTable(){
     var milCell=mil!==null?
       '<div class="mileage-bar-wrap"><div class="mileage-bar" style="width:'+barPct+'px"></div><span class="'+milCls+'">'+mil.toFixed(2)+' km/L</span></div>':
       '<span style="color:var(--muted)">—</span>';
+    var driverCell=row.driverName?
+      '<span style="color:var(--purple);font-weight:700">👤 '+esc(row.driverName)+'</span>':
+      '<span style="color:var(--muted2);font-style:italic;font-size:12px">—</span>';
     var tr=document.createElement('tr');
     tr.innerHTML=
       '<td style="text-align:center">'+rankCell+'</td>'+
       '<td style="font-weight:900;font-size:14px;color:var(--text)">'+esc(row.vehicle)+'</td>'+
+      '<td>'+driverCell+'</td>'+
       '<td style="font-family:\'JetBrains Mono\',monospace;color:var(--accent);font-weight:700">'+(row.startOdo!==null?row.startOdo.toLocaleString():'—')+'</td>'+
       '<td style="font-family:\'JetBrains Mono\',monospace;color:var(--accent2);font-weight:700">'+(row.endOdo!==null?row.endOdo.toLocaleString():'—')+'</td>'+
       '<td style="font-family:\'JetBrains Mono\',monospace;color:var(--teal);font-weight:700">'+(row.dist!==null?row.dist.toLocaleString():'—')+'</td>'+
@@ -1004,10 +1143,9 @@ function renderMileageTable(){
     tb.appendChild(tr);
   });
 
-  /* Summary / Totals row */
   var sumTr=document.createElement('tr');sumTr.className='mtbl-sum-row';
   sumTr.innerHTML=
-    '<td colspan="2" style="text-align:right;letter-spacing:1px;font-size:11px">TOTALS →</td>'+
+    '<td colspan="3" style="text-align:right;letter-spacing:1px;font-size:11px">TOTALS →</td>'+
     '<td>—</td>'+
     '<td>—</td>'+
     '<td>'+totalDist.toLocaleString()+' km</td>'+
@@ -1023,8 +1161,6 @@ function downloadMileageExcel(){
   if(!mileageTableData.length){showToast('⚠ No mileage data to download','error');return}
 
   var wb=XLSX.utils.book_new();
-
-  /* ── Sheet 1: Mileage Summary ── */
   var now=new Date();
   var sorted=mileageTableData.slice().sort(function(a,b){return(b.mileage||0)-(a.mileage||0)});
   var rankMap={};sorted.forEach(function(r,i){rankMap[r.id]=i+1});
@@ -1036,13 +1172,14 @@ function downloadMileageExcel(){
     ['MM ROADWAYS — VEHICLE MILEAGE SUMMARY'],
     ['Generated: '+fmtDate(now)+'   |   By: Vicky   |   Total Vehicles: '+mileageTableData.length],
     [],
-    ['#','Vehicle No','Start ODO (km)','End ODO (km)','Distance (km)','Excel Fuel (L)','Manual Fuel (L)','Total Fuel (L)','Mileage (km/L)','Rank','Saved On']
+    ['#','Vehicle No','Driver Name','Start ODO (km)','End ODO (km)','Distance (km)','Excel Fuel (L)','Manual Fuel (L)','Total Fuel (L)','Mileage (km/L)','Rank','Saved On']
   ];
 
   mileageTableData.forEach(function(row,i){
     rows.push([
       i+1,
       row.vehicle,
+      row.driverName||'',
       row.startOdo!==null?row.startOdo:0,
       row.endOdo!==null?row.endOdo:0,
       row.dist!==null?row.dist:0,
@@ -1056,26 +1193,23 @@ function downloadMileageExcel(){
   });
 
   rows.push([]);
-  rows.push(['TOTALS','','','',totalDist,'','',+totalFuel.toFixed(2),+avgMil.toFixed(2),'','']);
+  rows.push(['TOTALS','','','','',totalDist,'','',+totalFuel.toFixed(2),+avgMil.toFixed(2),'','']);
   rows.push([]);
   rows.push(['Generated by','Vicky']);
   rows.push(['Company','MM Roadways']);
 
   var ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:4},{wch:16},{wch:15},{wch:15},{wch:14},{wch:15},{wch:16},{wch:14},{wch:15},{wch:8},{wch:22}];
+  ws['!cols']=[{wch:4},{wch:16},{wch:18},{wch:15},{wch:15},{wch:14},{wch:15},{wch:16},{wch:14},{wch:15},{wch:8},{wch:22}];
 
-  /* Title styling */
   if(ws['A1'])ws['A1'].s={font:{bold:true,sz:15,color:{rgb:'0D5C2E'}},alignment:{horizontal:'left'}};
   if(ws['A2'])ws['A2'].s={font:{sz:11,color:{rgb:'3A7050'}},alignment:{horizontal:'left'}};
 
-  /* Header row = row 4 (index 3) */
-  var hCols=['A','B','C','D','E','F','G','H','I','J','K'];
+  var hCols=['A','B','C','D','E','F','G','H','I','J','K','L'];
   hCols.forEach(function(c){
     var cell=c+'4';
     if(ws[cell])ws[cell].s={font:{bold:true,color:{rgb:'FFFFFF'},sz:11},fill:{fgColor:{rgb:'0D5C2E'}},alignment:{horizontal:'center',wrapText:true}};
   });
 
-  /* Data rows */
   var ds=5;
   mileageTableData.forEach(function(row,idx){
     var er=ds+idx;
@@ -1084,25 +1218,23 @@ function downloadMileageExcel(){
     var milFc=mil===null?'7A94AA':mil>=4?'1A9E5C':mil>=3?'E07B00':'D93025';
     var rank=rankMap[row.id];
     var rankBg=rank===1?'FFF3CD':rank===2?'F0F0F0':rank===3?'FEF0E0':'F5F8FC';
-
-    // Base row style
     var rowBg=idx%2===0?'FFFFFF':'F7FAF8';
     hCols.forEach(function(col,ci){
       var addr=col+er;
       if(!ws[addr])ws[addr]={t:'z',v:'',s:{}};
       var bg=rowBg,fc='1A2636',bold=false;
       if(col==='B'){bold=true;fc='1A2636'}
-      if(col==='C'){fc='1A6FC4';bold=true}
-      if(col==='D'){fc='E07B00';bold=true}
-      if(col==='E'){fc='0097A7';bold=true}
-      if(col==='H'){fc='6B3FA0';bold=true}
-      if(col==='I'){bg=milBg;fc=milFc;bold=true}
-      if(col==='J'){bg=rankBg;fc='7A5000';bold=true}
-      ws[addr].s={font:{sz:11,color:{rgb:fc},bold:bold},fill:{fgColor:{rgb:bg}},alignment:{horizontal:col==='A'||col==='J'?'center':'left'}};
+      if(col==='C'){fc='6B3FA0';bold=true}
+      if(col==='D'){fc='1A6FC4';bold=true}
+      if(col==='E'){fc='E07B00';bold=true}
+      if(col==='F'){fc='0097A7';bold=true}
+      if(col==='I'){fc='6B3FA0';bold=true}
+      if(col==='J'){bg=milBg;fc=milFc;bold=true}
+      if(col==='K'){bg=rankBg;fc='7A5000';bold=true}
+      ws[addr].s={font:{sz:11,color:{rgb:fc},bold:bold},fill:{fgColor:{rgb:bg}},alignment:{horizontal:col==='A'||col==='K'?'center':'left'}};
     });
   });
 
-  /* Totals row */
   var totR=ds+mileageTableData.length+1;
   hCols.forEach(function(col){
     var addr=col+totR;
@@ -1112,22 +1244,22 @@ function downloadMileageExcel(){
 
   XLSX.utils.book_append_sheet(wb,ws,'Mileage Summary');
 
-  /* ── Sheet 2: Ranked List ── */
+  /* Sheet 2: Ranked */
   var r2=[
     ['MM ROADWAYS — MILEAGE RANKING'],
     ['Best to Worst — Generated by Vicky'],
     [],
-    ['Rank','Vehicle No','Mileage (km/L)','Distance (km)','Total Fuel (L)','Status']
+    ['Rank','Vehicle No','Driver Name','Mileage (km/L)','Distance (km)','Total Fuel (L)','Status']
   ];
   sorted.forEach(function(row,i){
     var mil=row.mileage;
     var status=mil===null?'N/A':mil>=4?'✅ Good':mil>=3?'⚠ Average':'❌ Low';
-    r2.push([i+1,row.vehicle,mil!==null?+mil.toFixed(2):0,row.dist||0,+row.totalFuel.toFixed(2),status]);
+    r2.push([i+1,row.vehicle,row.driverName||'',mil!==null?+mil.toFixed(2):0,row.dist||0,+row.totalFuel.toFixed(2),status]);
   });
   var ws2=XLSX.utils.aoa_to_sheet(r2);
-  ws2['!cols']=[{wch:6},{wch:16},{wch:15},{wch:14},{wch:14},{wch:12}];
+  ws2['!cols']=[{wch:6},{wch:16},{wch:18},{wch:15},{wch:14},{wch:14},{wch:12}];
   if(ws2['A1'])ws2['A1'].s={font:{bold:true,sz:14,color:{rgb:'0D5C2E'}}};
-  ['A4','B4','C4','D4','E4','F4'].forEach(function(cell){
+  ['A4','B4','C4','D4','E4','F4','G4'].forEach(function(cell){
     if(ws2[cell])ws2[cell].s={font:{bold:true,color:{rgb:'FFFFFF'},sz:11},fill:{fgColor:{rgb:'0D5C2E'}},alignment:{horizontal:'center'}};
   });
   sorted.forEach(function(row,i){
@@ -1135,11 +1267,11 @@ function downloadMileageExcel(){
     var bg=i===0?'FFF9C4':i===1?'F5F5F5':i===2?'FEF0E0':i%2===0?'FFFFFF':'F7FAF8';
     var milBg=mil===null?'FFFFFF':mil>=4?'E6F7EF':mil>=3?'FFF3E0':'FCE8E6';
     var milFc=mil===null?'7A94AA':mil>=4?'1A9E5C':mil>=3?'E07B00':'D93025';
-    ['A','B','C','D','E','F'].forEach(function(col,ci){
+    ['A','B','C','D','E','F','G'].forEach(function(col,ci){
       var addr=col+rr;if(!ws2[addr])ws2[addr]={t:'z',v:'',s:{}};
-      var cbg=col==='C'?milBg:bg;
-      var cfc=col==='C'?milFc:'1A2636';
-      ws2[addr].s={font:{sz:11,color:{rgb:cfc},bold:i<3||col==='C'},fill:{fgColor:{rgb:cbg}},alignment:{horizontal:col==='A'?'center':'left'}};
+      var cbg=col==='D'?milBg:bg;
+      var cfc=col==='D'?milFc:col==='C'?'6B3FA0':'1A2636';
+      ws2[addr].s={font:{sz:11,color:{rgb:cfc},bold:i<3||col==='D'},fill:{fgColor:{rgb:cbg}},alignment:{horizontal:col==='A'?'center':'left'}};
     });
   });
   XLSX.utils.book_append_sheet(wb,ws2,'Ranking');
@@ -1193,9 +1325,13 @@ function renderReport(){
     var mark=idx===si?'🔵 START ODO':idx===ei?'🟠 END ODO':counted?'✓ Counted':'';
     var typeCell=isM?'<span class="tag tag-m">MANUAL</span>':(r.fullTank==='yes'?'<span class="tag tag-y">Full Tank</span>':'<span class="tag tag-n">Partial</span>');
     var fuelStyle=isM?'color:var(--accent2);font-weight:800':r._checked?'color:var(--green);font-weight:800':'';
+    var driverCell=r.driverName?
+      '<span style="color:var(--purple);font-weight:700">👤 '+esc(r.driverName)+'</span>':
+      '<span style="color:var(--muted2);font-style:italic;font-size:12px">—</span>';
     tr.innerHTML=
       '<td style="text-align:center;font-family:\'JetBrains Mono\',monospace;font-size:12px">'+(idx+1)+'</td>'+
       '<td style="font-weight:800">'+esc(r.vehicleNo)+'</td>'+
+      '<td>'+driverCell+'</td>'+
       '<td>'+fmtDate(r.payDate)+(idx===si?'<span class="badge-s">START</span>':idx===ei?'<span class="badge-e">END</span>':'')+'</td>'+
       '<td style="font-family:\'JetBrains Mono\',monospace">'+(r.odo>0?r.odo.toLocaleString():'—')+'</td>'+
       '<td style="font-family:\'JetBrains Mono\',monospace;'+fuelStyle+'">'+(r.fuel>0?r.fuel.toFixed(2):'—')+'</td>'+
@@ -1206,7 +1342,7 @@ function renderReport(){
     tb.appendChild(tr);
   });
   var sumTr=document.createElement('tr');sumTr.className='rpt-sum-row';
-  sumTr.innerHTML='<td colspan="3" style="text-align:right;font-size:12px;letter-spacing:1px">SUMMARY →</td>'+
+  sumTr.innerHTML='<td colspan="4" style="text-align:right;font-size:12px;letter-spacing:1px">SUMMARY →</td>'+
     '<td>'+(c.sO!==null?'S: '+c.sO.toLocaleString():'—')+'&nbsp;&nbsp;'+(c.eO!==null?'E: '+c.eO.toLocaleString():'')+'</td>'+
     '<td>'+(c.totalFuel>0?c.totalFuel.toFixed(2)+' L':'—')+'</td>'+
     '<td colspan="2">Distance: '+(c.dist!==null?c.dist.toLocaleString()+' km':'—')+'</td>'+
@@ -1224,10 +1360,10 @@ function downloadReportExcel(){
     ['MM ROADWAYS — MILEAGE CALCULATION REPORT'],
     ['Vehicle: '+reportData.vehicle+'   |   Generated: '+fmtDate(reportData.savedAt)+'   |   By: Vicky'],
     [],
-    ['#','Vehicle No','Date / Time','Vehicle ODO (km)','Fuel Ltr','Full Tank / Type','Source','Mark','Note']
+    ['#','Vehicle No','Driver Name','Date / Time','Vehicle ODO (km)','Fuel Ltr','Full Tank / Type','Source','Mark','Note']
   ];
   rows.forEach(function(r,idx){
-    data.push([idx+1,r.vehicleNo,r.payDate?fmtDate(r.payDate):(r.rawDate||'—'),r.odo>0?r.odo:0,r.fuel>0?+r.fuel.toFixed(2):0,
+    data.push([idx+1,r.vehicleNo,r.driverName||'',r.payDate?fmtDate(r.payDate):(r.rawDate||'—'),r.odo>0?r.odo:0,r.fuel>0?+r.fuel.toFixed(2):0,
       r._manual?'MANUAL':r.fullTank==='yes'?'Full Tank':'Partial',r._manual?'Manual Entry':'Excel Data',
       idx===si?'START ODO':idx===ei?'END ODO':(r._checked||r._manual)?'✓ Counted':'',r._manual?(r.note||''):'']);
   });
@@ -1237,20 +1373,21 @@ function downloadReportExcel(){
   data.push(['Fuel Manual Entry (L)',c.fuelManual>0?+c.fuelManual.toFixed(2):'—']);data.push(['Total Fuel (L)',c.totalFuel>0?+c.totalFuel.toFixed(2):'—']);
   data.push(['Mileage (km/L)',c.mil!==null?+c.mil.toFixed(2):'—']);data.push([]);data.push(['Generated by','Vicky']);data.push(['Company','MM Roadways']);
   var ws=XLSX.utils.aoa_to_sheet(data);
-  ws['!cols']=[{wch:4},{wch:16},{wch:24},{wch:16},{wch:10},{wch:14},{wch:14},{wch:14},{wch:22}];
+  ws['!cols']=[{wch:4},{wch:16},{wch:18},{wch:24},{wch:16},{wch:10},{wch:14},{wch:14},{wch:14},{wch:22}];
   if(ws['A1'])ws['A1'].s={font:{bold:true,sz:14,color:{rgb:'1A3A5C'}},alignment:{horizontal:'left'}};
-  ['A4','B4','C4','D4','E4','F4','G4','H4','I4'].forEach(function(cell){
+  ['A4','B4','C4','D4','E4','F4','G4','H4','I4','J4'].forEach(function(cell){
     if(ws[cell])ws[cell].s={font:{bold:true,color:{rgb:'FFFFFF'},sz:11},fill:{fgColor:{rgb:'1A3A5C'}},alignment:{horizontal:'center'}};
   });
   var ds=5;
   rows.forEach(function(r,idx){
     var er=ds+idx;var isS=idx===si,isE=idx===ei,isM=r._manual;
     var bg=isS?'E8F0FB':isE?'FFF3E0':isM?'FFFBF0':'FFFFFF';
-    ['A','B','C','D','E','F','G','H','I'].forEach(function(col){
+    ['A','B','C','D','E','F','G','H','I','J'].forEach(function(col){
       var addr=col+er;if(!ws[addr])ws[addr]={t:'z',v:'',s:{}};
       var fc=isS?'1A6FC4':isE?'E07B00':isM?'C07000':'1A2636';
-      if(col==='E')fc=isM?'C07000':r._checked?'1A9E5C':'1A6FC4';
-      ws[addr].s={font:{sz:11,color:{rgb:fc},bold:isS||isE||isM},fill:{fgColor:{rgb:bg}},alignment:{horizontal:col==='A'?'center':'left'}};
+      if(col==='C')fc='6B3FA0';
+      if(col==='F')fc=isM?'C07000':r._checked?'1A9E5C':'1A6FC4';
+      ws[addr].s={font:{sz:11,color:{rgb:fc},bold:isS||isE||isM||(col==='C'&&r.driverName)},fill:{fgColor:{rgb:bg}},alignment:{horizontal:col==='A'?'center':'left'}};
     });
   });
   XLSX.utils.book_append_sheet(wb,ws,'Fuel Records');
