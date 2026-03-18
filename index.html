@@ -369,6 +369,24 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
 }
 .nav-item.active .nav-num { color: rgba(255,255,255,0.6); }
 
+/* NEW badge for Trip Count */
+.nav-badge-new {
+  font-size: 8px; font-weight: 900;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+  padding: 2px 7px;
+  border-radius: 20px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(34,197,94,0.4);
+  animation: badge-pulse 2s ease-in-out infinite;
+}
+@keyframes badge-pulse {
+  0%,100% { box-shadow: 0 2px 6px rgba(34,197,94,0.4); }
+  50% { box-shadow: 0 2px 14px rgba(34,197,94,0.7); }
+}
+
 /* Sidebar footer */
 .sb-footer {
   border-top: 1px solid var(--sb-border);
@@ -662,35 +680,32 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
 /* ─────────────────────────────────────────────────────
    CREDENTIALS  →  Change username & password here
 ───────────────────────────────────────────────────── */
-// const CREDENTIALS = {
-//   username: 'mmroadways',
-//   password: 'mmr@2026'
-// };
-
 const USERS = [
   { username: 'mmroadways',  password: 'mmr@2026',   name: 'Vignesh',  role: 'Administrator' },
-  { username: 'prahar',    password: 'prahar@123',    name: 'Vicky',   role: 'Manager'       },
-  { username: '',     password: '',    name: '',   role: 'Driver'        },
-  { username: '',    password: '',    name: '',    role: 'Accountant'    },
+  { username: 'prahar',      password: 'prahar@123', name: 'Vicky',    role: 'Manager'       },
+  { username: '',            password: '',            name: '',         role: 'Driver'        },
+  { username: '',            password: '',            name: '',         role: 'Accountant'    },
   // Add more users here as needed...
 ];
 
 /* ─────────────────────────────────────────────────────
    MODULES  →  'file' must match your HTML filenames
-   All 10 HTML files must be in the SAME folder as
+   All HTML files must be in the SAME folder as
    this MM_Roadways_MAIN.html file.
 ───────────────────────────────────────────────────── */
 const MODULES = [
-  { icon:'🏠', title:'Dashboard',         sub:'Transport Overview',      file:'deepseek_html_20260202_9f48c3.html' },
-  { icon:'⛽', title:'Fuel Statement',    sub:'Reconciliation Report',   file:'All_Statement_Compare.html'         },
-  { icon:'👤', title:'Driver Salary',     sub:'Salary & Photo Records',  file:'Driver_Salary_Photo_deep.html'      },
-  { icon:'📋', title:'Daily Settlements', sub:'Vehicle Expense Tracker', file:'Daily_Settlements.html'             },
-  { icon:'🚗', title:'Idle Vehicles',     sub:'Idle Vehicle Monitor',    file:'Idle_Vehicle.html'                  },
-  { icon:'📍', title:'Mileage',           sub:'Mileage Calculation',     file:'MM_Roadways_Mileage.html'           },
-  { icon:'🔍', title:'Fuel Check',        sub:'Transaction Comparator',  file:'mmfuell.html'                       },
-  { icon:'📊', title:'Trip Sheet',        sub:'Pending Tripsheet',       file:'Pending_Tripsheet1.html'            },
-  { icon:'🏷️', title:'FASTag',            sub:'FASTag Dashboard',        file:'Fastag.html'                        },
-  { icon:'🔄', title:'File Converter',    sub:'XLS / CSV / JSON / PDF',  file:'All_File_Format.html'               }
+  { icon:'🏠', title:'Dashboard',         sub:'Transport Overview',      file:'deepseek_html_20260202_9f48c3.html', isNew: false },
+  { icon:'⛽', title:'Fuel Statement',    sub:'Reconciliation Report',   file:'All_Statement_Compare.html',         isNew: false },
+  { icon:'👤', title:'Driver Salary',     sub:'Salary & Photo Records',  file:'Driver_Salary_Photo_deep.html',      isNew: false },
+  { icon:'📋', title:'Daily Settlements', sub:'Vehicle Expense Tracker', file:'Daily_Settlements.html',             isNew: false },
+  { icon:'🚗', title:'Idle Vehicles',     sub:'Idle Vehicle Monitor',    file:'Idle_Vehicle.html',                  isNew: false },
+  { icon:'📍', title:'Mileage',           sub:'Mileage Calculation',     file:'MM_Roadways_Mileage.html',           isNew: false },
+  { icon:'🔍', title:'Fuel Check',        sub:'Transaction Comparator',  file:'mmfuell.html',                       isNew: false },
+  { icon:'📊', title:'Trip Sheet',        sub:'Pending Tripsheet',       file:'Pending_Tripsheet1.html',            isNew: false },
+  { icon:'🏷️', title:'FASTag',            sub:'FASTag Dashboard',        file:'Fastag.html',                        isNew: false },
+  { icon:'🔄', title:'File Converter',    sub:'XLS / CSV / JSON / PDF',  file:'All_File_Format.html',               isNew: false },
+  { icon:'🔢', title:'Trip Count',        sub:'Vehicle Trip Counter',    file:'Trip_Count.html',                    isNew: true  },
+  { icon:'📅', title:'Month Trip Count',   sub:'Monthly Vehicle Summary',   file:'Tripcount.html',                     isNew: true  },
 ];
 
 /* ─────────────────────────────────────────────────────
@@ -770,7 +785,10 @@ function initApp() {
           <div class="nav-title">${mod.title}</div>
           <div class="nav-sub">${mod.sub}</div>
         </div>
-        <span class="nav-num">${String(i + 1).padStart(2, '0')}</span>
+        ${mod.isNew
+          ? `<span class="nav-badge-new">NEW</span>`
+          : `<span class="nav-num">${String(i + 1).padStart(2, '0')}</span>`
+        }
       `;
       el.addEventListener('click', () => { activate(i); closeSidebar(); });
       navList.appendChild(el);
