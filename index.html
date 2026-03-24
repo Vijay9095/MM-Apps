@@ -35,6 +35,12 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
   --green:        #22c55e;
   --green-soft:   #f0fdf4;
 
+  /* Red accent for rejected */
+  --red:          #ef4444;
+  --red-soft:     #fef2f2;
+  --red-grad:     linear-gradient(135deg, #ef4444 0%, #f87171 100%);
+  --red-glow:     rgba(239,68,68,0.25);
+
   /* Page / content */
   --page-bg:      #f1f5f9;
   --card-bg:      #ffffff;
@@ -70,7 +76,6 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
   overflow: hidden;
 }
 
-/* Animated background blobs */
 #loginScreen::before {
   content: '';
   position: absolute;
@@ -152,22 +157,6 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
   color: var(--txt-muted);
   margin-bottom: 20px;
   font-weight: 500;
-}
-
-/* Hint badge */
-.hint-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--blue-soft);
-  border: 1.5px solid #bfdbfe;
-  border-radius: 9px;
-  padding: 8px 14px;
-  font-size: 11.5px;
-  color: #1d4ed8;
-  font-weight: 700;
-  margin-bottom: 20px;
-  line-height: 1.5;
 }
 
 .form-group { margin-bottom: 16px; }
@@ -334,6 +323,11 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
   border-color: transparent;
   box-shadow: 0 4px 18px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.2);
 }
+/* Red active state for Rejected Form module */
+.nav-item.active.nav-rejected {
+  background: var(--red-grad);
+  box-shadow: 0 4px 18px var(--red-glow), inset 0 1px 0 rgba(255,255,255,0.2);
+}
 .nav-item.active::before {
   content: '';
   position: absolute; left: -8px;
@@ -342,6 +336,10 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
   background: var(--accent2);
   border-radius: 0 3px 3px 0;
   box-shadow: 0 0 8px var(--accent-glow);
+}
+.nav-item.active.nav-rejected::before {
+  background: #fca5a5;
+  box-shadow: 0 0 8px var(--red-glow);
 }
 .nav-icon { font-size: 19px; width: 26px; text-align: center; flex-shrink: 0; transition: transform 0.2s; }
 .nav-item:hover .nav-icon { transform: scale(1.18); }
@@ -369,7 +367,7 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
 }
 .nav-item.active .nav-num { color: rgba(255,255,255,0.6); }
 
-/* NEW badge for Trip Count */
+/* NEW badge */
 .nav-badge-new {
   font-size: 8px; font-weight: 900;
   background: linear-gradient(135deg, #22c55e, #16a34a);
@@ -502,6 +500,109 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
 .module-frame.active { display: block; }
 .module-frame.visible { opacity: 1; }
 
+/* ══════════════════════════════════════════
+   EXTERNAL LINK LANDING PAGE
+══════════════════════════════════════════ */
+.ext-landing {
+  position: absolute; inset: 0;
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #fff5f5 0%, #fef2f2 50%, #fff0f0 100%);
+  opacity: 0; transition: opacity 0.28s ease;
+  padding: 30px;
+}
+.ext-landing.active { display: flex; }
+.ext-landing.visible { opacity: 1; }
+
+.ext-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 48px 44px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 8px 40px rgba(239,68,68,0.12), 0 2px 8px rgba(0,0,0,0.06);
+  border: 1.5px solid #fecaca;
+  text-align: center;
+  animation: cardPop 0.4s cubic-bezier(.34,1.4,.64,1) both;
+}
+@keyframes cardPop {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.ext-icon-wrap {
+  width: 80px; height: 80px;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 2px solid #fecaca;
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px;
+  margin: 0 auto 20px;
+  box-shadow: 0 4px 20px rgba(239,68,68,0.18);
+  animation: iconFloat 3s ease-in-out infinite;
+}
+@keyframes iconFloat {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.ext-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 26px; font-weight: 700;
+  color: var(--txt-dark);
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.ext-sub {
+  font-size: 13px; color: var(--txt-muted);
+  font-weight: 500; margin-bottom: 28px;
+  line-height: 1.6;
+}
+
+.ext-url-box {
+  display: flex; align-items: center; gap: 10px;
+  background: #f8fafc;
+  border: 1.5px solid #fecaca;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  text-align: left;
+}
+.ext-url-icon { font-size: 18px; flex-shrink: 0; }
+.ext-url-text {
+  font-size: 12px; font-weight: 700;
+  color: #dc2626;
+  word-break: break-all;
+  flex: 1;
+  font-family: 'Rajdhani', sans-serif;
+  letter-spacing: 0.3px;
+}
+
+.btn-open-ext {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 32px;
+  background: var(--red-grad);
+  border: none; border-radius: 12px;
+  color: #fff;
+  font-size: 15px; font-weight: 800;
+  font-family: 'Nunito', sans-serif;
+  cursor: pointer; letter-spacing: 0.4px;
+  box-shadow: 0 4px 24px var(--red-glow);
+  transition: transform 0.18s, box-shadow 0.18s;
+  text-decoration: none;
+}
+.btn-open-ext:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px var(--red-glow);
+}
+.btn-open-ext:active { transform: translateY(0); }
+
+.ext-note {
+  font-size: 11px; color: var(--txt-muted);
+  font-weight: 500; margin-top: 18px; line-height: 1.7;
+}
+.ext-note strong { color: var(--red); }
+
 /* Loader */
 .loader {
   position: absolute; inset: 0;
@@ -576,10 +677,6 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
       <div class="login-brand">MM Roadways</div>
       <div class="login-tagline">Management Suite</div>
     </div>
-
-    <!-- <div class="hint-badge">
-      🔐 &nbsp;User: <strong>mmroadways</strong> &nbsp;|&nbsp; Pass: <strong>mmr@2026</strong>
-    </div> -->
 
     <div class="login-heading">Welcome Back! 👋</div>
     <div class="login-desc">Please sign in to access your dashboard.</div>
@@ -678,34 +775,34 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
 ══════════════════════════════════════════ -->
 <script>
 /* ─────────────────────────────────────────────────────
-   CREDENTIALS  →  Change username & password here
+   CREDENTIALS
 ───────────────────────────────────────────────────── */
 const USERS = [
   { username: 'mmroadways',  password: 'mmr@2026',   name: 'Vignesh',  role: 'Administrator' },
   { username: 'prahar',      password: 'prahar@123', name: 'Vicky',    role: 'Manager'       },
   { username: '',            password: '',            name: '',         role: 'Driver'        },
   { username: '',            password: '',            name: '',         role: 'Accountant'    },
-  // Add more users here as needed...
 ];
 
 /* ─────────────────────────────────────────────────────
-   MODULES  →  'file' must match your HTML filenames
-   All HTML files must be in the SAME folder as
-   this MM_Roadways_MAIN.html file.
+   MODULES
+   type: 'file'    → loads local HTML file in iframe
+   type: 'ext'     → shows external link landing page
 ───────────────────────────────────────────────────── */
 const MODULES = [
-  { icon:'🏠', title:'Dashboard',         sub:'Transport Overview',      file:'deepseek_html_20260202_9f48c3.html', isNew: false },
-  { icon:'⛽', title:'Fuel Statement',    sub:'Reconciliation Report',   file:'All_Statement_Compare.html',         isNew: false },
-  { icon:'👤', title:'Driver Salary',     sub:'Salary & Photo Records',  file:'Driver_Salary_Photo_deep.html',      isNew: false },
-  { icon:'📋', title:'Daily Settlements', sub:'Vehicle Expense Tracker', file:'Daily_Settlements.html',             isNew: false },
-  { icon:'🚗', title:'Idle Vehicles',     sub:'Idle Vehicle Monitor',    file:'Idle_Vehicle.html',                  isNew: false },
-  { icon:'📍', title:'Mileage',           sub:'Mileage Calculation',     file:'MM_Roadways_Mileage.html',           isNew: false },
-  { icon:'🔍', title:'Fuel Check',        sub:'Transaction Comparator',  file:'mmfuell.html',                       isNew: false },
-  { icon:'📊', title:'Trip Sheet',        sub:'Pending Tripsheet',       file:'Pending_Tripsheet1.html',            isNew: false },
-  { icon:'🏷️', title:'FASTag',            sub:'FASTag Dashboard',        file:'Fastag.html',                        isNew: false },
-  { icon:'🔄', title:'File Converter',    sub:'XLS / CSV / JSON / PDF',  file:'All_File_Format.html',               isNew: false },
-  { icon:'🔢', title:'Trip Count',        sub:'Vehicle Trip Counter',    file:'Trip_Count.html',                    isNew: true  },
-  { icon:'📅', title:'Month Trip Count',   sub:'Monthly Vehicle Summary',   file:'Tripcount.html',                     isNew: true  },
+  { icon:'🏠', title:'Dashboard',         sub:'Transport Overview',      type:'file', file:'deepseek_html_20260202_9f48c3.html',  isNew: false },
+  { icon:'⛽', title:'Fuel Statement',    sub:'Reconciliation Report',   type:'file', file:'All_Statement_Compare.html',           isNew: false },
+  { icon:'👤', title:'Driver Salary',     sub:'Salary & Photo Records',  type:'file', file:'Driver_Salary_Photo_deep.html',        isNew: false },
+  { icon:'📋', title:'Daily Settlements', sub:'Vehicle Expense Tracker', type:'file', file:'Daily_Settlements.html',               isNew: false },
+  { icon:'🚗', title:'Idle Vehicles',     sub:'Idle Vehicle Monitor',    type:'file', file:'Idle_Vehicle.html',                    isNew: false },
+  { icon:'📍', title:'Mileage',           sub:'Mileage Calculation',     type:'file', file:'MM_Roadways_Mileage.html',             isNew: false },
+  { icon:'🔍', title:'Fuel Check',        sub:'Transaction Comparator',  type:'file', file:'mmfuell.html',                         isNew: false },
+  { icon:'📊', title:'Trip Sheet',        sub:'Pending Tripsheet',       type:'file', file:'Pending_Tripsheet1.html',              isNew: false },
+  { icon:'🏷️', title:'FASTag',            sub:'FASTag Dashboard',        type:'file', file:'Fastag.html',                         isNew: false },
+  { icon:'🔄', title:'File Converter',    sub:'XLS / CSV / JSON / PDF',  type:'file', file:'All_File_Format.html',                 isNew: false },
+  { icon:'🔢', title:'Trip Count',        sub:'Vehicle Trip Counter',    type:'file', file:'Trip_Count.html',                     isNew: true  },
+  { icon:'📅', title:'Month Trip Count',  sub:'Monthly Vehicle Summary', type:'file', file:'Tripcount.html',                      isNew: true  },
+  { icon:'❌', title:'Rejected Form',     sub:'Settlement Rejected',     type:'ext',  url:'https://mmsettlementrejected.vercel.app/', isNew: true },
 ];
 
 /* ─────────────────────────────────────────────────────
@@ -737,7 +834,6 @@ function doLogin() {
   }
 }
 
-// Enter key support on login
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') {
     doLogin();
@@ -762,11 +858,10 @@ function doLogout() {
    APP INIT
 ───────────────────────────────────────────────────── */
 let activeIdx = -1;
-let iframeMap = {};
+let frameMap  = {};
 let appReady  = false;
 
 function initApp() {
-  // Set date chip
   const d = new Date();
   document.getElementById('dateBadge').textContent =
     d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
@@ -778,7 +873,7 @@ function initApp() {
     const navList = document.getElementById('navList');
     MODULES.forEach((mod, i) => {
       const el = document.createElement('div');
-      el.className = 'nav-item';
+      el.className = 'nav-item' + (mod.type === 'ext' ? ' nav-rejected' : '');
       el.innerHTML = `
         <span class="nav-icon">${mod.icon}</span>
         <div class="nav-info">
@@ -794,15 +889,40 @@ function initApp() {
       navList.appendChild(el);
     });
 
-    // Create iframes
+    // Create frames / landing pages
     const area = document.getElementById('contentArea');
     MODULES.forEach((mod, i) => {
-      const fr = document.createElement('iframe');
-      fr.className = 'module-frame';
-      fr.setAttribute('sandbox',
-        'allow-scripts allow-same-origin allow-forms allow-modals allow-downloads allow-popups');
-      area.appendChild(fr);
-      iframeMap[i] = { el: fr, loaded: false };
+      if (mod.type === 'file') {
+        const fr = document.createElement('iframe');
+        fr.className = 'module-frame';
+        fr.setAttribute('sandbox',
+          'allow-scripts allow-same-origin allow-forms allow-modals allow-downloads allow-popups');
+        area.appendChild(fr);
+        frameMap[i] = { type: 'file', el: fr, loaded: false };
+      } else {
+        // External link landing page
+        const div = document.createElement('div');
+        div.className = 'ext-landing';
+        div.innerHTML = `
+          <div class="ext-card">
+            <div class="ext-icon-wrap">❌</div>
+            <div class="ext-title">Rejected Form</div>
+            <div class="ext-sub">Settlement Rejected — View and manage all rejected settlement forms from the portal below.</div>
+            <div class="ext-url-box">
+              <span class="ext-url-icon">🔗</span>
+              <span class="ext-url-text">${mod.url}</span>
+            </div>
+            <a class="btn-open-ext" href="${mod.url}" target="_blank" rel="noopener noreferrer">
+              🚀 &nbsp; Open Rejected Form Portal
+            </a>
+            <div class="ext-note">
+              <strong>Note:</strong> This will open in a new tab. All operations (view, manage, submit) will happen inside the portal page.
+            </div>
+          </div>
+        `;
+        area.appendChild(div);
+        frameMap[i] = { type: 'ext', el: div };
+      }
     });
   }
 
@@ -822,38 +942,45 @@ function activate(idx) {
     el.classList.toggle('active', i === idx);
   });
 
-  // Hide previous frame
+  // Hide previous
   if (activeIdx >= 0) {
-    iframeMap[activeIdx].el.classList.remove('visible', 'active');
+    const prev = frameMap[activeIdx];
+    prev.el.classList.remove('visible', 'active');
   }
 
   // Update topbar
-  document.getElementById('tbIcon').textContent    = mod.icon;
-  document.getElementById('tbName').textContent    = mod.title;
-  document.getElementById('tbSub').textContent     = mod.sub;
+  document.getElementById('tbIcon').textContent     = mod.icon;
+  document.getElementById('tbName').textContent     = mod.title;
+  document.getElementById('tbSub').textContent      = mod.sub;
   document.getElementById('loaderIcon').textContent = mod.icon;
   document.getElementById('loaderSub').textContent  = mod.title + ' — ' + mod.sub;
 
-  // Show loader
-  document.getElementById('loader').classList.remove('hide');
-
   activeIdx = idx;
-  const fo = iframeMap[idx];
-  fo.el.classList.add('active');
+  const fo = frameMap[idx];
 
-  if (!fo.loaded) {
-    fo.el.src = mod.file;
-    fo.el.onload = () => { fo.loaded = true; revealFrame(idx); };
-    // Fallback in case onload doesn't fire (file:// protocol quirks)
-    setTimeout(() => { if (!fo.loaded) { fo.loaded = true; revealFrame(idx); } }, 3500);
+  if (fo.type === 'ext') {
+    // Show landing page instantly — no loader needed
+    document.getElementById('loader').classList.add('hide');
+    fo.el.classList.add('active');
+    setTimeout(() => fo.el.classList.add('visible'), 30);
   } else {
-    setTimeout(() => revealFrame(idx), 80);
+    // Show loader then load iframe
+    document.getElementById('loader').classList.remove('hide');
+    fo.el.classList.add('active');
+
+    if (!fo.loaded) {
+      fo.el.src = mod.file;
+      fo.el.onload = () => { fo.loaded = true; revealFrame(idx); };
+      setTimeout(() => { if (!fo.loaded) { fo.loaded = true; revealFrame(idx); } }, 3500);
+    } else {
+      setTimeout(() => revealFrame(idx), 80);
+    }
   }
 }
 
 function revealFrame(idx) {
   document.getElementById('loader').classList.add('hide');
-  iframeMap[idx].el.classList.add('visible');
+  frameMap[idx].el.classList.add('visible');
 }
 
 /* ─────────────────────────────────────────────────────
