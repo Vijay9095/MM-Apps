@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>MMROADWAYS — Vehicle Expense Tracker</title>
+<style>
+ body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;margin:0;background:linear-gradient(to bottom right,#eef3ff,#e6edff);} 
+ .container{max-width:1200px;margin:40px auto;padding:20px;} 
+ .brand-header{text-align:center;margin-bottom:30px;} 
+ .brand-name{font-size:42px;font-weight:800;color:#2563eb;margin:0;text-shadow:2px 2px 4px rgba(0,0,0,0.1);letter-spacing:1px;} 
+ .brand-subtitle{font-size:18px;color:#4f46e5;margin-top:5px;font-weight:500;} 
+ h1{font-size:34px;margin:0 0 10px;color:#111;text-align:center;} 
+ .sub{color:#555;margin-bottom:30px;text-align:center;} 
+ .card{background:#fff;border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,0.08);margin-bottom:28px;padding:0;} 
+ .card-header{padding:16px 22px;background:linear-gradient(90deg,#2563eb,#4f46e5);color:#fff;border-radius:14px 14px 0 0;font-size:18px;font-weight:600;} 
+ .card-body{padding:22px;} 
+ label{font-weight:600;color:#444;display:block;margin-bottom:6px;} 
+ input[type=date], input[type=text], input[type=number]{padding:8px 10px;border:2px solid #cbd5e1;border-radius:8px;font-size:15px;width:100%;box-sizing:border-box;margin-bottom:12px;}
+ .form-row{display:flex;gap:15px;flex-wrap:wrap;}
+ .form-group{flex:1;min-width:150px;}
+ .dropzone{border:2px dashed #cbd5e1;border-radius:12px;padding:40px;text-align:center;background:#f8fafc;transition:0.2s;} 
+ .dropzone:hover{border-color:#2563eb;background:#eff6ff;} 
+ button{cursor:pointer;border:none;border-radius:8px;padding:10px 18px;font-weight:600;} 
+ .btn-primary{background:#2563eb;color:#fff;margin-top:5px;} 
+ .btn-primary:hover{background:#1d4ed8;} 
+ .btn-secondary{background:#e2e8f0;color:#334155;} 
+ .btn-success{background:#10b981;color:#fff;}
+ .btn-success:hover{background:#059669;}
+ table{width:100%;border-collapse:collapse;margin-top:18px;font-size:14px;background:white;} 
+ th,td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left;} 
+ th{background:#f1f5f9;position:sticky;top:0;} 
+ .preview-area{max-height:420px;overflow:auto;} 
+ .status{font-size:14px;color:#444;margin-top:4px;} 
+ .export-buttons{display:flex;gap:12px;flex-wrap:wrap;} 
+ .remark-textbox{width:100%;min-width:150px;padding:6px 10px;border:2px solid #dc3545;border-radius:6px;font-size:13px;background-color:#fff3cd;color:#856404;font-weight:500;outline:none;box-sizing:border-box;} 
+ .remark-textbox:focus{border-color:#ff6b7c;box-shadow:0 0 0 3px rgba(220,53,69,0.1);} 
+ .pending-row{background-color:#fff9db !important;} 
+ .received-row{background-color:#e8f5e9 !important;} 
+ .count-badge{padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600;margin:0 8px;} 
+ .pending-badge{background:#fef3c7;color:#92400e;border:1px solid #fbbf24;} 
+ .verified-badge{background:#d1fae5;color:#065f46;border:1px solid #10b981;}
+ .unchecked-badge{background:#fff3cd;color:#856404;border:1px solid #dc3545;}
+ .remarks-header{background:#fff3cd !important;color:#856404;font-weight:600;}
+ .entry-table th{background:#e0f2fe;color:#0369a1;}
+ .remove-btn{color:#ef4444;cursor:pointer;font-weight:bold;padding:2px 6px;border:1px solid #fecaca;background:#fee2e2;border-radius:4px;}
+ .remove-btn:hover{background:#fecaca;}
+ 
+ /* Custom styles for centering */
+ .center-input{margin:0 auto;display:block;text-align:center;}
+ .title-input{font-size:18px;font-weight:600;border:2px solid #2563eb;color:#111;padding:10px;text-align:center;}
+</style>
+</head>
+<body>
+<div class="container">
+ <div class="brand-header">
+   <div class="brand-name">MMROADWAYS</div>
+   <div class="brand-subtitle">TripSheet</div>
+ </div>
+ 
+ <div class="card">
+   <div class="card-header">Report Details</div>
+   <div class="card-body" style="text-align:center;">
+     <div style="max-width:400px;margin:0 auto 20px auto;">
+       <label style="text-align:left;">Report Date:</label>
+       <input type="date" id="reportDate" class="center-input" />
+     </div>
+     <div style="max-width:400px;margin:0 auto;">
+       <label style="text-align:left;">Report Title (Shows on Image):</label>
+       <input type="text" id="reportTitle" class="title-input center-input" placeholder="Enter Title Here" />
+     </div>
+   </div>
+ </div>
+
+ <!-- Module 1: Expense Bill -->
+ <div class="card">
+   <div class="card-header">Today Vehicle Settlement Expense Bill</div>
+   <div class="card-body">
+     <div class="form-row">
+       <div class="form-group">
+         <label>Vehicle No</label>
+         <input type="text" id="expVehicle" placeholder="Enter Vehicle Number" />
+       </div>
+     </div>
+     <button class="btn-success" onclick="addExpenseEntry()">Add Entry</button>
+     <button class="btn-primary" onclick="exportExpenseImage()">Download Image</button>
+     <div class="preview-area" id="expensePreviewArea" style="margin-top:15px;"></div>
+   </div>
+ </div>
+
+ <!-- Module 2: Received Vehicles -->
+ <div class="card">
+   <div class="card-header">Today's Received Vehicles</div>
+   <div class="card-body">
+     <div class="form-row">
+       <div class="form-group">
+         <label>Vehicle No</label>
+         <input type="text" id="recVehicle" placeholder="Enter Vehicle Number" />
+       </div>
+     </div>
+     <button class="btn-success" onclick="addReceivedEntry()">Add Entry</button>
+     <button class="btn-primary" onclick="exportReceivedImage()">Download Image</button>
+     <div class="preview-area" id="receivedPreviewArea" style="margin-top:15px;"></div>
+   </div>
+ </div>
+
+ <!-- Main Data Module -->
+ <div class="card">
+   <div class="card-header">Today Settlement Report (Main Data)</div>
+   <div class="card-body">
+     <div class="dropzone" id="dropzone">
+       <div style="font-size:16px;font-weight:600;color:#333;margin-bottom:6px;">Drag & Drop Main Excel File Here</div>
+       <div style="color:#666;font-size:14px;margin-bottom:14px;">Comparison will happen automatically based on Vehicle No.</div>
+       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" multiple style="display:none;" />
+       <button class="btn-primary" id="browseBtn">Select Main File</button>
+     </div>
+   </div>
+ </div>
+
+ <div class="card">
+   <div class="card-header">Settlement Preview & Export</div>
+   <div class="card-body">
+     <div class="status" id="status">No main data loaded.</div>
+     <div class="preview-area" id="previewArea"></div>
+     <br>
+     <div class="export-buttons" style="justify-content:center;">
+       <button class="btn-primary" id="exportXlsxBtn" disabled>Export XLSX</button>
+       <button class="btn-primary" id="exportCsvBtn" disabled>Export CSV</button>
+       <button class="btn-primary" id="exportPngBtn" disabled>Export PNG</button>
+     </div>
+   </div>
+ </div>
+</div>
+
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+// --- Global State ---
+let files=[], rows=[], processedRows=[];
+let remarkValues = {}; 
+let receivedValues = {}; 
+let uncheckedRemarkValues = {};
+
+let expenseEntries = [];
+let receivedEntries = [];
+
+// --- DOM Elements ---
+const fileInput=document.getElementById("fileInput");
+const browseBtn=document.getElementById("browseBtn");
+const dropzone=document.getElementById("dropzone");
+const previewArea=document.getElementById("previewArea");
+const statusEl=document.getElementById("status");
+const exportXlsxBtn=document.getElementById("exportXlsxBtn");
+const exportCsvBtn=document.getElementById("exportCsvBtn");
+const exportPngBtn=document.getElementById("exportPngBtn");
+
+// --- Event Listeners ---
+browseBtn.onclick=()=>fileInput.click();
+dropzone.onclick=()=>fileInput.click();
+dropzone.ondragover=e=>{e.preventDefault();dropzone.style.background="#e0f2fe"};
+dropzone.ondragleave=()=>dropzone.style.background="#f8fafc";
+dropzone.ondrop=e=>{e.preventDefault();dropzone.style.background="#f8fafc";handleFiles(e.dataTransfer.files)};
+fileInput.onchange=e=>handleFiles(e.target.files);
+
+// --- New Module Functions ---
+
+function addExpenseEntry() {
+  const vehicle = document.getElementById('expVehicle').value.trim();
+  if(!vehicle) { alert("Please enter a Vehicle Number"); return; }
+  expenseEntries.push({ vehicle });
+  renderExpenseTable();
+  document.getElementById('expVehicle').value = '';
+  if(rows.length > 0) processAndRenderMain();
+}
+
+function addReceivedEntry() {
+  const vehicle = document.getElementById('recVehicle').value.trim();
+  if(!vehicle) { alert("Please enter a Vehicle Number"); return; }
+  receivedEntries.push({ vehicle });
+  renderReceivedTable();
+  document.getElementById('recVehicle').value = '';
+  if(rows.length > 0) processAndRenderMain();
+}
+
+function renderExpenseTable() {
+  const area = document.getElementById('expensePreviewArea');
+  if(expenseEntries.length === 0) { area.innerHTML = ''; return; }
+  let html = `<table class="entry-table"><thead><tr><th>Vehicle No</th><th>Action</th></tr></thead><tbody>`;
+  expenseEntries.forEach((e, i) => {
+    html += `<tr><td>${e.vehicle}</td><td><span class="remove-btn" onclick="removeExpense(${i})">X</span></td></tr>`;
+  });
+  html += '</tbody></table>';
+  area.innerHTML = html;
+}
+
+function removeExpense(index) {
+  expenseEntries.splice(index, 1);
+  renderExpenseTable();
+  if(rows.length > 0) processAndRenderMain();
+}
+
+function renderReceivedTable() {
+  const area = document.getElementById('receivedPreviewArea');
+  if(receivedEntries.length === 0) { area.innerHTML = ''; return; }
+  let html = `<table class="entry-table"><thead><tr><th>Vehicle No</th><th>Action</th></tr></thead><tbody>`;
+  receivedEntries.forEach((e, i) => {
+    html += `<tr><td>${e.vehicle}</td><td><span class="remove-btn" onclick="removeReceived(${i})">X</span></td></tr>`;
+  });
+  html += '</tbody></table>';
+  area.innerHTML = html;
+}
+
+function removeReceived(index) {
+  receivedEntries.splice(index, 1);
+  renderReceivedTable();
+  if(rows.length > 0) processAndRenderMain();
+}
+
+// Export Images for New Modules
+function exportExpenseImage() {
+  if(expenseEntries.length === 0) { alert("No expense data to export"); return; }
+  exportTableImage(expenseEntries, 'Today Vehicle Settlement Expense Bill');
+}
+
+function exportReceivedImage() {
+  if(receivedEntries.length === 0) { alert("No received data to export"); return; }
+  exportTableImage(receivedEntries, 'Today\'s Received Vehicles');
+}
+
+function exportTableImage(data, title) {
+  const date = document.getElementById("reportDate").value || "No Date";
+  const wrapper = document.createElement('div');
+  wrapper.style.background = "white";
+  wrapper.style.padding = "20px";
+  wrapper.style.fontFamily = "system-ui";
+  
+  let tableHTML = `<table style='width:100%;border-collapse:collapse;font-size:14px;'><thead><tr>`;
+  Object.keys(data[0]).forEach(k => {
+    tableHTML += `<th style='padding:8px;border-bottom:2px solid #0369a1;background:#e0f2fe;color:#0369a1;'>${k}</th>`;
+  });
+  tableHTML += `</tr></thead><tbody>`;
+  data.forEach(row => {
+    tableHTML += `<tr>`;
+    Object.values(row).forEach(val => {
+      tableHTML += `<td style='padding:8px;border-bottom:1px solid #e2e8f0;'>${val}</td>`;
+    });
+    tableHTML += `</tr>`;
+  });
+  tableHTML += `</tbody></table>`;
+
+  wrapper.innerHTML = `
+    <div style="text-align:center;margin-bottom:15px;">
+      <div style="font-size:24px;font-weight:800;color:#2563eb;">MMROADWAYS</div>
+      <div style="font-size:18px;font-weight:600;color:#333;margin-top:5px;">${title}</div>
+      <div style="font-size:14px;color:#666;">Date: ${date}</div>
+    </div>
+    ${tableHTML}
+  `;
+  document.body.appendChild(wrapper);
+  
+  html2canvas(wrapper, { scale: 2 }).then(canvas => {
+    let a = document.createElement('a');
+    a.href = canvas.toDataURL("image/png");
+    a.download = `MMROADWAYS_${title.replace(/\s/g, '_')}.png`;
+    a.click();
+    wrapper.remove();
+  });
+}
+
+// --- Main Data Functions ---
+
+async function handleFiles(list){
+ files=[...list];
+ rows=[];
+ processedRows=[];
+ remarkValues = {};
+ receivedValues = {};
+ uncheckedRemarkValues = {};
+ previewArea.innerHTML=""; 
+ statusEl.textContent="Loading...";
+ await load();
+}
+
+async function load(){
+ try {
+   let all=[];
+   for(const f of files){
+     const data=await f.arrayBuffer();
+     const wb=XLSX.read(data,{type:'array'});
+     wb.SheetNames.forEach(s=>{
+       let sh=XLSX.utils.sheet_to_json(wb.Sheets[s],{defval:''});
+       if(sh.length) sh.forEach(r=>all.push(r));
+     });
+   }
+   rows = all;
+   processAndRenderMain();
+   updateButtons();
+ } catch(err){
+   statusEl.textContent="Error loading file";
+   console.error(err);
+ }
+}
+
+function processAndRenderMain() {
+  processedRows = processRows(rows);
+  const pendingCount = countStatus('pending');
+  const verifiedCount = countStatus('verified');
+  statusEl.textContent=`Loaded ${rows.length} rows. Pending: ${pendingCount}, Verified: ${verifiedCount}`;
+  renderPreview();
+}
+
+function processRows(allRows) {
+  return allRows.map((row, index) => {
+    const newRow = {...row};
+    const statusKey = Object.keys(row).find(key => key.toLowerCase() === 'status');
+    const remarkKey = Object.keys(row).find(key => key.toLowerCase() === 'remarks');
+    const vehicleKey = Object.keys(row).find(key => key.toLowerCase().includes('vehicle'));
+    
+    // Logic for auto-marking received
+    if(vehicleKey && receivedEntries.length > 0) {
+      const mainVehicle = String(row[vehicleKey]).trim().toLowerCase();
+      const isReceivedManually = receivedEntries.some(e => String(e.vehicle).trim().toLowerCase() === mainVehicle);
+      if(isReceivedManually) {
+        receivedValues[index] = true;
+        if(statusKey) newRow[statusKey] = 'Received';
+        if(remarkKey) newRow[remarkKey] = 'Received via Entry';
+        else newRow['Remarks'] = 'Received via Entry';
+      }
+    }
+
+    // Logic for marking expense
+    if(vehicleKey && expenseEntries.length > 0) {
+       const mainVehicle = String(row[vehicleKey]).trim().toLowerCase();
+       const hasExpense = expenseEntries.some(e => String(e.vehicle).trim().toLowerCase() === mainVehicle);
+       if(hasExpense) {
+         if(remarkKey && !newRow[remarkKey]) newRow[remarkKey] = 'Has Expense Bill';
+         else if(!remarkKey && !newRow['Remarks']) newRow['Remarks'] = 'Has Expense Bill';
+       }
+    }
+    
+    if (remarkKey) {
+       if(!newRow[remarkKey]) newRow[remarkKey] = remarkValues[index] || '';
+    } else {
+       if(!newRow['Remarks']) newRow['Remarks'] = remarkValues[index] || '';
+    }
+    return newRow;
+  });
+}
+
+function countStatus(statusType) {
+  let count = 0;
+  processedRows.forEach(row => {
+    const statusKey = Object.keys(row).find(key => key.toLowerCase() === 'status');
+    if (statusKey && String(row[statusKey]).toLowerCase() === statusType.toLowerCase()) count++;
+  });
+  return count;
+}
+
+function renderPreview(){
+ if(!processedRows.length){ previewArea.innerHTML=""; return; }
+ const allColumns = new Set();
+ processedRows.forEach(row => { Object.keys(row).forEach(key => allColumns.add(key)); });
+ allColumns.add('Remarks');
+ 
+ // Remove 'Received' column from display
+ const cols = Array.from(allColumns).filter(c => c.toLowerCase() !== 'received');
+
+ cols.sort((a, b) => {
+   if (a.toLowerCase() === 'remarks') return 1;
+   if (b.toLowerCase() === 'remarks') return -1;
+   return 0;
+ });
+ 
+ let html="<table><thead><tr>";
+ cols.forEach(c => {
+   if (c.toLowerCase() === 'remarks') html += `<th class="remarks-header">${c}</th>`;
+   else html += `<th>${c}</th>`;
+ });
+ html += "</tr></thead><tbody>";
+ 
+ processedRows.slice(0,300).forEach((r, rowIndex)=>{
+   const statusKey = Object.keys(r).find(key => key.toLowerCase() === 'status');
+   const statusValue = statusKey ? String(r[statusKey]).toLowerCase() : '';
+   const isPending = statusValue === 'pending';
+   const isReceived = statusValue === 'received';
+   
+   let rowClass = '';
+   if (isReceived) rowClass = 'class="received-row"';
+   else if (isPending) rowClass = 'class="pending-row"';
+   
+   html += `<tr ${rowClass}>` + cols.map(c=>{
+     const cellValue = r[c] ?? '';
+     if (c.toLowerCase() === 'remarks' && isPending && !isReceived) {
+       return `<td><input type="text" class="remark-textbox" value="${remarkValues[rowIndex] || 'Please settle'}" placeholder="Enter remarks..." onchange="updateRemarkValue(${rowIndex}, this.value)"></td>`;
+     } else if (c.toLowerCase() === 'remarks' && isReceived) {
+       return `<td style="background-color:#e8f5e9; color:#2e7d32; font-weight:500;">${remarkValues[rowIndex] || cellValue || 'Settled'}</td>`;
+     } else if (c.toLowerCase() === 'remarks' && isPending) {
+       return `<td style="background-color:#fff3cd; color:#856404; font-weight:500;">${remarkValues[rowIndex] || 'Please settle'}</td>`;
+     } else return `<td>${cellValue}</td>`;
+   }).join('') + "</tr>";
+ });
+ html += "</tbody></table>";
+ previewArea.innerHTML=html;
+}
+
+function updateRemarkValue(rowIndex, value) { remarkValues[rowIndex] = value; }
+
+function updateButtons(){
+ const ok=processedRows.length>0;
+ exportXlsxBtn.disabled=!ok;
+ exportCsvBtn.disabled=!ok;
+ exportPngBtn.disabled=!ok;
+}
+
+function getTableHTMLForExport() {
+  const allColumns = new Set();
+  processedRows.forEach(row => { Object.keys(row).forEach(key => allColumns.add(key)); });
+  allColumns.add('Remarks');
+  
+  // Remove 'Received' column from export image
+  const cols = Array.from(allColumns).filter(c => c.toLowerCase() !== 'received');
+  
+  cols.sort((a, b) => {
+    if (a.toLowerCase() === 'remarks') return 1;
+    if (b.toLowerCase() === 'remarks') return -1;
+    return 0;
+  });
+  
+  let html="<table style='width:100%;border-collapse:collapse;font-size:14px;background:white;'><thead><tr>";
+  cols.forEach(c => {
+    if (c.toLowerCase() === 'remarks') html += `<th style='padding:8px;border-bottom:2px solid #e2e8f0;text-align:left;background:#fff3cd;color:#856404;font-weight:600;'>${c}</th>`;
+    else html += `<th style='padding:8px;border-bottom:2px solid #e2e8f0;text-align:left;background:#f1f5f9;'>${c}</th>`;
+  });
+  html += "</tr></thead><tbody>";
+  
+  processedRows.forEach((r, rowIndex)=>{
+    const statusKey = Object.keys(r).find(key => key.toLowerCase() === 'status');
+    const statusValue = statusKey ? String(r[statusKey]).toLowerCase() : '';
+    const isPending = statusValue === 'pending';
+    const isReceived = statusValue === 'received';
+    const rowStyle = isReceived ? 'background-color:#e8f5e9;' : isPending ? 'background-color:#fff9db;' : '';
+    
+    html += `<tr style='${rowStyle}'>` + cols.map(c=>{
+      const cellValue = r[c] ?? '';
+      if (c.toLowerCase() === 'remarks') {
+        let remarkValue = remarkValues[rowIndex] || (isReceived ? 'Settled' : cellValue);
+        let style = isReceived ? 'background:#c8e6c9;color:#2e7d32;padding:4px;border-radius:4px;' : 'padding:4px;';
+        return `<td style='padding:8px;border-bottom:1px solid #e2e8f0;'><div style='${style}'>${remarkValue}</div></td>`;
+      }
+      return `<td style='padding:8px;border-bottom:1px solid #e2e8f0;'>${cellValue}</td>`;
+    }).join('') + "</tr>";
+  });
+  return html + "</tbody></table>";
+}
+
+exportXlsxBtn.onclick=()=>{
+ let ws=XLSX.utils.json_to_sheet(processedRows);
+ let wb=XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb,ws,'Merged');
+ XLSX.writeFile(wb,'MMROADWAYS_Settlement.xlsx');
+};
+
+exportCsvBtn.onclick=()=>{
+ let ws=XLSX.utils.json_to_sheet(processedRows);
+ let csv=XLSX.utils.sheet_to_csv(ws);
+ let blob=new Blob([csv],{type:'text/csv'});
+ let a=document.createElement('a');
+ a.href=URL.createObjectURL(blob);
+ a.download='MMROADWAYS_Settlement.csv';
+ a.click();
+};
+
+// Helper to generate side-by-side table for Received Vehicles if > 6
+function getReceivedListHTML(entries) {
+    if (entries.length === 0) return `<div style="margin-bottom:15px;font-size:14px;color:#666;"><span style="font-weight:600;">Today's Received Vehicles:</span> None</div>`;
+    
+    let title = `<div style="font-size:15px;font-weight:600;color:#333;margin-bottom:5px;">Today's Received Vehicles (Count: ${entries.length})</div>`;
+    
+    // If more than 6, split into two columns with divider
+    if (entries.length > 6) {
+        const mid = Math.ceil(entries.length / 2);
+        const left = entries.slice(0, mid);
+        const right = entries.slice(mid);
+        
+        const renderList = (list) => list.map(e => `<tr><td style='padding:6px;border:1px solid #e2e8f0;'>${e.vehicle}</td></tr>`).join('');
+        
+        return `
+        <div style="margin-bottom:20px;">
+            ${title}
+            <div style="display:flex;gap:15px;">
+                <div style="flex:1;border-right:2px solid #cbd5e1;padding-right:15px;">
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                        <tbody>${renderList(left)}</tbody>
+                    </table>
+                </div>
+                <div style="flex:1;padding-left:15px;">
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                        <tbody>${renderList(right)}</tbody>
+                    </table>
+                </div>
+            </div>
+        </div>`;
+    } else {
+        let rows = entries.map(e => `<tr><td style='padding:6px;border:1px solid #e2e8f0;'>${e.vehicle}</td></tr>`).join('');
+        return `
+        <div style="margin-bottom:20px;">
+            ${title}
+            <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                <tbody>${rows}</tbody>
+            </table>
+        </div>`;
+    }
+}
+
+function getMiniTableHTML(title, entries) {
+    if (entries.length === 0) return `<div style="margin-bottom:15px;font-size:14px;color:#666;"><span style="font-weight:600;">${title}:</span> None</div>`;
+    
+    let rows = entries.map(e => `<tr><td style='padding:6px;border:1px solid #e2e8f0;'>${e.vehicle}</td></tr>`).join('');
+    
+    return `
+    <div style="margin-bottom:20px;">
+        <div style="font-size:15px;font-weight:600;color:#333;margin-bottom:5px;">${title} (Count: ${entries.length})</div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+            <tbody>${rows}</tbody>
+        </table>
+    </div>`;
+}
+
+exportPngBtn.onclick=()=>{
+ const date=document.getElementById("reportDate").value || "No Date";
+ // Get the custom title from the text box
+ const reportTitle = document.getElementById("reportTitle").value || "Today Settlement Report";
+ 
+ if(!processedRows.length) return;
+
+ const pendingCount = countStatus('pending');
+ const verifiedCount = countStatus('verified');
+ const totalCount = rows.length;
+
+ // Generate HTML for lists
+ const expenseListHTML = getMiniTableHTML('Today Vehicle Settlement Expense Bill', expenseEntries);
+ // Use specific function for Received Vehicles to handle split logic
+ const receivedListHTML = getReceivedListHTML(receivedEntries);
+
+ const wrapper=document.createElement('div');
+ wrapper.style.padding="0";
+ wrapper.style.margin="0";
+ wrapper.style.background="linear-gradient(to bottom right,#eef3ff,#e6edff)";
+ wrapper.style.fontFamily="system-ui,Segoe UI,Roboto";
+ 
+ // Image Layout with Custom Title at Top Center
+ wrapper.innerHTML = `
+   <div style="background:linear-gradient(90deg,#2563eb,#4f46e5);color:white;padding:22px;text-align:center;">
+     <div style="font-size:32px;font-weight:800;letter-spacing:2px;">MMROADWAYS</div>
+     <div style="font-size:16px;font-weight:500;opacity:0.9;">TripSheet</div>
+   </div>
+   
+   <!-- Custom Title Section (Bold, Center, Top) -->
+   <div style="background:white;padding:20px 30px 0 30px;text-align:center;">
+     <div style="font-size:28px;font-weight:800;color:#111;margin-bottom:5px;">${reportTitle}</div>
+     <div style="font-size:16px;color:#555;">Report Date: ${date}</div>
+   </div>
+
+   <div style="background:white;padding:20px 30px;border-bottom:1px solid #e2e8f0;">
+     <!-- Inserted Lists Here -->
+     <div style="margin-top:10px;">
+        ${expenseListHTML}
+        ${receivedListHTML}
+     </div>
+
+     <!-- Summary without Received/Unchecked -->
+     <div style="display:flex;align-items:center;margin-top:20px;gap:15px;flex-wrap:wrap;">
+       <div style="font-size:14px;font-weight:600;color:#333;">Summary:</div>
+       <div style="display:flex;align-items:center;"><span style="font-size:14px;color:#666;">Total:</span><span style="font-size:14px;font-weight:700;color:#2563eb;margin-left:5px;margin-right:15px;">${totalCount}</span></div>
+       <div style="display:flex;align-items:center;"><span style="font-size:14px;color:#666;">Pending:</span><span style="padding:4px 10px;background:#fef3c7;color:#92400e;border:1px solid #fbbf24;border-radius:12px;font-size:12px;font-weight:600;margin-left:5px;">${pendingCount}</span></div>
+       <div style="display:flex;align-items:center;"><span style="font-size:14px;color:#666;">Verified:</span><span style="padding:4px 10px;background:#d1fae5;color:#065f46;border:1px solid #10b981;border-radius:12px;font-size:12px;font-weight:600;margin-left:5px;">${verifiedCount}</span></div>
+     </div>
+   </div>
+   <div style="padding:20px;background:white;">${getTableHTMLForExport()}</div>
+   <div style="background:#f8fafc;padding:12px 20px;text-align:center;color:#666;font-size:14px;border-top:1px solid #e2e8f0;">Generated by MMROADWAYS(Vignesh)</div>
+ `;
+ document.body.appendChild(wrapper);
+ html2canvas(wrapper,{backgroundColor:null,scale:3,useCORS:true,logging:false}).then(canvas=>{
+   let a=document.createElement('a');
+   a.href=canvas.toDataURL("image/png");
+   a.download="MMROADWAYS_Settlement_Report.png";
+   a.click();
+   wrapper.remove();
+ });
+};
+</script>
+</body>
+</html>
