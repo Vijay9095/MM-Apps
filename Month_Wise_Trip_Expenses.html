@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MM Roadways — Trip Consolidated Report</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<style>
+:root{
+  --bg:#f0f4f8;--surface:#fff;--surface2:#f7fafc;--border:#e2e8f0;--border2:#cbd5e0;
+  --accent:#2563eb;--accent-light:#eff6ff;--accent2:#1d4ed8;
+  --green:#16a34a;--green-light:#f0fdf4;--red:#dc2626;--red-light:#fef2f2;
+  --amber:#d97706;--amber-light:#fffbeb;--blue:#2563eb;--blue-light:#eff6ff;
+  --purple:#7c3aed;--text:#1e293b;--text2:#475569;--muted:#94a3b8;
+  --radius:10px;
+  --shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06);
+  --shadow-lg:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:13px}
+.header{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 50%,#1e40af 100%);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow-md);position:sticky;top:0;z-index:200}
+.header h1{font-family:'Sora',sans-serif;font-size:20px;font-weight:800;color:#fff;letter-spacing:.3px}
+.header p{font-size:11px;color:rgba(255,255,255,.65);margin-top:3px}
+.badge{background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.25);padding:5px 14px;border-radius:20px;font-size:12px;font-weight:700;backdrop-filter:blur(4px)}
+.summary-bar{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;padding:16px 28px;background:var(--surface);border-bottom:1px solid var(--border);box-shadow:var(--shadow)}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;display:flex;align-items:center;gap:10px}
+.stat-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.stat-icon.blue{background:var(--blue-light)}.stat-icon.green{background:var(--green-light)}
+.stat-icon.red{background:var(--red-light)}.stat-icon.amber{background:var(--amber-light)}.stat-icon.purple{background:#f5f3ff}
+.stat-val{font-size:16px;font-weight:700;color:var(--text);line-height:1.2;font-family:'Sora',sans-serif}
+.stat-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:1px}
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--border);background:var(--surface);padding:0 28px}
+.tab{padding:12px 20px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .2s;display:flex;align-items:center;gap:6px}
+.tab:hover{color:var(--accent)}.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
+.controls{padding:12px 28px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface);border-bottom:1px solid var(--border)}
+.search-box{flex:1;min-width:220px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color .2s}
+.search-box:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;transition:all .15s;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent2)}
+.btn-green{background:var(--green);color:#fff}.btn-green:hover{background:#15803d}
+.btn-outline{background:var(--surface);border:1px solid var(--border2);color:var(--text2)}.btn-outline:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+.btn-amber{background:var(--amber);color:#fff}.btn-amber:hover{background:#b45309}
+.divider{width:1px;height:28px;background:var(--border2)}
+.filter-wrap{position:relative}
+.filter-btn{background:var(--surface);border:1px solid var(--border2);color:var(--text2);padding:8px 14px;border-radius:8px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;transition:all .15s;white-space:nowrap}
+.filter-btn:hover,.filter-btn.open{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+.filter-badge{background:var(--accent);color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:2px}
+.filter-dropdown{position:absolute;top:calc(100% + 6px);left:0;background:#fff;border:1px solid var(--border2);border-radius:12px;box-shadow:var(--shadow-lg);z-index:300;min-width:260px;max-width:340px;padding:8px 0;display:none}
+.filter-dropdown.open{display:block}
+.filter-search{padding:8px 12px;border-bottom:1px solid var(--border)}
+.filter-search input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;font-family:'DM Sans',sans-serif;outline:none}
+.filter-actions{display:flex;gap:6px;padding:6px 12px;border-bottom:1px solid var(--border)}
+.filter-action-btn{padding:4px 10px;border:1px solid var(--border2);border-radius:5px;background:var(--surface2);cursor:pointer;font-size:11px;font-weight:600;color:var(--text2);font-family:'DM Sans',sans-serif}
+.filter-action-btn:hover{background:var(--accent-light);color:var(--accent);border-color:var(--accent)}
+.filter-list{max-height:260px;overflow-y:auto;padding:4px 0}
+.filter-item{display:flex;align-items:center;gap:8px;padding:7px 14px;cursor:pointer;transition:background .12s}
+.filter-item:hover{background:var(--surface2)}
+.filter-item input[type=checkbox]{width:14px;height:14px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.filter-item-label{font-size:12px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.filter-item-sub{font-size:10px;color:var(--muted);margin-left:auto;flex-shrink:0}
+.filter-footer{padding:8px 12px;border-top:1px solid var(--border);display:flex;justify-content:flex-end}
+.filter-apply{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:6px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
+.filter-apply:hover{background:var(--accent2)}
+.table-wrap{overflow-x:auto;padding:16px 28px}
+table{width:100%;border-collapse:collapse}
+thead th{background:#1e3a5f;color:#fff;padding:10px 8px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.4px;white-space:nowrap;border-right:1px solid rgba(255,255,255,.1)}
+thead th.right{text-align:right}thead th.center{text-align:center}
+.th-group{background:#2d5a8e!important;text-align:center!important;border-bottom:1px solid rgba(255,255,255,.2);font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:rgba(255,255,255,.85)!important}
+tbody tr{border-bottom:1px solid var(--border)}
+td{padding:8px;vertical-align:middle;border-right:1px solid var(--border)}
+td:last-child{border-right:none}
+.trip-row td{background:#fff}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.num-atm{color:#1d4ed8;font-weight:600}
+.num-outstanding.has-amount{color:var(--red);font-weight:700}
+.num-outstanding.cleared{color:var(--green);font-weight:600}
+.num-outstanding.negative{color:#7c3aed;font-weight:700}
+.small-num{color:var(--text2)}
+.paid-input{background:var(--green-light);border:1px solid #86efac;border-radius:6px;padding:5px 8px;color:var(--green);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;width:110px;text-align:right;outline:none}
+.paid-input:focus{border-color:var(--green);box-shadow:0 0 0 2px rgba(22,163,74,.15)}
+.trip-paid-input{background:#f0fdf4;border:1px solid #86efac;border-radius:5px;padding:4px 7px;color:#166534;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;width:105px;text-align:right;outline:none;transition:border-color .15s,box-shadow .15s}
+.trip-paid-input:focus{border-color:#16a34a;box-shadow:0 0 0 2px rgba(22,163,74,.2)}
+.import-section{padding:24px 28px}
+.import-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.drop-card{background:var(--surface);border:2px dashed var(--border2);border-radius:14px;padding:26px 20px;text-align:center;cursor:pointer;transition:all .2s}
+.drop-card:hover,.drop-card.drag-over{border-color:var(--accent);background:var(--accent-light)}
+.drop-card.f1c{border-color:#3b82f6}.drop-card.f2c{border-color:#f59e0b}
+.drop-card.loaded{border-style:solid;border-color:#16a34a;background:#f0fdf4}
+.dz-icon{font-size:34px;margin-bottom:10px}
+.drop-card h3{font-size:14px;font-weight:700;margin-bottom:6px;font-family:'Sora',sans-serif}
+.drop-card p{font-size:11px;color:var(--muted);margin-bottom:14px;line-height:1.6}
+.finfo{margin-top:12px;padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600;background:var(--green-light);color:var(--green);border:1px solid #86efac;display:none}
+.col-hint{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:12px;text-align:left}
+.col-hint h4{font-size:10px;font-weight:700;color:var(--text);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.col-tags{display:flex;flex-wrap:wrap;gap:4px}
+.tag{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700}
+.tag-req{background:#dbeafe;color:#1e40af}.tag-opt{background:#fef9c3;color:#92400e}
+.merge-bar{display:flex;justify-content:center;align-items:center;gap:14px;padding:16px;background:var(--surface);border-radius:12px;border:1px solid var(--border);margin-bottom:20px}
+.pbox{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px}
+.pbox-hdr{background:var(--surface2);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.pbox-hdr h3{font-size:13px;font-weight:600}
+.pscroll{overflow-x:auto;max-height:200px}
+.ptable{width:100%;border-collapse:collapse;font-size:11px}
+.ptable th{background:#1e3a5f;color:#fff;padding:6px 8px;text-align:left;white-space:nowrap;position:sticky;top:0}
+.ptable td{padding:5px 8px;border-bottom:1px solid var(--border)}
+.ptable tr:hover td{background:var(--accent-light)}
+.report-wrap{overflow-x:auto;padding:16px 28px}
+.rtable{width:100%;border-collapse:collapse;font-size:12px}
+.rtable thead th{background:#1e3a5f;color:#fff;padding:9px 8px;text-align:left;font-size:11px;font-weight:700;white-space:nowrap;border-right:1px solid rgba(255,255,255,.15)}
+.rtable thead th.r{text-align:right}
+.rtable .veh-hdr td{font-weight:700;font-size:12px;padding:8px;vertical-align:middle;border-right:1px solid rgba(255,255,255,.12)}
+.rtable .tr-row td{background:#fff;border-bottom:1px solid var(--border);border-right:1px solid var(--border);padding:7px 8px;vertical-align:middle}
+.rtable .tr-row:hover td{filter:brightness(.97)}
+.rtable .veh-total td{font-weight:700;padding:7px 8px;border-right:1px solid rgba(0,0,0,.06)}
+.rtable .grand-row td{background:#0f2040;color:#fff;font-weight:700;font-size:13px;border-top:3px solid #000;padding:9px 8px;border-right:1px solid rgba(255,255,255,.1)}
+.vehicle-no{font-weight:700;font-size:13px;color:#1e40af;white-space:nowrap;font-family:'Sora',sans-serif}
+.driver-name{font-size:11px;color:var(--text2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trip-badge{display:inline-flex;align-items:center;justify-content:center;border-radius:12px;padding:2px 8px;font-size:11px;font-weight:700}
+.toast{position:fixed;bottom:20px;right:20px;padding:12px 18px;border-radius:10px;font-size:13px;font-weight:600;z-index:600;transform:translateY(80px);opacity:0;transition:all .3s;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow-lg)}
+.toast.success{background:var(--green);color:#fff}.toast.info{background:var(--accent);color:#fff}.toast.error{background:var(--red);color:#fff}
+.toast.show{transform:translateY(0);opacity:1}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-state .icon{font-size:40px;margin-bottom:10px;opacity:.5}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+@media(max-width:768px){.summary-bar{grid-template-columns:repeat(2,1fr)}.import-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div><h1>🚛 MM Roadways — Trip Consolidated Report</h1><p>Import File 1 (Tripsheet) + File 2 (Trip Count) → Merge → Generate Report</p></div>
+  <span class="badge" id="headerBadge">0 Vehicles</span>
+</div>
+
+<div class="summary-bar">
+  <div class="stat-card"><div class="stat-icon blue">🚛</div><div><div class="stat-val" id="sV">0</div><div class="stat-label">Vehicles</div></div></div>
+  <div class="stat-card"><div class="stat-icon purple">🔁</div><div><div class="stat-val" id="sT">—</div><div class="stat-label">Total Trips</div></div></div>
+  <div class="stat-card"><div class="stat-icon blue">💳</div><div><div class="stat-val" id="sA">—</div><div class="stat-label">ATM Advance</div></div></div>
+  <div class="stat-card"><div class="stat-icon amber">📋</div><div><div class="stat-val" id="sE">—</div><div class="stat-label">Total Expense</div></div></div>
+  <div class="stat-card"><div class="stat-icon green">✅</div><div><div class="stat-val" id="sP">₹0</div><div class="stat-label">Paid Amount</div></div></div>
+  <div class="stat-card"><div class="stat-icon red">⚠️</div><div><div class="stat-val" id="sO">—</div><div class="stat-label">Outstanding</div></div></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('import')" id="tab-import">📥 Import Files</div>
+  <div class="tab" onclick="switchTab('main')" id="tab-main">📊 Main Report</div>
+  <div class="tab" onclick="switchTab('report')" id="tab-report">📋 Vehicle-wise Report</div>
+</div>
+
+<div id="pane-import">
+  <div class="import-section">
+    <div class="import-grid">
+      <div>
+        <div class="drop-card f1c" id="dz1" onclick="document.getElementById('f1i').click()" ondragover="dzOver(event,'dz1')" ondragleave="dzLeave('dz1')" ondrop="dzDrop(event,'dz1',1)">
+          <div class="dz-icon">📄</div><h3>File 1 — Tripsheet Data</h3>
+          <p>Excel with trip expense details per vehicle.<br>Multiple rows per vehicle supported.<br>Drag & drop or click to choose.</p>
+          <button class="btn btn-primary" onclick="event.stopPropagation();document.getElementById('f1i').click()">📂 Choose File 1</button>
+          <input type="file" id="f1i" accept=".xlsx,.xls,.csv" style="display:none" onchange="loadFile(event,1)">
+          <div class="finfo" id="f1info"></div>
+        </div>
+        <div class="col-hint">
+          <h4>Required Columns</h4>
+          <div class="col-tags"><span class="tag tag-req">Vehicle</span><span class="tag tag-req">Driver</span><span class="tag tag-req">Start Date</span><span class="tag tag-req">End Date</span><span class="tag tag-req">Route</span></div>
+          <h4 style="margin-top:8px">Optional</h4>
+          <div class="col-tags">
+            <span class="tag tag-opt">Trip Count</span><span class="tag tag-opt">Trip Sheet No</span><span class="tag tag-opt">Start Odo</span><span class="tag tag-opt">End Odo</span><span class="tag tag-opt">Act. Distance</span>
+            <span class="tag tag-opt">ATM Advance</span><span class="tag tag-opt">Fuel Advance</span><span class="tag tag-opt">Toll (FasTag)</span><span class="tag tag-opt">Loading</span><span class="tag tag-opt">Unloading</span>
+            <span class="tag tag-opt">Parking</span><span class="tag tag-opt">Repair Works</span><span class="tag tag-opt">Repair Cost w/o Bill</span><span class="tag tag-opt">Adblue</span>
+            <span class="tag tag-opt">RTO</span><span class="tag tag-opt">Police</span><span class="tag tag-opt">Route Guide</span><span class="tag tag-opt">Driver Salary</span>
+            <span class="tag tag-opt">Incentive</span><span class="tag tag-opt">Others</span><span class="tag tag-opt">Total Advance</span>
+            <span class="tag tag-opt">Total Expense</span><span class="tag tag-opt">Balance To Pay</span><span class="tag tag-opt">Paid Amount</span><span class="tag tag-opt">Outstanding Balance</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="drop-card f2c" id="dz2" onclick="document.getElementById('f2i').click()" ondragover="dzOver(event,'dz2')" ondragleave="dzLeave('dz2')" ondrop="dzDrop(event,'dz2',2)">
+          <div class="dz-icon">📊</div><h3>File 2 — Trip Count Data <span style="font-size:11px;color:var(--muted);font-weight:400">(Optional)</span></h3>
+          <p>Excel with trip count per vehicle.<br>Merged with File 1 by vehicle number.<br>Drag & drop or click to choose.</p>
+          <button class="btn btn-amber" onclick="event.stopPropagation();document.getElementById('f2i').click()">📂 Choose File 2</button>
+          <input type="file" id="f2i" accept=".xlsx,.xls,.csv" style="display:none" onchange="loadFile(event,2)">
+          <div class="finfo" id="f2info"></div>
+        </div>
+        <div class="col-hint">
+          <h4>Required</h4><div class="col-tags"><span class="tag tag-req">Vehicle</span></div>
+          <h4 style="margin-top:8px">Optional</h4>
+          <div class="col-tags"><span class="tag tag-opt">Route</span><span class="tag tag-opt">Start Date</span><span class="tag tag-opt">End Date</span><span class="tag tag-opt">Trip Count</span><span class="tag tag-opt">Driver</span></div>
+          <p style="font-size:11px;color:var(--muted);margin-top:8px">💡 File 2 is optional. Multiple rows auto-grouped.</p>
+        </div>
+      </div>
+    </div>
+    <div class="merge-bar">
+      <button class="btn btn-green" style="padding:11px 32px;font-size:14px" onclick="mergeAndLoad()">🔀 Merge & Generate Report</button>
+      <button class="btn btn-outline" onclick="clearAll()">🗑 Clear All</button>
+    </div>
+    <div id="pv1" style="display:none" class="pbox"><div class="pbox-hdr"><h3 id="pv1t"></h3><span id="pv1c" style="font-size:11px;color:var(--muted)"></span></div><div class="pscroll"><table class="ptable"><thead id="pv1h"></thead><tbody id="pv1b"></tbody></table></div></div>
+    <div id="pv2" style="display:none" class="pbox"><div class="pbox-hdr"><h3 id="pv2t"></h3><span id="pv2c" style="font-size:11px;color:var(--muted)"></span></div><div class="pscroll"><table class="ptable"><thead id="pv2h"></thead><tbody id="pv2b"></tbody></table></div></div>
+  </div>
+</div>
+
+<div id="pane-main" style="display:none">
+  <div class="controls">
+    <input class="search-box" type="text" id="searchBox" placeholder="🔍  Search vehicle, driver, route..." oninput="renderMain()">
+    <div class="divider"></div>
+    <button class="btn btn-primary" onclick="switchTab('report')">📋 Vehicle Report</button>
+    <button class="btn btn-green" onclick="downloadExcel()">⬇ Download Excel</button>
+    <button class="btn btn-outline" onclick="resetAllPaid()">↺ Reset Paid</button>
+  </div>
+  <div class="table-wrap">
+    <table id="mainTable" style="min-width:2300px">
+      <thead>
+        <tr>
+          <th class="th-group" colspan="4">Vehicle Info</th><th class="th-group" colspan="3">Trip Dates &amp; Route</th>
+          <th class="th-group" colspan="3">Odometer</th><th class="th-group" colspan="2">Advance</th>
+          <th class="th-group" colspan="9">Expense Breakdown</th><th class="th-group" colspan="4">Salary &amp; Others</th>
+          <th class="th-group" colspan="5">Financial Summary</th>
+        </tr>
+        <tr>
+          <th style="min-width:28px">#</th><th style="min-width:130px">Vehicle</th><th style="min-width:155px">Driver</th>
+          <th class="center" style="min-width:55px">Trips</th><th style="min-width:100px">Start Date</th><th style="min-width:100px">End Date</th>
+          <th style="min-width:180px">Route</th><th class="right" style="min-width:80px">Start Odo</th><th class="right" style="min-width:80px">End Odo</th>
+          <th class="right" style="min-width:80px">Act. Dist</th><th class="right" style="min-width:90px">ATM Advance</th><th class="right" style="min-width:90px">Fuel Advance</th>
+          <th class="right" style="min-width:85px">Toll (FasTag)</th><th class="right" style="min-width:70px">Loading</th><th class="right" style="min-width:75px">Unloading</th>
+          <th class="right" style="min-width:70px">Parking</th><th class="right" style="min-width:85px">Repair Works</th><th class="right" style="min-width:95px">Repair w/o Bill</th>
+          <th class="right" style="min-width:65px">Adblue</th><th class="right" style="min-width:55px">RTO</th><th class="right" style="min-width:60px">Police</th>
+          <th class="right" style="min-width:85px">Route Guide</th><th class="right" style="min-width:95px">Driver Salary</th><th class="right" style="min-width:80px">Incentive</th>
+          <th class="right" style="min-width:70px">Others</th><th class="right" style="min-width:100px">Total Advance</th><th class="right" style="min-width:100px">Total Expense</th>
+          <th class="right" style="min-width:100px">Balance To Pay</th><th class="right" style="min-width:115px">Paid Amount</th><th class="right" style="min-width:115px">Outstanding</th>
+        </tr>
+      </thead>
+      <tbody id="mainBody"></tbody><tfoot id="mainFoot"></tfoot>
+    </table>
+  </div>
+</div>
+
+<div id="pane-report" style="display:none">
+  <div class="controls">
+    <input class="search-box" type="text" id="searchBox2" placeholder="🔍  Search vehicle, driver, route..." oninput="renderReport()">
+    <div class="divider"></div>
+    <div class="filter-wrap" id="filterWrap">
+      <button class="filter-btn" id="filterBtn" onclick="toggleFilterDropdown(event)">
+        🚛 Filter Vehicles <span class="filter-badge" id="filterCountBadge" style="display:none">0</span> ▾
+      </button>
+      <div class="filter-dropdown" id="filterDropdown">
+        <div class="filter-search"><input type="text" id="filterSearch" placeholder="Search vehicles..." oninput="renderFilterList()"></div>
+        <div class="filter-actions">
+          <button class="filter-action-btn" onclick="selectAllVehicles()">Select All</button>
+          <button class="filter-action-btn" onclick="clearAllVehicles()">Clear All</button>
+        </div>
+        <div class="filter-list" id="filterList"></div>
+        <div class="filter-footer"><button class="filter-apply" onclick="applyVehicleFilter()">Apply Filter</button></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <button class="btn btn-green" onclick="downloadExcel()">⬇ Download Excel</button>
+    <button class="btn btn-outline" onclick="switchTab('main')">← Back to Main</button>
+  </div>
+  <div class="report-wrap"><div id="reportPane"></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== 10 VEHICLE COLOR PALETTES — ARGB for ExcelJS ===== */
+const VCOLORS=[
+  {dark:'FF1E3A5F',mid:'FF2563EB',light:'FFDBEAFE',bg:'FFEFF6FF',accent:'FF3B82F6',fg:'FF1E40AF',
+   xlTripBg2:'FFEFF6FF',xlTotalBg:'FFDBEAFE',xlFg:'FF1E40AF',xlNumFg:'FF334155',xlBorder:'FF93C5FD',
+   xlOutPos:'FFDC2626',xlOutNeg:'FF7C3AED',xlOutZero:'FF16A34A',xlPaid:'FF166534'},
+  {dark:'FF14532D',mid:'FF16A34A',light:'FFDCFCE7',bg:'FFF0FDF4',accent:'FF22C55E',fg:'FF166534',
+   xlTripBg2:'FFF0FDF4',xlTotalBg:'FFDCFCE7',xlFg:'FF166534',xlNumFg:'FF334155',xlBorder:'FF86EFAC',
+   xlOutPos:'FFDC2626',xlOutNeg:'FF7C3AED',xlOutZero:'FF16A34A',xlPaid:'FF166534'},
+  {dark:'FF78350F',mid:'FFD97706',light:'FFFEF3C7',bg:'FFFFFBEB',accent:'FFF59E0B',fg:'FF92400E',
+   xlTripBg2:'FFFFFBEB',xlTotalBg:'FFFEF3C7',xlFg:'FF92400E',xlNumFg:'FF334155',xlBorder:'FFFCD34D',
+   xlOutPos:'FFDC2626',xlOutNeg:'FF7C3AED',xlOutZero:'FF16A34A',xlPaid:'FF166534'},
+  {dark:'FF881337',mid:'FFE11D48',light:'FFFCE7F3',bg:'FFFDF2F8',accent:'FFF43F5E',fg:'FFBE123C',
+   xlTripBg2:'FFFDF2F8',xlTotalBg:'FFFCE7F3',xlFg:'FFBE123C',xlNumFg:'FF334155',xlBorder:'FFFDA4AF',
+   xlOutPos:'FFDC2626',xlOutNeg:'FF7C3AED',xlOutZero:'FF16A34A',xlPaid:'FF166534'},
+  {dark:'FF4C1D95',mid:'FF7C3AED',light:'FFEDE9FE',bg:'FFF5F3FF',accent:'FF8B5CF6',fg:'FF6D28D9',
+   xlTripBg2:'FFF5F3FF',xlTotalBg:'FFEDE9FE',xlFg:'FF6D28D9',xlNumFg:'FF334155',xlBorder:'FFC4B5FD',
+   xlOutPos:'FFDC2626',xlOutNeg:'FF7C3AED',xlOutZero:'FF16A34A',xlPaid:'FF166534'},
+  {dark:'FF7C2D12',mid:'FFEA580C',light:'FFFFEDD5',bg:'FFFFF7ED',accent:'FFF97316',fg:'FFC2410C',
+   xlTripBg2:'FFFFF7ED',xlTotalBg:'FFFFEDD5',xlFg:'FFC2410C',xlNumFg:'FF334155',xlBorder:'FFFDBA74',
+   xlOutPos:'FFDC2626',xlOutNeg:'FF7C3AED',xlOutZero:'FF16A34A',xlPaid:'FF166534'},
+  {dark:'FF134E4A',mid:'FF0D9488',light:'FFCCFBF1',bg:'FFF0FDFA',accent:'FF14B8A6',fg:'FF0F766E',
+   xlTripBg2:'FFF0FDFA',xlTotalBg:'FFCCFBF1',xlFg:'FF0F766E',xlNumFg:'FF334155',xlBorder:'FF5EEAD4',
+   xlOutPos:'FFDC2626',xlOutNeg:'FF7C3AED',xlOutZero:'FF16A34A',xlPaid:'FF166534'},
+  {dark:'FF7F1D1D',mid:'FFDC2626',light:'FFFEE2E2',bg:'FFFEF2F2',accent:'FFEF4444',fg:'FFB91C1C',
+   xlTripBg2:'FFFEF2F2',xlTotalBg:'FFFEE2E2',xlFg:'FFB91C1C',xlNumFg:'FF334155',xlBorder:'FFFCA5A5',
+   xlOutPos:'FFDC2626',xlOutNeg:'FF7C3AED',xlOutZero:'FF16A34A',xlPaid:'FF166534'},
+  {dark:'FF0C4A6E',mid:'FF0284C7',light:'FFE0F2FE',bg:'FFF0F9FF',accent:'FF0EA5E9',fg:'FF0369A1',
+   xlTripBg2:'FFF0F9FF',xlTotalBg:'FFE0F2FE',xlFg:'FF0369A1',xlNumFg:'FF334155',xlBorder:'FF7DD3FC',
+   xlOutPos:'FFDC2626',xlOutNeg:'FF7C3AED',xlOutZero:'FF16A34A',xlPaid:'FF166534'},
+  {dark:'FF701A75',mid:'FFC026D3',light:'FFFAE8FF',bg:'FFFDF4FF',accent:'FFD946EF',fg:'FFA21CAF',
+   xlTripBg2:'FFFDF4FF',xlTotalBg:'FFFAE8FF',xlFg:'FFA21CAF',xlNumFg:'FF334155',xlBorder:'FFE879F9',
+   xlOutPos:'FFDC2626',xlOutNeg:'FF7C3AED',xlOutZero:'FF16A34A',xlPaid:'FF166534'},
+];
+function vc(i){return VCOLORS[i%VCOLORS.length];}
+function vchtml(i){const c=vc(i);return{dark:'#'+c.dark.slice(2),mid:'#'+c.mid.slice(2),light:'#'+c.light.slice(2),bg:'#'+c.bg.slice(2),fg:'#'+c.fg.slice(2),accent:'#'+c.accent.slice(2)};}
+
+const ALIASES={
+  vehicle:['vehicle','vehicle no','vehicle number','veh no','veh','vehicleno','vehical'],
+  driver:['driver','driver name','driver/cleaner','driver / cleaner','drivername'],
+  startDate:['start date','start dt','from date','departure date','startdate'],
+  endDate:['end date','end dt','to date','arrival date','enddate'],
+  route:['route','routes','routename','route name'],
+  tripCount:['trip count','trips','no of trips','no.of trips','number of trips','tripcount'],
+  startOdo:['start odo','start odometer','opening odo','startodo','startkm'],
+  endOdo:['end odo','end odometer','closing odo','endodo','endkm'],
+  actDistance:['act. distance','actual distance','act distance','act.distance','km','distance'],
+  atmAdvance:['atm advance','advance (atm)','cash advance','atm','atmadv'],
+  fuelAdvance:['fuel advance','fuel\u00a0advance','fuel adv','diesel advance','fueladv'],
+  toll:['toll (fastag)','toll','fastag','fasttag','tollcharges'],
+  loading:['loading','loading charges'],unloading:['unloading','unloading charges'],parking:['parking','parking charges'],
+  repairWorks:['repair works','repair (with bill)','repair w/ bill','repairworks'],
+  repairCostNoBill:['repair cost w/o bill','repair (without bill)','repair w/o bill','repair cost w.o bill','repaircostwobill'],
+  adblue:['adblue','ad blue','adblu'],rto:['rto','rto charges'],police:['police','police charges'],
+  routeGuide:['route guide','route guide charges','routeguide'],
+  driverSalary:['driver salary','salary','driver sal','driversalary'],
+  incentive:['incentive','bonus'],others:['others','other charges','misc','miscellaneous','other'],
+  totalAdvance:['total advance','total adv','totaladvance'],
+  totalExpense:['total expense','total exp','total expenses','totalexpense'],
+  balanceToPay:['balance to pay','balance','bal to pay','bal','balancetopay'],
+  paidAmount:['paid amount','paid','amount paid','paidamount'],
+  outstandingBalance:['outstanding balance','outstanding','outstanding bal','balance outstanding','outstandingbal'],
+  tripSheetNo:['trip sheet no','tripsheet no','sheet no','trip no','tripsheetno'],
+};
+const NUM_KEYS=['actDistance','atmAdvance','fuelAdvance','toll','loading','unloading','parking','repairWorks','repairCostNoBill','adblue','rto','police','routeGuide','driverSalary','incentive','others','totalAdvance','totalExpense','balanceToPay','paidAmount','outstandingBalance','startOdo','endOdo','tripCount'];
+
+let F1=null,F2=null,VDATA=[];let selectedVehicles=new Set();
+
+function ns(s){return String(s||'').trim().toLowerCase().replace(/\u00a0/g,' ').replace(/\s+/g,' ');}
+function nv(v){return String(v||'').replace(/\s+/g,'').toUpperCase();}
+function safe(v){const n=parseFloat(String(v||'').replace(/,/g,''));return isNaN(n)?0:n;}
+function fmt(v){if(v===undefined||v===null||v==='')return'—';const num=Number(v);if(num===0)return'—';return'₹'+num.toLocaleString('en-IN',{maximumFractionDigits:0});}
+function fmtRaw(v){return Number(v||0).toLocaleString('en-IN',{maximumFractionDigits:0});}
+function fmtN(v){if(!v||v===0)return'—';return Number(v).toLocaleString('en-IN',{maximumFractionDigits:0});}
+function fmtOut(v){const n=Number(v||0);if(n===0)return'<span style="font-size:11px">✓ Cleared</span>';if(n<0)return'<span style="color:#7c3aed;font-weight:700">'+fmt(n)+'</span>';return fmt(v);}
+function dOnly(s){return String(s||'').split(' ')[0]||'—';}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function n0(v){return Number(v||0);}
+function outCls(v){const n=Number(v||0);return n<0?'num num-outstanding negative':n>0?'num num-outstanding has-amount':'num num-outstanding cleared';}
+function outClr(v){const n=Number(v||0);return n<0?'#7c3aed':n>0?'#dc2626':'#16a34a';}
+function xlOutClr(v){const n=Number(v||0);return n<0?'FF7C3AED':n>0?'FFDC2626':'FF16A34A';}
+
+function mapCols(headers){const map={};headers.forEach((h,i)=>{const hn=ns(h);for(const[key,aliases]of Object.entries(ALIASES)){if(!(key in map)&&aliases.some(a=>ns(a)===hn))map[key]=i;}});return map;}
+function gcv(row,map,key){if(!(key in map))return'';const v=row[map[key]];return(v===null||v===undefined)?'':v;}
+function dzOver(e,id){e.preventDefault();document.getElementById(id).classList.add('drag-over');}
+function dzLeave(id){document.getElementById(id).classList.remove('drag-over');}
+function dzDrop(e,id,n){e.preventDefault();document.getElementById(id).classList.remove('drag-over');const f=e.dataTransfer.files[0];if(f)readXL(f,n);}
+function loadFile(e,n){const f=e.target.files[0];if(f)readXL(f,n);e.target.value='';}
+
+function readXL(file,fn){
+  const reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array',cellDates:true,raw:false});
+      const ws=wb.Sheets[wb.SheetNames[0]];const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',raw:false});
+      let hIdx=0;for(let i=0;i<Math.min(8,raw.length);i++){if(raw[i].filter(c=>String(c||'').trim()!=='').length>3){hIdx=i;break;}}
+      const headers=raw[hIdx].map(h=>String(h||'').trim());const colMap=mapCols(headers);
+      if(!('vehicle' in colMap)){showToast(`File ${fn}: "Vehicle" column not found!`,'error');return;}
+      const dataRows=raw.slice(hIdx+1).filter(r=>{const f0=ns(String(r[0]||''));return r.some(c=>String(c||'').trim()!=='')&&f0!=='grand total';});
+      if(fn===1){F1=parseF1(dataRows,colMap,headers,file.name);document.getElementById('f1info').style.display='block';document.getElementById('f1info').textContent='✓ '+file.name+' — '+dataRows.length+' rows';document.getElementById('dz1').classList.add('loaded');showPrev(1,dataRows.slice(0,8),headers,file.name);showToast('File 1 loaded: '+F1.vehicleGroups.length+' groups','success');}
+      else{F2=parseF2(dataRows,colMap,headers,file.name);document.getElementById('f2info').style.display='block';document.getElementById('f2info').textContent='✓ '+file.name+' — '+dataRows.length+' rows';document.getElementById('dz2').classList.add('loaded');showPrev(2,dataRows.slice(0,8),headers,file.name);showToast('File 2 loaded: '+Object.keys(F2.vmap).length+' vehicles','success');}
+    }catch(err){showToast('File '+fn+' error: '+err.message,'error');console.error(err);}
+  };reader.readAsArrayBuffer(file);
+}
+
+function parseF1(rows,colMap){
+  const vehicleGroups=[];let curGroup=null;
+  rows.forEach(row=>{
+    const rawV=String(gcv(row,colMap,'vehicle')||'').trim();
+    if(ns(rawV)==='total'||ns(rawV)==='grand total') return;
+    if(rawV){const vKey=nv(rawV);const driver=String(gcv(row,colMap,'driver')||'').trim();const tripSheetNo=String(gcv(row,colMap,'tripSheetNo')||'').trim();
+      if(!curGroup||nv(curGroup.vehicle)!==vKey){curGroup={vehicle:rawV,driver:driver||(curGroup?curGroup.driver:''),tripSheetNo,trips:[]};vehicleGroups.push(curGroup);}
+      if(driver)curGroup.driver=driver;const trip={};['route','startDate','endDate'].forEach(k=>{trip[k]=String(gcv(row,colMap,k)||'').trim();});NUM_KEYS.forEach(k=>{trip[k]=safe(gcv(row,colMap,k));});curGroup.trips.push(trip);}
+  });return{vehicleGroups};
+}
+function parseF2(rows,colMap){
+  const vmap={};rows.forEach(row=>{
+    const rawV=String(gcv(row,colMap,'vehicle')||'').trim();if(!rawV||ns(rawV)==='total'||ns(rawV)==='grand total') return;
+    const vk=nv(rawV);if(!vmap[vk])vmap[vk]={vehicle:rawV,tripCount:0,routes:[],startDates:[],endDates:[]};
+    const e=vmap[vk];e.tripCount+=safe(gcv(row,colMap,'tripCount'));
+    const r=String(gcv(row,colMap,'route')||'').trim();if(r&&!e.routes.includes(r))e.routes.push(r);
+    const sd=String(gcv(row,colMap,'startDate')||'').trim();if(sd)e.startDates.push(sd);
+    const ed=String(gcv(row,colMap,'endDate')||'').trim();if(ed)e.endDates.push(ed);
+  });return{vmap};
+}
+function showPrev(n,rows,headers,name){
+  const box=document.getElementById('pv'+n);box.style.display='block';document.getElementById('pv'+n+'t').textContent='File '+n+' Preview: '+name;document.getElementById('pv'+n+'c').textContent='First '+rows.length+' rows';
+  const sh=headers.slice(0,14);document.getElementById('pv'+n+'h').innerHTML='<tr>'+sh.map(h=>'<th>'+(h||'')+'</th>').join('')+'</tr>';
+  document.getElementById('pv'+n+'b').innerHTML=rows.map(r=>'<tr>'+sh.map((_,i)=>'<td>'+(r[i]??'')+'</td>').join('')+'</tr>').join('');
+}
+
+function mergeAndLoad(){
+  if(!F1){showToast('Please upload File 1 first','error');return;}
+  VDATA=[];const byVehicle={};const vehicleOrder=[];
+  F1.vehicleGroups.forEach(grp=>{const vk=nv(grp.vehicle);if(!byVehicle[vk]){byVehicle[vk]={vehicle:grp.vehicle,driver:grp.driver,tripSheetNo:grp.tripSheetNo,trips:[]};vehicleOrder.push(vk);}if(grp.driver)byVehicle[vk].driver=grp.driver;byVehicle[vk].trips.push(...grp.trips);});
+  vehicleOrder.forEach(vk=>{
+    const g=byVehicle[vk];const trips=g.trips;const agg={};NUM_KEYS.forEach(k=>{agg[k]=0;});let routes=[],startDates=[],endDates=[];
+    trips.forEach(tr=>{NUM_KEYS.forEach(k=>{agg[k]+=n0(tr[k]);});if(tr.route&&!routes.includes(tr.route))routes.push(tr.route);if(tr.startDate)startDates.push(tr.startDate);if(tr.endDate)endDates.push(tr.endDate);});
+    if(!trips.some(tr=>tr.tripCount>0))agg.tripCount=trips.length;agg.startOdo=trips.length?trips[0].startOdo:0;agg.endOdo=trips.length?trips[trips.length-1].endOdo:0;
+    if(F2){const f2v=F2.vmap[vk];if(f2v){if(f2v.tripCount>0)agg.tripCount=f2v.tripCount;f2v.routes.forEach(r=>{if(!routes.includes(r))routes.push(r);});}}
+    trips.forEach(tr=>{tr.outstandingBalance=n0(tr.balanceToPay)-n0(tr.paidAmount);});agg.outstandingBalance=n0(agg.balanceToPay)-n0(agg.paidAmount);
+    VDATA.push({vehicle:g.vehicle,driver:g.driver,tripSheetNo:g.tripSheetNo,trips,routes,startDates,endDates,startOdo:agg.startOdo,endOdo:agg.endOdo,...agg});
+  });
+  selectedVehicles=new Set(VDATA.map(d=>nv(d.vehicle)));switchTab('main');renderMain();showToast('✅ '+VDATA.length+' vehicles merged!','success');
+}
+
+function recomputeVehicle(gi){
+  const d=VDATA[gi];const trips=d.trips||[];
+  ['atmAdvance','fuelAdvance','toll','loading','unloading','parking','repairWorks','repairCostNoBill','adblue','rto','police','routeGuide','driverSalary','incentive','others','totalAdvance','totalExpense','balanceToPay','actDistance'].forEach(k=>{d[k]=trips.reduce((s,t)=>s+n0(t[k]),0);});
+  d.paidAmount=trips.reduce((s,t)=>s+n0(t.paidAmount),0);
+  trips.forEach(t=>{t.outstandingBalance=n0(t.balanceToPay)-n0(t.paidAmount);});d.outstandingBalance=n0(d.balanceToPay)-n0(d.paidAmount);
+  if(trips.length){d.startOdo=trips[0].startOdo;d.endOdo=trips[trips.length-1].endOdo;}
+}
+
+function clearAll(){F1=null;F2=null;VDATA=[];selectedVehicles=new Set();['f1info','f2info'].forEach(id=>{const e=document.getElementById(id);e.style.display='none';e.textContent='';});['dz1','dz2'].forEach(id=>document.getElementById(id).classList.remove('loaded'));['pv1','pv2'].forEach(id=>document.getElementById(id).style.display='none');['f1i','f2i'].forEach(id=>document.getElementById(id).value='');renderMain();showToast('All data cleared','info');}
+
+function switchTab(t){['main','report','import'].forEach(n=>{document.getElementById('pane-'+n).style.display=n===t?'block':'none';document.getElementById('tab-'+n).className='tab'+(n===t?' active':'');});if(t==='report'){buildFilterList();renderReport();}}
+
+function toggleFilterDropdown(e){e.stopPropagation();const dd=document.getElementById('filterDropdown');const btn=document.getElementById('filterBtn');const open=dd.classList.contains('open');dd.classList.toggle('open',!open);btn.classList.toggle('open',!open);}
+document.addEventListener('click',function(e){const wrap=document.getElementById('filterWrap');if(wrap&&!wrap.contains(e.target)){document.getElementById('filterDropdown').classList.remove('open');document.getElementById('filterBtn').classList.remove('open');}});
+let tempSelected=new Set();
+function buildFilterList(){tempSelected=new Set(selectedVehicles);renderFilterList();updateFilterBadge();}
+function renderFilterList(){const q=(document.getElementById('filterSearch').value||'').toLowerCase();const list=document.getElementById('filterList');if(!VDATA.length){list.innerHTML='<div style="padding:12px;text-align:center;color:var(--muted);font-size:12px">No data loaded</div>';return;}let html='';VDATA.forEach((d,i)=>{const vk=nv(d.vehicle);if(q&&!d.vehicle.toLowerCase().includes(q)&&!(d.driver||'').toLowerCase().includes(q))return;const ch=vchtml(i);const checked=tempSelected.has(vk)?'checked':'';html+='<label class="filter-item"><input type="checkbox" '+checked+' onchange="toggleTempVehicle(\''+vk+'\',this.checked)"><span class="filter-item-label" style="color:'+ch.dark+'"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+ch.mid+';margin-right:5px;vertical-align:middle"></span>'+esc(d.vehicle)+'</span><span class="filter-item-sub">'+esc(d.driver||'')+'</span></label>';});list.innerHTML=html||'<div style="padding:10px;text-align:center;color:var(--muted);font-size:12px">No match</div>';}
+function toggleTempVehicle(vk,checked){if(checked)tempSelected.add(vk);else tempSelected.delete(vk);}
+function selectAllVehicles(){VDATA.forEach(d=>tempSelected.add(nv(d.vehicle)));renderFilterList();}
+function clearAllVehicles(){tempSelected.clear();renderFilterList();}
+function applyVehicleFilter(){selectedVehicles=new Set(tempSelected);updateFilterBadge();document.getElementById('filterDropdown').classList.remove('open');document.getElementById('filterBtn').classList.remove('open');renderReport();}
+function updateFilterBadge(){const badge=document.getElementById('filterCountBadge');const sel=selectedVehicles.size;const total=VDATA.length;if(sel===total||sel===0){badge.style.display='none';}else{badge.style.display='inline';badge.textContent=sel;}}
+
+function getFiltered(q){q=(q||'').toLowerCase();if(!q)return VDATA;return VDATA.filter(d=>(d.vehicle||'').toLowerCase().includes(q)||(d.driver||'').toLowerCase().includes(q)||(d.routes||[]).join(' ').toLowerCase().includes(q));}
+function getReportFiltered(){const q=((document.getElementById('searchBox2')||{}).value||'').toLowerCase();return VDATA.filter(d=>{const vk=nv(d.vehicle);const inSel=selectedVehicles.size===0||selectedVehicles.has(vk);if(!inSel)return false;if(!q)return true;return(d.vehicle||'').toLowerCase().includes(q)||(d.driver||'').toLowerCase().includes(q)||(d.routes||[]).join(' ').toLowerCase().includes(q);});}
+function gt(rows){const t={tripCount:0,actDistance:0,atmAdvance:0,fuelAdvance:0,toll:0,loading:0,unloading:0,parking:0,repairWorks:0,repairCostNoBill:0,adblue:0,rto:0,police:0,routeGuide:0,driverSalary:0,incentive:0,others:0,totalAdvance:0,totalExpense:0,balanceToPay:0,paidAmount:0,outstandingBalance:0};rows.forEach(d=>Object.keys(t).forEach(k=>{t[k]+=n0(d[k]);}));return t;}
+
+function updateSummary(filtered){
+  if(!filtered)filtered=getFiltered((document.getElementById('searchBox')||{}).value||'');
+  let trips=0,atm=0,exp=0,paid=0,out=0;
+  filtered.forEach(d=>{trips+=n0(d.tripCount);atm+=n0(d.atmAdvance);exp+=n0(d.totalExpense);paid+=n0(d.paidAmount);out+=n0(d.outstandingBalance);});
+  document.getElementById('sV').textContent=filtered.length;document.getElementById('sT').textContent=trips||'—';
+  document.getElementById('sA').textContent=atm?fmt(atm):'—';document.getElementById('sE').textContent=exp?fmt(exp):'—';
+  document.getElementById('sP').textContent=paid?fmt(paid):'₹0';
+  const oEl=document.getElementById('sO');oEl.textContent=out?fmt(out):'—';oEl.style.color=out<0?'#7c3aed':out>0?'var(--red)':'var(--green)';
+  document.getElementById('headerBadge').textContent=filtered.length+' Vehicles';
+}
+
+function renderMain(){
+  const q=((document.getElementById('searchBox')||{}).value||'');const filtered=getFiltered(q);const tbody=document.getElementById('mainBody');const tfoot=document.getElementById('mainFoot');
+  if(!filtered.length){const msg=VDATA.length===0?'<div class="empty-state"><div class="icon">📥</div><div>No data. Import Files first.</div></div>':'<div class="empty-state"><div class="icon">🔍</div><div>No vehicles match.</div></div>';tbody.innerHTML='<tr><td colspan="30">'+msg+'</td></tr>';tfoot.innerHTML='';updateSummary(filtered);return;}
+  let html='';
+  filtered.forEach((d,i)=>{
+    const gi=VDATA.indexOf(d);const ch=vchtml(i);const sd=d.startDates&&d.startDates.length?dOnly(d.startDates[0]):'—';const ed=d.endDates&&d.endDates.length?dOnly(d.endDates[d.endDates.length-1]):'—';const out=n0(d.outstandingBalance);
+    html+='<tr class="trip-row" style="border-left:4px solid '+ch.mid+'"><td style="color:'+ch.mid+';font-size:11px;text-align:center;font-weight:700">'+(i+1)+'</td><td><div class="vehicle-no" style="color:'+ch.dark+'">'+esc(d.vehicle)+'</div><div style="font-size:10px;color:#94a3b8">'+esc(d.tripSheetNo||'')+'</div></td><td><div class="driver-name" title="'+esc(d.driver)+'">'+(esc(d.driver)||'—')+'</div></td><td style="text-align:center"><span class="trip-badge" style="background:'+ch.bg+';color:'+ch.fg+';border:1px solid '+ch.light+'">'+(d.tripCount||0)+'</span></td><td style="font-size:11px;white-space:nowrap">'+sd+'</td><td style="font-size:11px;white-space:nowrap">'+ed+'</td><td style="font-size:11px;color:var(--text2);max-width:200px;word-break:break-word">'+esc((d.routes||[]).join(' | ')||'—')+'</td><td class="num small-num">'+fmtN(d.startOdo)+'</td><td class="num small-num">'+fmtN(d.endOdo)+'</td><td class="num small-num">'+fmtN(d.actDistance)+'</td><td class="num num-atm">'+fmt(d.atmAdvance)+'</td><td class="num small-num">'+fmt(d.fuelAdvance)+'</td><td class="num small-num">'+(d.toll?fmt(d.toll):'—')+'</td><td class="num small-num">'+(d.loading?fmt(d.loading):'—')+'</td><td class="num small-num">'+(d.unloading?fmt(d.unloading):'—')+'</td><td class="num small-num">'+(d.parking?fmt(d.parking):'—')+'</td><td class="num small-num">'+(d.repairWorks?fmt(d.repairWorks):'—')+'</td><td class="num small-num">'+(d.repairCostNoBill?fmt(d.repairCostNoBill):'—')+'</td><td class="num small-num">'+(d.adblue?fmt(d.adblue):'—')+'</td><td class="num small-num">'+(d.rto?fmt(d.rto):'—')+'</td><td class="num small-num">'+(d.police?fmt(d.police):'—')+'</td><td class="num small-num">'+(d.routeGuide?fmt(d.routeGuide):'—')+'</td><td class="num">'+fmt(d.driverSalary)+'</td><td class="num small-num">'+(d.incentive?fmt(d.incentive):'—')+'</td><td class="num small-num">'+(d.others?fmt(d.others):'—')+'</td><td class="num num-atm">'+fmt(d.totalAdvance)+'</td><td class="num" style="font-weight:600">'+fmt(d.totalExpense)+'</td><td class="num" style="color:var(--amber);font-weight:600">'+fmt(d.balanceToPay)+'</td><td style="text-align:right"><input class="paid-input" type="number" min="0" value="'+(d.paidAmount||'')+'" placeholder="0" data-gi="'+gi+'" onchange="updPaidMain('+gi+',this.value)" oninput="updPaidMain('+gi+',this.value)"></td><td class="'+outCls(out)+'" id="out_'+gi+'">'+fmtOut(out)+'</td></tr>';
+  });
+  tbody.innerHTML=html;renderFoot(filtered);updateSummary(filtered);
+}
+
+function renderFoot(filtered){
+  const t=gt(filtered);const gOC=outClr(t.outstandingBalance);
+  document.getElementById('mainFoot').innerHTML='<tr style="background:#1e3a5f;color:#fff"><td colspan="3" style="font-weight:800;font-size:13px;font-family:Sora,sans-serif;padding:9px 8px">GRAND TOTAL</td><td style="text-align:center;color:#93c5fd;font-weight:800;padding:9px 8px">'+t.tripCount+'</td><td colspan="5" style="padding:9px 8px"></td><td class="num" style="color:#d1d5db;padding:9px 8px">'+(fmtN(t.actDistance)||'—')+'</td><td class="num" style="color:#93c5fd;padding:9px 8px">'+fmt(t.atmAdvance)+'</td><td class="num" style="color:#d1d5db;padding:9px 8px">'+fmt(t.fuelAdvance)+'</td><td class="num" style="color:#d1d5db;padding:9px 8px">'+(t.toll?fmt(t.toll):'—')+'</td><td class="num" style="color:#d1d5db;padding:9px 8px">'+(t.loading?fmt(t.loading):'—')+'</td><td class="num" style="color:#d1d5db;padding:9px 8px">'+(t.unloading?fmt(t.unloading):'—')+'</td><td class="num" style="color:#d1d5db;padding:9px 8px">'+(t.parking?fmt(t.parking):'—')+'</td><td class="num" style="color:#d1d5db;padding:9px 8px">'+(t.repairWorks?fmt(t.repairWorks):'—')+'</td><td class="num" style="color:#d1d5db;padding:9px 8px">'+(t.repairCostNoBill?fmt(t.repairCostNoBill):'—')+'</td><td class="num" style="color:#d1d5db;padding:9px 8px">'+(t.adblue?fmt(t.adblue):'—')+'</td><td class="num" style="color:#d1d5db;padding:9px 8px">'+(t.rto?fmt(t.rto):'—')+'</td><td class="num" style="color:#d1d5db;padding:9px 8px">'+(t.police?fmt(t.police):'—')+'</td><td class="num" style="color:#d1d5db;padding:9px 8px">'+(t.routeGuide?fmt(t.routeGuide):'—')+'</td><td class="num" style="color:#fde68a;padding:9px 8px">'+fmt(t.driverSalary)+'</td><td class="num" style="color:#d1d5db;padding:9px 8px">'+(t.incentive?fmt(t.incentive):'—')+'</td><td class="num" style="color:#d1d5db;padding:9px 8px">'+(t.others?fmt(t.others):'—')+'</td><td class="num" style="color:#93c5fd;padding:9px 8px">'+fmt(t.totalAdvance)+'</td><td class="num" style="color:#fde68a;font-weight:800;padding:9px 8px">'+fmt(t.totalExpense)+'</td><td class="num" style="color:#fde68a;padding:9px 8px">'+fmt(t.balanceToPay)+'</td><td class="num" style="color:#86efac;padding:9px 8px">'+(fmt(t.paidAmount)||'₹0')+'</td><td class="num" style="color:'+gOC+';font-size:14px;font-weight:800;padding:9px 8px">'+(fmt(t.outstandingBalance)||'₹0')+'</td></tr>';
+}
+
+function updPaidMain(gi,val){const paid=parseFloat(val)||0;const d=VDATA[gi];const trips=d.trips||[];if(trips.length===1){trips[0].paidAmount=paid;}else{trips.forEach((t,i)=>{t.paidAmount=i===trips.length-1?paid:0;});}recomputeVehicle(gi);const el=document.getElementById('out_'+gi);if(el){el.className=outCls(d.outstandingBalance);el.innerHTML=fmtOut(d.outstandingBalance);}renderFoot(getFiltered((document.getElementById('searchBox')||{}).value||''));updateSummary();}
+function resetAllPaid(){VDATA.forEach((d,gi)=>{(d.trips||[]).forEach(t=>{t.paidAmount=0;t.outstandingBalance=n0(t.balanceToPay);});recomputeVehicle(gi);});renderMain();showToast('All paid amounts reset','info');}
+
+const RCOLS=[{l:'Vehicle / Trip',k:'_vehicle',w:145},{l:'Driver',k:'_driver',w:155},{l:'Trips',k:'tripCount',r:true,w:58},{l:'Route',k:'route',w:195},{l:'Start Date',k:'startDate',w:92},{l:'End Date',k:'endDate',w:92},{l:'Start Odo',k:'startOdo',r:true,w:82},{l:'End Odo',k:'endOdo',r:true,w:82},{l:'Act. Dist',k:'actDistance',r:true,w:78},{l:'ATM Advance',k:'atmAdvance',r:true,w:100},{l:'Fuel Adv',k:'fuelAdvance',r:true,w:88},{l:'Toll (FasTag)',k:'toll',r:true,w:90},{l:'Loading',k:'loading',r:true,w:74},{l:'Unloading',k:'unloading',r:true,w:78},{l:'Parking',k:'parking',r:true,w:70},{l:'Repair Works',k:'repairWorks',r:true,w:94},{l:'Repair w/o Bill',k:'repairCostNoBill',r:true,w:106},{l:'Adblue',k:'adblue',r:true,w:64},{l:'RTO',k:'rto',r:true,w:58},{l:'Police',k:'police',r:true,w:58},{l:'Route Guide',k:'routeGuide',r:true,w:88},{l:'Driver Salary',k:'driverSalary',r:true,w:100},{l:'Incentive',k:'incentive',r:true,w:78},{l:'Others',k:'others',r:true,w:68},{l:'Total Advance',k:'totalAdvance',r:true,w:100},{l:'Total Expense',k:'totalExpense',r:true,w:100},{l:'Bal To Pay',k:'balanceToPay',r:true,w:95},{l:'Paid Amount',k:'_paid',r:true,w:122},{l:'Outstanding',k:'outstandingBalance',r:true,w:115}];
+const COL_PAID=28,COL_OUT=29,COL_ATM=10,COL_TOTADV=25,COL_TOTEXP=26,COL_BAL=27;
+
+function renderReport(){
+  const filtered=getReportFiltered();const GT=gt(filtered);const now=new Date().toLocaleDateString('en-IN');
+  if(!filtered.length){document.getElementById('reportPane').innerHTML='<div class="empty-state"><div class="icon">📥</div><div>No data loaded or no vehicles selected.</div></div>';return;}
+  const thead='<tr>'+RCOLS.map(c=>'<th class="'+(c.r?'r':'')+'" style="min-width:'+(c.w||80)+'px">'+c.l+'</th>').join('')+'</tr>';let body='';
+  filtered.forEach((d,vi)=>{
+    const ch=vchtml(vi);const gi=VDATA.indexOf(d);
+    const trips=d.trips&&d.trips.length?d.trips:[{route:(d.routes||[]).join(' | '),startDate:d.startDates&&d.startDates.length?d.startDates[0]:'',endDate:d.endDates&&d.endDates.length?d.endDates[d.endDates.length-1]:'',startOdo:d.startOdo||0,endOdo:d.endOdo||0,tripCount:d.tripCount||0,actDistance:d.actDistance||0,atmAdvance:d.atmAdvance||0,fuelAdvance:d.fuelAdvance||0,toll:d.toll||0,loading:d.loading||0,unloading:d.unloading||0,parking:d.parking||0,repairWorks:d.repairWorks||0,repairCostNoBill:d.repairCostNoBill||0,adblue:d.adblue||0,rto:d.rto||0,police:d.police||0,routeGuide:d.routeGuide||0,driverSalary:d.driverSalary||0,incentive:d.incentive||0,others:d.others||0,totalAdvance:d.totalAdvance||0,totalExpense:d.totalExpense||0,balanceToPay:d.balanceToPay||0,paidAmount:d.paidAmount||0,outstandingBalance:d.outstandingBalance||0}];
+    body+='<tr class="veh-hdr" style="background:'+ch.dark+';border-top:4px solid '+ch.mid+'">';RCOLS.forEach(col=>{if(col.k==='_vehicle')body+='<td style="color:#fff"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+ch.light+';margin-right:6px;vertical-align:middle"></span><strong>'+esc(d.vehicle)+'</strong>'+(d.tripSheetNo?'<div style="font-size:10px;color:rgba(255,255,255,.5);margin-left:16px">'+esc(d.tripSheetNo)+'</div>':'')+'</td>';else if(col.k==='_driver')body+='<td style="color:rgba(255,255,255,.8)">'+(esc(d.driver)||'—')+'</td>';else if(col.k==='tripCount')body+='<td style="text-align:center"><span style="background:rgba(255,255,255,.2);color:#fff;border-radius:12px;padding:2px 10px;font-weight:700">'+(d.tripCount||0)+'</span></td>';else if(col.k==='route')body+='<td style="color:rgba(255,255,255,.75);font-size:11px">'+esc((d.routes||[]).join(' → ')||'—')+'</td>';else if(col.k==='startDate')body+='<td style="color:rgba(255,255,255,.65);font-size:11px;white-space:nowrap">'+(d.startDates&&d.startDates.length?dOnly(d.startDates[0]):'—')+'</td>';else if(col.k==='endDate')body+='<td style="color:rgba(255,255,255,.65);font-size:11px;white-space:nowrap">'+(d.endDates&&d.endDates.length?dOnly(d.endDates[d.endDates.length-1]):'—')+'</td>';else body+='<td></td>';});body+='</tr>';
+    trips.forEach((tr,ti)=>{const rowBg=ti%2===0?'#fff':ch.bg;body+='<tr class="tr-row" style="background:'+rowBg+';border-left:3px solid '+ch.mid+'">';RCOLS.forEach(col=>{if(col.k==='_vehicle')body+='<td style="color:'+ch.dark+';font-weight:600;font-size:12px"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:'+ch.mid+';margin-right:5px;vertical-align:middle"></span>'+(ti===0?'Trip 1':'↳ Trip '+(ti+1))+'</td>';else if(col.k==='_driver')body+='<td style="font-size:11px;color:var(--text2)">'+(ti===0?esc(d.driver||'—'):'')+'</td>';else if(col.k==='tripCount')body+='<td style="text-align:center"><span class="trip-badge" style="background:'+ch.bg+';color:'+ch.fg+';border:1px solid '+ch.light+'">'+(n0(tr.tripCount)||1)+'</span></td>';else if(col.k==='route')body+='<td style="font-size:11px;color:'+ch.fg+';font-weight:500">'+esc(tr.route||'—')+'</td>';else if(col.k==='startDate')body+='<td style="font-size:11px;white-space:nowrap">'+dOnly(tr.startDate)+'</td>';else if(col.k==='endDate')body+='<td style="font-size:11px;white-space:nowrap">'+dOnly(tr.endDate)+'</td>';else if(col.k==='startOdo')body+='<td style="text-align:right;color:var(--text2)">'+(n0(tr.startOdo)?fmtRaw(tr.startOdo):'0')+'</td>';else if(col.k==='endOdo')body+='<td style="text-align:right;color:var(--text2)">'+(n0(tr.endOdo)?fmtRaw(tr.endOdo):'0')+'</td>';else if(col.k==='_paid')body+='<td style="text-align:right;padding:4px 6px"><input class="trip-paid-input" type="number" min="0" value="'+(n0(tr.paidAmount)||'')+'" placeholder="0" title="Trip '+(ti+1)+' — Enter paid amount" onchange="updTripPaid('+gi+','+ti+',this.value)" oninput="updTripPaid('+gi+','+ti+',this.value)"></td>';else if(col.k==='outstandingBalance'){const ov=n0(tr.balanceToPay)-n0(tr.paidAmount);body+='<td style="text-align:right;font-weight:700;color:'+outClr(ov)+'" id="tout_'+gi+'_'+ti+'">'+fmtRaw(ov)+'</td>';}else if(col.r)body+='<td style="text-align:right;color:var(--text2)">'+fmtRaw(n0(tr[col.k]))+'</td>';else body+='<td></td>';});body+='</tr>';});
+    const vOut=n0(d.outstandingBalance);const routeStr=(d.routes||[]).join(' | ')||'—';body+='<tr class="veh-total" style="background:'+ch.light+';border-top:2px solid '+ch.mid+';border-bottom:3px solid '+ch.dark+';border-left:4px solid '+ch.dark+'">';RCOLS.forEach(col=>{if(col.k==='_vehicle')body+='<td style="color:'+ch.dark+';font-weight:800">📊 Total — '+esc(d.vehicle)+'</td>';else if(col.k==='_driver')body+='<td style="color:'+ch.dark+';font-weight:600;font-size:11px">'+esc(d.driver||'')+'</td>';else if(col.k==='tripCount')body+='<td style="text-align:center;font-weight:800;color:'+ch.dark+'">'+(d.tripCount||0)+'</td>';else if(col.k==='route')body+='<td style="font-size:11px;color:'+ch.dark+';font-weight:600">'+esc(routeStr)+'</td>';else if(col.k==='startDate')body+='<td style="font-size:11px;font-weight:600">'+(d.startDates&&d.startDates.length?dOnly(d.startDates[0]):'—')+'</td>';else if(col.k==='endDate')body+='<td style="font-size:11px;font-weight:600">'+(d.endDates&&d.endDates.length?dOnly(d.endDates[d.endDates.length-1]):'—')+'</td>';else if(col.k==='_paid')body+='<td style="text-align:right;font-weight:800;color:'+ch.dark+'" id="vpaid_'+gi+'">'+fmtRaw(n0(d.paidAmount))+'</td>';else if(col.k==='outstandingBalance')body+='<td style="text-align:right;font-weight:800;color:'+outClr(vOut)+'" id="vout_'+gi+'">'+fmtRaw(vOut)+'</td>';else if(col.r)body+='<td style="text-align:right;font-weight:700;color:'+ch.dark+'">'+fmtRaw(n0(d[col.k]))+'</td>';else body+='<td></td>';});body+='</tr>';
+  });
+  const gOut=n0(GT.outstandingBalance);let gRow='<tr class="grand-row">';RCOLS.forEach(col=>{if(col.k==='_vehicle')gRow+='<td style="font-weight:800;font-size:14px;font-family:Sora,sans-serif">🏆 GRAND TOTAL</td>';else if(col.k==='_driver'||col.k==='route'||col.k==='startDate'||col.k==='endDate'||col.k==='startOdo'||col.k==='endOdo')gRow+='<td></td>';else if(col.k==='tripCount')gRow+='<td style="text-align:center;color:#93c5fd;font-weight:800">'+GT.tripCount+'</td>';else if(col.k==='_paid')gRow+='<td style="text-align:right;color:#86efac;font-weight:700" id="gpaid_tot">'+fmtRaw(n0(GT.paidAmount))+'</td>';else if(col.k==='outstandingBalance')gRow+='<td style="text-align:right;color:'+outClr(gOut)+';font-weight:800;font-size:13px" id="gout_tot">'+fmtRaw(gOut)+'</td>';else if(col.k==='totalExpense'||col.k==='balanceToPay')gRow+='<td style="text-align:right;color:#fde68a;font-weight:800">'+fmtRaw(n0(GT[col.k]))+'</td>';else if(col.k==='atmAdvance'||col.k==='totalAdvance')gRow+='<td style="text-align:right;color:#93c5fd;font-weight:700">'+fmtRaw(n0(GT[col.k]))+'</td>';else gRow+='<td style="text-align:right;color:#d1d5db">'+fmtRaw(n0(GT[col.k]))+'</td>';});gRow+='</tr>';
+  const totalWidth=RCOLS.reduce((s,c)=>s+(c.w||80),0)+50;let legend='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;padding:10px 14px;background:#fff;border-radius:10px;border:1px solid var(--border)">';filtered.forEach((d,i)=>{const ch=vchtml(i);legend+='<span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:'+ch.dark+';background:'+ch.bg+';padding:3px 10px;border-radius:6px;border:1px solid '+ch.mid+'"><span style="width:8px;height:8px;border-radius:50%;background:'+ch.mid+'"></span>'+esc(d.vehicle)+'</span>';});legend+='</div>';
+  document.getElementById('reportPane').innerHTML='<div style="margin-bottom:14px"><h2 style="font-family:Sora,sans-serif;font-size:18px;font-weight:800;color:#1e3a5f">MM Roadways — Vehicle-wise Trip Report</h2><p style="font-size:12px;color:#64748b">Generated: '+now+' &nbsp;|&nbsp; Vehicles: '+filtered.length+' &nbsp;|&nbsp; Total Trips: '+GT.tripCount+' &nbsp;|&nbsp; Outstanding: <strong style="color:'+outClr(gOut)+'">'+fmt(gOut)+'</strong></p><p style="font-size:11px;color:#16a34a;margin-top:5px;font-weight:500">💡 Enter paid amount per trip — Negative outstanding = overpaid</p></div>'+legend+'<div style="overflow-x:auto"><table class="rtable" style="min-width:'+totalWidth+'px"><thead>'+thead+'</thead><tbody>'+body+'</tbody><tfoot>'+gRow+'</tfoot></table></div>';
+}
+
+function updTripPaid(gi,ti,val){
+  const paid=parseFloat(val)||0;const d=VDATA[gi];const trips=d.trips||[];if(ti<trips.length)trips[ti].paidAmount=paid;recomputeVehicle(gi);
+  const tEl=document.getElementById('tout_'+gi+'_'+ti);if(tEl){const ov=n0(trips[ti].balanceToPay)-paid;tEl.style.color=outClr(ov);tEl.textContent=fmtRaw(ov);}
+  const vpEl=document.getElementById('vpaid_'+gi);if(vpEl)vpEl.textContent=fmtRaw(n0(d.paidAmount));
+  const voEl=document.getElementById('vout_'+gi);if(voEl){voEl.style.color=outClr(d.outstandingBalance);voEl.textContent=fmtRaw(d.outstandingBalance);}
+  const filtered=getReportFiltered();const GT=gt(filtered);
+  const gpEl=document.getElementById('gpaid_tot');if(gpEl)gpEl.textContent=fmtRaw(n0(GT.paidAmount));
+  const goEl=document.getElementById('gout_tot');if(goEl){goEl.style.color=outClr(GT.outstandingBalance);goEl.textContent=fmtRaw(n0(GT.outstandingBalance));}
+  const mainEl=document.getElementById('out_'+gi);if(mainEl){mainEl.className=outCls(d.outstandingBalance);mainEl.innerHTML=fmtOut(d.outstandingBalance);}
+  document.querySelectorAll('#mainBody input[data-gi="'+gi+'"]').forEach(inp=>{inp.value=d.paidAmount||'';});
+  renderFoot(getFiltered((document.getElementById('searchBox')||{}).value||''));updateSummary();
+}
+
+/* ===== EXCELJS HELPERS ===== */
+function xljBdr(color,style){style=style||'thin';const s={style:style,color:{argb:color}};return{top:s,bottom:s,left:s,right:s};}
+function xljBdrTB(color){const m={style:'medium',color:{argb:color}};const t={style:'thin',color:{argb:color}};return{top:m,bottom:m,left:t,right:t};}
+function xljFl(argb){return{type:'pattern',pattern:'solid',fgColor:{argb:argb}};}
+
+/* ===== DOWNLOAD EXCEL — ExcelJS with full colors, borders, minus values ===== */
+async function downloadExcel(){
+  if(!VDATA.length){showToast('No data to download','info');return;}
+  try{
+    showToast('Generating Excel...','info');
+    const filtered=getFiltered((document.getElementById('searchBox')||{}).value||'');
+    const wb=new ExcelJS.Workbook();wb.creator='MM Roadways';wb.created=new Date();
+
+    /* ===== SHEET 1: Vehicle-wise Report ===== */
+    const ws=wb.addWorksheet('Vehicle-wise Report',{properties:{tabColor:{argb:'FF1E3A5F'}}});
+    const NC=29;
+    const HDR=['Vehicle / Trip','Driver','Trips','Route','Start Date','End Date','Start Odo','End Odo','Act. Distance','ATM Advance','Fuel Advance','Toll (FasTag)','Loading','Unloading','Parking','Repair Works','Repair Cost w/o Bill','Adblue','RTO','Police','Route Guide','Driver Salary','Incentive','Others','Total Advance','Total Expense','Balance To Pay','Paid Amount','Outstanding Balance'];
+    const COL_W=[24,22,7,28,11,11,10,10,11,12,11,11,10,10,9,12,14,9,8,8,11,13,11,10,13,13,13,13,14];
+    ws.columns=COL_W.map(w=>({width:w}));
+
+    /* Header row */
+    const hRow=ws.addRow(HDR);hRow.height=24;
+    for(let cn=1;cn<=NC;cn++){const cell=hRow.getCell(cn);cell.fill=xljFl('FF1E3A5F');cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11,name:'Calibri'};cell.alignment={horizontal:'center',vertical:'middle',wrapText:true};cell.border=xljBdr('FF2D5A8E');}
+
+    filtered.forEach((d,vi)=>{
+      const c=vc(vi);const gi=VDATA.indexOf(d);
+      const trips=d.trips&&d.trips.length?d.trips:[{route:(d.routes||[]).join(' | '),startDate:d.startDates&&d.startDates.length?d.startDates[0]:'',endDate:d.endDates&&d.endDates.length?d.endDates[d.endDates.length-1]:'',startOdo:d.startOdo||0,endOdo:d.endOdo||0,tripCount:d.tripCount||0,actDistance:d.actDistance||0,atmAdvance:d.atmAdvance||0,fuelAdvance:d.fuelAdvance||0,toll:d.toll||0,loading:d.loading||0,unloading:d.unloading||0,parking:d.parking||0,repairWorks:d.repairWorks||0,repairCostNoBill:d.repairCostNoBill||0,adblue:d.adblue||0,rto:d.rto||0,police:d.police||0,routeGuide:d.routeGuide||0,driverSalary:d.driverSalary||0,incentive:d.incentive||0,others:d.others||0,totalAdvance:d.totalAdvance||0,totalExpense:d.totalExpense||0,balanceToPay:d.balanceToPay||0,paidAmount:d.paidAmount||0,outstandingBalance:d.outstandingBalance||0}];
+      const sd=d.startDates&&d.startDates.length?dOnly(d.startDates[0]):'';const ed=d.endDates&&d.endDates.length?dOnly(d.endDates[d.endDates.length-1]):'';
+
+      /* Vehicle header */
+      const vhRow=ws.addRow([d.vehicle,d.driver,d.tripCount||0,(d.routes||[]).join(' → ')||'',sd,ed,'','','','','','','','','','','','','','','','','','','','','','']);vhRow.height=20;
+      for(let cn=1;cn<=NC;cn++){const cell=vhRow.getCell(cn);cell.fill=xljFl(c.dark);cell.font={bold:true,color:{argb:'FFFFFFFF'},size:12,name:'Calibri'};cell.alignment={horizontal:cn>=7?'right':'left',vertical:'middle'};cell.border=xljBdr(c.mid);}
+
+      /* Trip rows */
+      trips.forEach((tr,ti)=>{
+        const trOut=n0(tr.balanceToPay)-n0(tr.paidAmount);
+        const trRow=ws.addRow([ti===0?'  Trip 1':'  \u21B3 Trip '+(ti+1),ti===0?(d.driver||''):'',n0(tr.tripCount)||1,tr.route||'',dOnly(tr.startDate)||'',dOnly(tr.endDate)||'',n0(tr.startOdo),n0(tr.endOdo),n0(tr.actDistance),n0(tr.atmAdvance),n0(tr.fuelAdvance),n0(tr.toll),n0(tr.loading),n0(tr.unloading),n0(tr.parking),n0(tr.repairWorks),n0(tr.repairCostNoBill),n0(tr.adblue),n0(tr.rto),n0(tr.police),n0(tr.routeGuide),n0(tr.driverSalary),n0(tr.incentive),n0(tr.others),n0(tr.totalAdvance),n0(tr.totalExpense),n0(tr.balanceToPay),n0(tr.paidAmount),trOut]);
+        trRow.height=16;const bgRgb=ti%2===0?'FFFFFFFF':c.xlTripBg2;
+        for(let cn=1;cn<=NC;cn++){
+          const cell=trRow.getCell(cn);let fColor=c.xlNumFg;let fBold=false;
+          if(cn===1)fColor=c.xlFg;if(cn===10){fBold=true;fColor='FF1D4ED8';}if(cn===25){fBold=true;fColor='FF1D4ED8';}
+          if(cn===26||cn===27){fBold=true;fColor='FFB45309';}if(cn===28){fBold=true;fColor=c.xlPaid;}
+          if(cn===29){fBold=true;fColor=trOut<0?c.xlOutNeg:trOut>0?c.xlOutPos:c.xlOutZero;}
+          cell.fill=xljFl(bgRgb);cell.font={bold:fBold,color:{argb:fColor},size:10,name:'Calibri'};
+          cell.alignment={horizontal:cn>=7?'right':'left',vertical:'middle'};cell.border=xljBdr(c.xlBorder);
+          if(cn>=7&&typeof cell.value==='number')cell.numFmt='#,##0';
+        }
+      });
+
+      /* Vehicle total */
+      const vOut=n0(d.outstandingBalance);
+      const vtRow=ws.addRow(['  Total \u2014 '+d.vehicle,d.driver||'',d.tripCount||0,(d.routes||[]).join(' | ')||'',sd,ed,n0(d.startOdo),n0(d.endOdo),n0(d.actDistance),n0(d.atmAdvance),n0(d.fuelAdvance),n0(d.toll),n0(d.loading),n0(d.unloading),n0(d.parking),n0(d.repairWorks),n0(d.repairCostNoBill),n0(d.adblue),n0(d.rto),n0(d.police),n0(d.routeGuide),n0(d.driverSalary),n0(d.incentive),n0(d.others),n0(d.totalAdvance),n0(d.totalExpense),n0(d.balanceToPay),n0(d.paidAmount),vOut]);
+      vtRow.height=18;
+      for(let cn=1;cn<=NC;cn++){
+        const cell=vtRow.getCell(cn);let fColor=c.xlFg;let fBold=true;
+        if(cn===28)fColor=c.xlPaid;if(cn===29)fColor=vOut<0?c.xlOutNeg:vOut>0?c.xlOutPos:c.xlOutZero;
+        if(cn===26||cn===27)fColor='FFB45309';if(cn===10||cn===25)fColor='FF1D4ED8';
+        cell.fill=xljFl(c.xlTotalBg);cell.font={bold:fBold,color:{argb:fColor},size:11,name:'Calibri'};
+        cell.alignment={horizontal:cn>=7?'right':'left',vertical:'middle'};cell.border=xljBdrTB(c.xlFg);
+        if(cn>=7&&typeof cell.value==='number')cell.numFmt='#,##0';
+      }
+    });
+
+    /* Grand total */
+    const GT=gt(filtered);const gOut=n0(GT.outstandingBalance);
+    const gtRow=ws.addRow(['GRAND TOTAL','',GT.tripCount,'','','','', '',n0(GT.actDistance),n0(GT.atmAdvance),n0(GT.fuelAdvance),n0(GT.toll),n0(GT.loading),n0(GT.unloading),n0(GT.parking),n0(GT.repairWorks),n0(GT.repairCostNoBill),n0(GT.adblue),n0(GT.rto),n0(GT.police),n0(GT.routeGuide),n0(GT.driverSalary),n0(GT.incentive),n0(GT.others),n0(GT.totalAdvance),n0(GT.totalExpense),n0(GT.balanceToPay),n0(GT.paidAmount),gOut]);
+    gtRow.height=26;
+    for(let cn=1;cn<=NC;cn++){
+      const cell=gtRow.getCell(cn);let fColor='FFFFFFFF';let fSz=12;
+      if(cn===29){fColor=gOut<0?'FFC4B5FD':gOut>0?'FFFCA5A5':'FF86EFAC';fSz=14;}
+      else if(cn===26||cn===27)fColor='FFFDE68A';else if(cn===28)fColor='FF86EFAC';
+      else if(cn===10||cn===25||cn===3)fColor='FF93C5FD';else if(cn>=7)fColor='FFD1D5DB';
+      cell.fill=xljFl('FF0F2040');cell.font={bold:true,color:{argb:fColor},size:fSz,name:'Calibri'};
+      cell.alignment={horizontal:cn>=7?'right':cn===1?'left':'center',vertical:'middle'};cell.border=xljBdr('FFFFFFFF','thick');
+      if(cn>=7&&typeof cell.value==='number')cell.numFmt='#,##0';
+    }
+
+    /* ===== SHEET 2: Summary ===== */
+    const ws2=wb.addWorksheet('Summary',{properties:{tabColor:{argb:'FF16A34A'}}});
+    const sHDR=['#','Vehicle','Driver','Trip Count','Routes','Total Advance','Total Expense','Balance To Pay','Paid Amount','Outstanding Balance'];
+    const NC2=10;const sW=[5,22,25,10,35,14,14,14,14,16];ws2.columns=sW.map(w=>({width:w}));
+    const shRow=ws2.addRow(sHDR);shRow.height=22;
+    for(let cn=1;cn<=NC2;cn++){const cell=shRow.getCell(cn);cell.fill=xljFl('FF1E3A5F');cell.font={bold:true,color:{argb:'FFFFFFFF'},size:11,name:'Calibri'};cell.alignment={horizontal:'center',vertical:'middle'};cell.border=xljBdr('FF2D5A8E');}
+
+    filtered.forEach((d,vi)=>{
+      const c=vc(vi);const vo=n0(d.outstandingBalance);
+      const dRow=ws2.addRow([vi+1,d.vehicle,d.driver||'',d.tripCount||0,(d.routes||[]).join(' | '),n0(d.totalAdvance),n0(d.totalExpense),n0(d.balanceToPay),n0(d.paidAmount),vo]);dRow.height=16;
+      for(let cn=1;cn<=NC2;cn++){
+        const cell=dRow.getCell(cn);let fColor=c.xlNumFg;let fBold=cn===2;
+        if(cn===2)fColor=c.xlFg;if(cn===NC2){fBold=true;fColor=vo<0?c.xlOutNeg:vo>0?c.xlOutPos:c.xlOutZero;}
+        if(cn===7||cn===8){fBold=true;fColor='FFB45309';}if(cn===6){fBold=true;fColor='FF1D4ED8';}if(cn===9)fColor=c.xlPaid;
+        cell.fill=xljFl(c.xlTripBg2);cell.font={bold:fBold,color:{argb:fColor},size:10,name:'Calibri'};
+        cell.alignment={horizontal:cn>=3?'right':cn===1?'center':'left',vertical:'middle'};cell.border=xljBdr(c.xlBorder);
+        if(cn>=3&&typeof cell.value==='number')cell.numFmt='#,##0';
+      }
+    });
+
+    const sgRow=ws2.addRow(['','Grand Total','',GT.tripCount,'',n0(GT.totalAdvance),n0(GT.totalExpense),n0(GT.balanceToPay),n0(GT.paidAmount),gOut]);sgRow.height=24;
+    for(let cn=1;cn<=NC2;cn++){
+      const cell=sgRow.getCell(cn);let fColor='FFFFFFFF';let fSz=12;
+      if(cn===NC2){fColor=gOut<0?'FFC4B5FD':gOut>0?'FFFCA5A5':'FF86EFAC';fSz=14;}
+      else if(cn===7||cn===8)fColor='FFFDE68A';
+            else if(cn===6)fColor='FF93C5FD';
+      else if(cn>=3)fColor='FFD1D5DB';
+      cell.fill=xljFl('FF0F2040');cell.font={bold:true,color:{argb:fColor},size:fSz,name:'Calibri'};
+      cell.alignment={horizontal:cn>=3?'right':cn===1?'left':'center',vertical:'middle'};cell.border=xljBdr('FFFFFFFF','thick');
+      if(cn>=3&&typeof cell.value==='number')cell.numFmt='#,##0';
+    }
+
+    /* Write to browser */
+    const buf=await wb.xlsx.writeBuffer();
+    const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download='MM_Roadways_Report_'+new Date().toISOString().slice(0,10)+'.xlsx';
+    document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+    showToast('✓ Excel downloaded — Colorful with borders!','success');
+  }catch(err){
+    console.error(err);
+    showToast('Download error: '+err.message,'error');
+  }
+}
+
+function showToast(msg,type){
+  type=type||'success';
+  const t=document.getElementById('toast');t.textContent=msg;t.className='toast '+type+' show';
+  clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},3500);
+}
+renderMain();
+</script>
+</body>
+</html>
