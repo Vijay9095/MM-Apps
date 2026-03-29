@@ -16,32 +16,27 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
    CSS VARIABLES — LIGHT THEME
 ══════════════════════════════════════════ */
 :root {
-  /* Sidebar */
   --sb-bg:        #1c2b4a;
   --sb-dark:      #152039;
   --sb-w:         235px;
   --sb-border:    rgba(255,255,255,0.08);
 
-  /* Accent */
   --accent:       #f97316;
   --accent2:      #fb923c;
   --accent-soft:  #fff4ed;
   --accent-glow:  rgba(249,115,22,0.25);
   --accent-grad:  linear-gradient(135deg, #f97316 0%, #fb923c 100%);
 
-  /* Blue accent for chips */
   --blue:         #3b82f6;
   --blue-soft:    #eff6ff;
   --green:        #22c55e;
   --green-soft:   #f0fdf4;
 
-  /* Red accent for rejected */
   --red:          #ef4444;
   --red-soft:     #fef2f2;
   --red-grad:     linear-gradient(135deg, #ef4444 0%, #f87171 100%);
   --red-glow:     rgba(239,68,68,0.25);
 
-  /* Page / content */
   --page-bg:      #f1f5f9;
   --card-bg:      #ffffff;
   --topbar-bg:    #ffffff;
@@ -49,13 +44,11 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
   --border:       #e2e8f0;
   --shadow:       0 1px 3px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.06);
 
-  /* Text */
   --txt-dark:     #0f172a;
   --txt-mid:      #475569;
   --txt-muted:    #94a3b8;
   --txt-light:    #cbd5e1;
 
-  /* Nav */
   --nav-hover:    rgba(255,255,255,0.07);
   --nav-active:   var(--accent-grad);
 
@@ -241,7 +234,7 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
 .login-footer .dev { color: var(--accent); font-weight: 800; font-size: 12px; }
 
 /* ══════════════════════════════════════════
-   MAIN APP (hidden until login)
+   MAIN APP
 ══════════════════════════════════════════ */
 #appShell {
   display: none;
@@ -323,7 +316,6 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
   border-color: transparent;
   box-shadow: 0 4px 18px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.2);
 }
-/* Red active state for Rejected Form module */
 .nav-item.active.nav-rejected {
   background: var(--red-grad);
   box-shadow: 0 4px 18px var(--red-glow), inset 0 1px 0 rgba(255,255,255,0.2);
@@ -367,7 +359,6 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
 }
 .nav-item.active .nav-num { color: rgba(255,255,255,0.6); }
 
-/* NEW badge */
 .nav-badge-new {
   font-size: 8px; font-weight: 900;
   background: linear-gradient(135deg, #22c55e, #16a34a);
@@ -385,7 +376,6 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
   50% { box-shadow: 0 2px 14px rgba(34,197,94,0.7); }
 }
 
-/* Sidebar footer */
 .sb-footer {
   border-top: 1px solid var(--sb-border);
   padding: 14px 18px; flex-shrink: 0;
@@ -412,7 +402,6 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
   overflow: hidden; background: var(--page-bg); min-width: 0;
 }
 
-/* Topbar */
 .topbar {
   height: var(--topbar-h);
   background: var(--topbar-bg);
@@ -435,7 +424,6 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
 
 .tb-right { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
 
-/* Chips */
 .chip {
   display: flex; align-items: center; gap: 6px;
   padding: 5px 13px; border-radius: 20px;
@@ -458,7 +446,6 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
   box-shadow: 0 2px 12px var(--accent-glow);
 }
 
-/* User menu */
 .user-menu {
   display: flex; align-items: center; gap: 8px;
   padding: 5px 14px 5px 6px; border-radius: 24px;
@@ -786,24 +773,25 @@ const USERS = [
 
 /* ─────────────────────────────────────────────────────
    MODULES
-   type: 'file'    → loads local HTML file in iframe
-   type: 'ext'     → shows external link landing page
+   type: 'file'  → loads local HTML file in iframe
+   type: 'ext'   → shows external link landing page
 ───────────────────────────────────────────────────── */
 const MODULES = [
-  { icon:'🏠', title:'Dashboard',         sub:'Transport Overview',      type:'file', file:'deepseek_html_20260202_9f48c3.html',  isNew: false },
-  { icon:'⛽', title:'Fuel Statement',    sub:'Reconciliation Report',   type:'file', file:'All_Statement_Compare.html',           isNew: false },
-  { icon:'👤', title:'Driver Salary',     sub:'Salary & Photo Records',  type:'file', file:'Driver_Salary_Photo_deep.html',        isNew: false },
-  { icon:'📋', title:'Daily Settlements', sub:'Vehicle Expense Tracker', type:'file', file:'Daily_Settlements.html',               isNew: false },
-  { icon:'🚗', title:'Idle Vehicles',     sub:'Idle Vehicle Monitor',    type:'file', file:'Idle_Vehicle.html',                    isNew: false },
-  { icon:'📍', title:'Mileage',           sub:'Mileage Calculation',     type:'file', file:'MM_Roadways_Mileage.html',             isNew: false },
-  { icon:'🔍', title:'Fuel Check',        sub:'Transaction Comparator',  type:'file', file:'mmfuell.html',                         isNew: false },
-  { icon:'📊', title:'Trip Sheet',        sub:'Pending Tripsheet',       type:'file', file:'Pending_Tripsheet1.html',              isNew: false },
-  { icon:'🏷️', title:'FASTag',            sub:'FASTag Dashboard',        type:'file', file:'Fastag.html',                         isNew: false },
-  { icon:'🔄', title:'File Converter',    sub:'XLS / CSV / JSON / PDF',  type:'file', file:'All_File_Format.html',                 isNew: false },
-  { icon:'🔢', title:'Trip Count',        sub:'Vehicle Trip Counter',    type:'file', file:'Trip_Count.html',                     isNew: true  },
-  { icon:'📅', title:'Month Trip Count',  sub:'Monthly Vehicle Summary', type:'file', file:'Tripcount.html',                      isNew: true  },
-  { icon:'❌', title:'Rejected Form',     sub:'Settlement Rejected',     type:'ext',  url:'https://mmsettlementrejected.vercel.app/', isNew: true },
-  { icon:'🧾', title:'Trip Settlement',   sub:'Trip Settlement Records', type:'file', file:'Trip_Settlement.html',                 isNew: true  },
+  { icon:'🏠', title:'Dashboard',               sub:'Transport Overview',      type:'file', file:'deepseek_html_20260202_9f48c3.html',  isNew: false },
+  { icon:'⛽', title:'Fuel Statement',          sub:'Reconciliation Report',   type:'file', file:'All_Statement_Compare.html',           isNew: false },
+  { icon:'👤', title:'Driver Salary',           sub:'Salary & Photo Records',  type:'file', file:'Driver_Salary_Photo_deep.html',        isNew: false },
+  { icon:'📋', title:'Daily Settlements',       sub:'Vehicle Expense Tracker', type:'file', file:'Daily_Settlements.html',               isNew: false },
+  { icon:'🚗', title:'Idle Vehicles',           sub:'Idle Vehicle Monitor',    type:'file', file:'Idle_Vehicle.html',                    isNew: false },
+  { icon:'📍', title:'Mileage',                 sub:'Mileage Calculation',     type:'file', file:'MM_Roadways_Mileage.html',             isNew: false },
+  { icon:'🔍', title:'Fuel Check',              sub:'Transaction Comparator',  type:'file', file:'mmfuell.html',                         isNew: false },
+  { icon:'📊', title:'Trip Sheet',              sub:'Pending Tripsheet',       type:'file', file:'Pending_Tripsheet1.html',              isNew: false },
+  { icon:'🏷️', title:'FASTag',                  sub:'FASTag Dashboard',        type:'file', file:'Fastag.html',                         isNew: false },
+  { icon:'🔄', title:'File Converter',          sub:'XLS / CSV / JSON / PDF',  type:'file', file:'All_File_Format.html',                 isNew: false },
+  { icon:'🔢', title:'Trip Count',              sub:'Vehicle Trip Counter',    type:'file', file:'Trip_Count.html',                     isNew: true  },
+  { icon:'📅', title:'Month Trip Count',        sub:'Monthly Vehicle Summary', type:'file', file:'Tripcount.html',                      isNew: true  },
+  { icon:'💰', title:'Month-Wise-Trip-Expenses',sub:'Monthly Trip Expense Report',type:'file',file:'Month_Wise_Trip_Expenses.html',      isNew: true  },
+  { icon:'❌', title:'Rejected Form',           sub:'Settlement Rejected',     type:'ext',  url:'https://mmsettlementrejected.vercel.app/', isNew: true  },
+  { icon:'🧾', title:'Trip Settlement',         sub:'Trip Settlement Records', type:'file', file:'Trip_Settlement.html',                 isNew: true  },
 ];
 
 /* ─────────────────────────────────────────────────────
@@ -901,7 +889,6 @@ function initApp() {
         area.appendChild(fr);
         frameMap[i] = { type: 'file', el: fr, loaded: false };
       } else {
-        // External link landing page
         const div = document.createElement('div');
         div.className = 'ext-landing';
         div.innerHTML = `
@@ -960,12 +947,10 @@ function activate(idx) {
   const fo = frameMap[idx];
 
   if (fo.type === 'ext') {
-    // Show landing page instantly — no loader needed
     document.getElementById('loader').classList.add('hide');
     fo.el.classList.add('active');
     setTimeout(() => fo.el.classList.add('visible'), 30);
   } else {
-    // Show loader then load iframe
     document.getElementById('loader').classList.remove('hide');
     fo.el.classList.add('active');
 
