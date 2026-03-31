@@ -165,7 +165,7 @@ async function load(){
    const verifiedCount = countStatus('verified');
    const receivedCount = countStatus('received');
    const uncheckedCount = getUncheckedCount();
-   statusEl.textContent=`Loaded ${rows.length} rows. Pending: ${pendingCount}, Verified: ${verifiedCount}, Received: ${receivedCount}, Unchecked: ${uncheckedCount}`;
+   statusEl.textContent=`Loaded ${rows.length} rows. Pending: ${pendingCount}, Verified: ${verifiedCount}, Verified: ${receivedCount}, Unchecked: ${uncheckedCount}`;
    
    if (rows.length > 0) {
      uncheckedInfo.style.display = "block";
@@ -371,7 +371,7 @@ function handleReceivedChange(i,isChecked){
   if(mk) processedRows[i][mk]=remarkValues[i]; else processedRows[i]['Remarks']=remarkValues[i];
   /* recalculate per-person received counts */
   calculateCreatedByCounts();
-  statusEl.textContent=`Loaded ${rows.length} rows. Pending: ${countStatus('pending')}, Verified: ${countStatus('verified')}, Received: ${countStatus('received')}, Unchecked: ${getUncheckedCount()}`;
+  statusEl.textContent=`Loaded ${rows.length} rows. Pending: ${countStatus('pending')}, Verified: ${countStatus('verified')}, Verified: ${countStatus('received')}, Unchecked: ${getUncheckedCount()}`;
   updateUncheckedCountBox();
   renderPreview();
 }
@@ -439,7 +439,7 @@ function getCreatedBySummaryHTML() {
     html += `<span style="color:#6366f1;font-weight:700;margin:0 10px;">:</span>`;
     html += `<span style="color:#4f46e5;font-weight:800;font-size:15px;">${count}</span>`;
     html += `<span style="margin-left:16px;display:inline-flex;align-items:center;gap:5px;padding:3px 12px;background:#e8f5e9;border:1px solid #4caf50;border-radius:20px;font-size:12px;font-weight:700;color:#2e7d32;">`;
-    html += `<span style="width:8px;height:8px;background:#4caf50;border-radius:50%;display:inline-block;"></span>Received: ${rCount}</span>`;
+    html += `<span style="width:8px;height:8px;background:#4caf50;border-radius:50%;display:inline-block;"></span>Verified: ${rCount}</span>`;
     html += `</div>`;
   });
   html += `<div style="display:flex;align-items:center;padding:6px 0 0 0;border-top:2px solid #a5b4fc;margin-top:6px;font-size:14px;">`;
@@ -447,7 +447,7 @@ function getCreatedBySummaryHTML() {
   html += `<span style="color:#6366f1;font-weight:700;margin:0 10px;">:</span>`;
   html += `<span style="color:#4f46e5;font-weight:800;font-size:15px;">${totalEntries}</span>`;
   html += `<span style="margin-left:16px;display:inline-flex;align-items:center;gap:5px;padding:3px 12px;background:#c8e6c9;border:1px solid #4caf50;border-radius:20px;font-size:12px;font-weight:700;color:#2e7d32;">`;
-  html += `<span style="width:8px;height:8px;background:#4caf50;border-radius:50%;display:inline-block;"></span>Received: ${totalReceived}</span>`;
+  html += `<span style="width:8px;height:8px;background:#4caf50;border-radius:50%;display:inline-block;"></span>Verified: ${totalReceived}</span>`;
   html += `</div>`;
   html += `</div>`;
   return html;
