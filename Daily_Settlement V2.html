@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>MMROADWAYS — Vehicle Expense Tracker</title>
+<style>
+ body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;margin:0;background:linear-gradient(to bottom right,#eef3ff,#e6edff);} 
+ .container{max-width:1200px;margin:40px auto;padding:20px;} 
+ .brand-header{text-align:center;margin-bottom:30px;} 
+ .brand-name{font-size:42px;font-weight:800;color:#2563eb;margin:0;text-shadow:2px 2px 4px rgba(0,0,0,0.1);letter-spacing:1px;} 
+ .brand-subtitle{font-size:18px;color:#4f46e5;margin-top:5px;font-weight:500;} 
+ h1{font-size:34px;margin:0 0 10px;color:#111;text-align:center;} 
+ .sub{color:#555;margin-bottom:30px;text-align:center;} 
+ .card{background:#fff;border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,0.08);margin-bottom:28px;padding:0;} 
+ .card-header{padding:16px 22px;background:linear-gradient(90deg,#2563eb,#4f46e5);color:#fff;border-radius:14px 14px 0 0;font-size:18px;font-weight:600;} 
+ .card-body{padding:22px;} 
+ label{font-weight:600;color:#444;} 
+ input[type=date]{padding:8px 10px;border:2px solid #cbd5e1;border-radius:8px;font-size:15px;} 
+ .dropzone{border:2px dashed #cbd5e1;border-radius:12px;padding:40px;text-align:center;background:#f8fafc;transition:0.2s;} 
+ .dropzone:hover{border-color:#2563eb;background:#eff6ff;} 
+ button{cursor:pointer;border:none;border-radius:8px;padding:10px 18px;font-weight:600;} 
+ .btn-primary{background:#2563eb;color:#fff;} 
+ .btn-primary:hover{background:#1d4ed8;} 
+ .btn-secondary{background:#e2e8f0;color:#334155;} 
+ table{width:100%;border-collapse:collapse;margin-top:18px;font-size:14px;background:white;} 
+ th,td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left;} 
+ th{background:#f1f5f9;position:sticky;top:0;} 
+ .preview-area{max-height:420px;overflow:auto;} 
+ .status{font-size:14px;color:#444;margin-top:4px;} 
+ .export-buttons{display:flex;gap:12px;flex-wrap:wrap;} 
+ .remark-textbox{width:100%;min-width:150px;padding:6px 10px;border:2px solid #dc3545;border-radius:6px;font-size:13px;background-color:#fff3cd;color:#856404;font-weight:500;outline:none;box-sizing:border-box;} 
+ .remark-textbox:focus{border-color:#ff6b7c;box-shadow:0 0 0 3px rgba(220,53,69,0.1);} 
+ .pending-row{background-color:#fff9db !important;} 
+ .received-row{background-color:#e8f5e9 !important;} 
+ .remarks-header{background:#fff3cd !important;color:#856404;font-weight:600;}
+ .received-header{background:#e8f5e9 !important;color:#2e7d32;font-weight:600;}
+ .received-checkbox{width:20px;height:20px;cursor:pointer;border:2px solid #4caf50;border-radius:4px;outline:none;margin-right:5px;}
+ .received-checkbox:checked{background-color:#4caf50;border-color:#4caf50;}
+ .unchecked-textbox{width:calc(100% - 30px);min-width:120px;padding:6px 10px;border:2px solid #dc3545;border-radius:6px;font-size:13px;background-color:#fff3cd;color:#856404;font-weight:500;outline:none;box-sizing:border-box;text-align:center;}
+ .unchecked-textbox:focus{border-color:#ff6b7c;box-shadow:0 0 0 3px rgba(220,53,69,0.1);}
+ .unchecked-count-box{width:100%;min-width:150px;padding:6px 10px;border:2px solid #dc3545;border-radius:6px;font-size:13px;background-color:#fff3cd;color:#856404;font-weight:500;outline:none;box-sizing:border-box;text-align:center;cursor:default;}
+ .cb-summary{padding:14px 18px;background:linear-gradient(135deg,#f0f4ff,#e8eeff);border-radius:12px;border:1px solid #c7d2fe;margin-bottom:16px;}
+ .cb-summary-title{font-size:14px;font-weight:700;color:#3730a3;margin-bottom:10px;}
+ .cb-row{display:flex;align-items:center;padding:5px 0;border-bottom:1px dashed #c7d2fe;font-size:14px;}
+ .cb-row:last-child{border-bottom:none;}
+ .cb-name{color:#312e81;font-weight:600;min-width:200px;}
+ .cb-sep{color:#6366f1;font-weight:700;margin:0 10px;}
+ .cb-count{color:#4f46e5;font-weight:800;font-size:15px;}
+</style>
+</head>
+<body>
+<div class="container">
+ <div class="brand-header">
+   <div class="brand-name">MMROADWAYS</div>
+   <div class="brand-subtitle">TripSheet</div>
+ </div>
+ 
+ <h1>Today Settlement</h1>
+ <div class="sub">Upload Excel files to automatically detect and display vehicle, driver, and expense data</div>
+
+ <div class="card">
+   <div class="card-header">Step 1: Select Date</div>
+   <div class="card-body">
+     <label>Report Date:</label>
+     <input type="date" id="reportDate" />
+   </div>
+ </div>
+
+ <div class="card">
+   <div class="card-header">Step 2: Upload Excel Files</div>
+   <div class="card-body">
+     <div class="dropzone" id="dropzone">
+       <div style="font-size:16px;font-weight:600;color:#333;margin-bottom:6px;">Drag & Drop Excel Files Here</div>
+       <div style="color:#666;font-size:14px;margin-bottom:14px;">or click to browse (xlsx, xls, csv)</div>
+       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" multiple style="display:none;" />
+       <button class="btn-primary" id="browseBtn">Select Files</button>
+     </div>
+   </div>
+ </div>
+
+ <div class="card">
+   <div class="card-header">Step 3: Preview & Export</div>
+   <div class="card-body">
+     <div class="status" id="status">No data loaded.</div>
+     <div class="preview-area" id="previewArea"></div>
+     <br>
+     <div style="margin-top:10px;margin-bottom:10px;">
+       <div id="uncheckedInfo" style="display:none;">
+         <label>Unchecked Count Summary:</label>
+         <input type="text" id="uncheckedCountBox" class="unchecked-count-box" readonly />
+       </div>
+     </div>
+     <div class="export-buttons">
+       <button class="btn-primary" id="exportXlsxBtn" disabled>Export XLSX</button>
+       <button class="btn-primary" id="exportCsvBtn" disabled>Export CSV</button>
+       <button class="btn-primary" id="exportPngBtn" disabled>Export PNG</button>
+     </div>
+   </div>
+ </div>
+</div>
+
+<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+let files=[], rows=[], processedRows=[];
+let remarkValues = {};
+let receivedValues = {};
+let uncheckedRemarkValues = {};
+let createdByCounts = {};
+const fileInput=document.getElementById("fileInput");
+const browseBtn=document.getElementById("browseBtn");
+const dropzone=document.getElementById("dropzone");
+const previewArea=document.getElementById("previewArea");
+const statusEl=document.getElementById("status");
+const exportXlsxBtn=document.getElementById("exportXlsxBtn");
+const exportCsvBtn=document.getElementById("exportCsvBtn");
+const exportPngBtn=document.getElementById("exportPngBtn");
+const uncheckedInfo = document.getElementById("uncheckedInfo");
+const uncheckedCountBox = document.getElementById("uncheckedCountBox");
+
+browseBtn.onclick=()=>fileInput.click();
+dropzone.onclick=()=>fileInput.click();
+dropzone.ondragover=e=>{e.preventDefault();dropzone.style.background="#e0f2fe"};
+dropzone.ondragleave=()=>dropzone.style.background="#f8fafc";
+dropzone.ondrop=e=>{e.preventDefault();dropzone.style.background="#f8fafc";handleFiles(e.dataTransfer.files)};
+fileInput.onchange=e=>handleFiles(e.target.files);
+
+async function handleFiles(list){
+ files=[...list];
+ rows=[];
+ processedRows=[];
+ remarkValues = {};
+ receivedValues = {};
+ uncheckedRemarkValues = {};
+ createdByCounts = {};
+ previewArea.innerHTML="";
+ statusEl.textContent="Loading...";
+ uncheckedInfo.style.display = "none";
+ uncheckedCountBox.value = "";
+ await load();
+}
+
+async function load(){
+ try {
+   let all=[];
+   for(const f of files){
+     const data=await f.arrayBuffer();
+     const wb=XLSX.read(data,{type:'array'});
+     wb.SheetNames.forEach(s=>{
+       let sh=XLSX.utils.sheet_to_json(wb.Sheets[s],{defval:''});
+       if(sh.length) sh.forEach(r=>all.push(r));
+     });
+   }
+   rows = all;
+   processedRows = processRows(all);
+   calculateCreatedByCounts();
+   
+   const pendingCount = countStatus('pending');
+   const verifiedCount = countStatus('verified');
+   const receivedCount = countStatus('received');
+   const uncheckedCount = getUncheckedCount();
+   statusEl.textContent=`Loaded ${rows.length} rows. Pending: ${pendingCount}, Verified: ${verifiedCount}, Received: ${receivedCount}, Unchecked: ${uncheckedCount}`;
+   
+   if (rows.length > 0) {
+     uncheckedInfo.style.display = "block";
+     updateUncheckedCountBox();
+   }
+   renderPreview();
+   updateButtons();
+ } catch(err){
+   statusEl.textContent="Error loading file";
+   console.error(err);
+ }
+}
+
+function getCreatedByColumnKey(row) {
+  if (!row) return null;
+  return Object.keys(row).find(key => {
+    const k = key.toLowerCase().trim();
+    return k === 'created by' || k === 'createdby' || k === 'created_by' || 
+           k === 'created' || k === 'owner' || k === 'entered by' || 
+           k === 'enteredby' || k === 'entered_by' || k === 'added by' ||
+           k === 'addedby' || k === 'added_by' || k === 'prepared by' ||
+           k === 'preparedby' || k === 'prepared_by';
+  });
+}
+
+/* KEY FIX: Extract ONLY the name part — remove numbers, time, AM/PM, date etc. */
+function extractNameOnly(raw) {
+  return String(raw || '').trim()
+    .replace(/\s*\d+.*/, '')    // remove everything from first digit onwards
+    .replace(/\b(Am|Pm|AM|PM|am|pm)\b/gi, '') // remove AM/PM
+    .replace(/[\s]+/g, ' ')     // multiple spaces → single
+    .trim();
+}
+
+function normalizeName(name) {
+  let extracted = extractNameOnly(name);
+  return extracted.toLowerCase().replace(/[^a-z0-9\s]/g,'').trim();
+}
+
+function toTitleCase(str) {
+  return String(str || '').trim()
+    .replace(/[\s]+/g,' ')
+    .replace(/[^a-zA-Z0-9\s]/g,'')
+    .trim()
+    .split(' ')
+    .filter(w => w.length > 0)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function calculateCreatedByCounts() {
+  createdByCounts = {};
+  if (!rows.length) return;
+  const cbKey = getCreatedByColumnKey(rows[0]);
+  if (!cbKey) return;
+  rows.forEach(row => {
+    let rawName = String(row[cbKey] || '').trim();
+    if (!rawName || rawName.toLowerCase() === 'undefined' || rawName.toLowerCase() === 'null') return;
+    let norm = normalizeName(rawName);
+    if (!norm) return;
+    if (createdByCounts[norm]) createdByCounts[norm]++;
+    else createdByCounts[norm] = 1;
+  });
+}
+
+function processRows(allRows) {
+  return allRows.map((row, index) => {
+    const newRow = {...row};
+    const statusKey = Object.keys(row).find(key => key.toLowerCase() === 'status');
+    const receivedKey = Object.keys(row).find(key => key.toLowerCase() === 'received');
+    const remarkKey = Object.keys(row).find(key => key.toLowerCase() === 'remarks');
+    if (!uncheckedRemarkValues[index]) uncheckedRemarkValues[index] = 'Enter remarks...';
+    if (!receivedValues[index]) receivedValues[index] = false;
+    if (receivedKey) {
+      receivedValues[index] = String(row[receivedKey]).trim().toLowerCase() === 'true' || row[receivedKey] === true || row[receivedKey] === 1;
+    }
+    if (statusKey) {
+      const statusValue = String(row[statusKey]).trim().toLowerCase();
+      if (statusValue === 'pending') {
+        if (!remarkValues[index]) remarkValues[index] = remarkKey ? (row[remarkKey] || 'Please settle') : 'Please settle';
+        if (remarkKey) newRow[remarkKey] = remarkValues[index]; else newRow['Remarks'] = remarkValues[index];
+      }
+      if (receivedValues[index] && statusValue !== 'received') newRow[statusKey] = 'Received';
+    }
+    if (receivedKey) newRow[receivedKey] = receivedValues[index]; else newRow['Received'] = receivedValues[index];
+    return newRow;
+  });
+}
+
+function countStatus(statusType) {
+  let count = 0;
+  processedRows.forEach(row => {
+    const k = Object.keys(row).find(key => key.toLowerCase() === 'status');
+    if (k && String(row[k]).toLowerCase() === statusType.toLowerCase()) count++;
+  });
+  return count;
+}
+
+function getUncheckedCount() {
+  let c = 0;
+  Object.values(receivedValues).forEach(v => { if (!v) c++; });
+  if (Object.keys(receivedValues).length < rows.length) c += (rows.length - Object.keys(receivedValues).length);
+  return c;
+}
+
+function updateUncheckedCountBox() { uncheckedCountBox.value = `${getUncheckedCount()} items unchecked`; }
+
+function renderCreatedBySummary() {
+  const names = Object.keys(createdByCounts);
+  if (names.length === 0) return '';
+  names.sort((a, b) => createdByCounts[b] - createdByCounts[a]);
+  const totalEntries = Object.values(createdByCounts).reduce((s, v) => s + v, 0);
+  
+  let html = '<div class="cb-summary">';
+  html += '<div class="cb-summary-title">Created By</div>';
+  names.forEach(normName => {
+    const displayName = toTitleCase(normName);
+    const count = createdByCounts[normName];
+    html += `<div class="cb-row"><span class="cb-name">${displayName}</span><span class="cb-sep">:</span><span class="cb-count">${count}</span></div>`;
+  });
+  html += `<div class="cb-row" style="border-top:2px solid #a5b4fc;margin-top:6px;padding-top:8px;"><span class="cb-name" style="font-weight:800;">Total</span><span class="cb-sep">:</span><span class="cb-count">${totalEntries}</span></div>`;
+  html += '</div>';
+  return html;
+}
+
+function renderPreview(){
+ if(!processedRows.length){ previewArea.innerHTML=""; return; }
+ let html = renderCreatedBySummary();
+ 
+ const allColumns = new Set();
+ processedRows.forEach(row => { Object.keys(row).forEach(key => allColumns.add(key)); });
+ allColumns.add('Remarks'); allColumns.add('Received');
+ const cols = Array.from(allColumns);
+ cols.sort((a, b) => {
+   if (a.toLowerCase() === 'received') return -1; if (b.toLowerCase() === 'received') return 1;
+   if (a.toLowerCase() === 'remarks') return 1; if (b.toLowerCase() === 'remarks') return -1;
+   return 0;
+ });
+ 
+ html += "<table><thead><tr>";
+ cols.forEach(c => {
+   if (c.toLowerCase() === 'received') html += `<th class="received-header">${c}</th>`;
+   else if (c.toLowerCase() === 'remarks') html += `<th class="remarks-header">${c}</th>`;
+   else html += `<th>${c}</th>`;
+ });
+ html += "</tr></thead><tbody>";
+ 
+ processedRows.slice(0,300).forEach((r, ri)=>{
+   const sk = Object.keys(r).find(k => k.toLowerCase()==='status');
+   const sv = sk ? String(r[sk]).toLowerCase() : '';
+   const isP = sv==='pending', isR = sv==='received' || receivedValues[ri];
+   let rc = isR ? 'class="received-row"' : isP ? 'class="pending-row"' : '';
+   html += `<tr ${rc}>` + cols.map(c=>{
+     const v = r[c] ?? '';
+     if (c.toLowerCase()==='received') {
+       if (!isR) return `<td style="text-align:left;"><input type="checkbox" class="received-checkbox" onchange="handleReceivedChange(${ri},this.checked)"><input type="text" class="unchecked-textbox" value="${uncheckedRemarkValues[ri]||'Enter remarks...'}" placeholder="Enter remarks..." onchange="updateUncheckedRemark(${ri},this.value)" onkeyup="updateUncheckedRemark(${ri},this.value)"></td>`;
+       return `<td style="text-align:center;"><input type="checkbox" class="received-checkbox" checked onchange="handleReceivedChange(${ri},this.checked)"></td>`;
+     }
+     if (c.toLowerCase()==='remarks' && isP && !isR) return `<td><input type="text" class="remark-textbox" value="${remarkValues[ri]||'Please settle'}" placeholder="Enter remarks..." onchange="updateRemarkValue(${ri},this.value)" onkeyup="updateRemarkValue(${ri},this.value)"></td>`;
+     if (c.toLowerCase()==='remarks' && isR) return `<td style="background-color:#e8f5e9;color:#2e7d32;font-weight:500;">${remarkValues[ri]||'Settled'}</td>`;
+     if (c.toLowerCase()==='remarks' && isP) return `<td style="background-color:#fff3cd;color:#856404;font-weight:500;">${remarkValues[ri]||'Please settle'}</td>`;
+     return `<td>${v}</td>`;
+   }).join('') + "</tr>";
+ });
+ html += "</tbody></table>";
+ previewArea.innerHTML=html;
+}
+
+function updateUncheckedRemark(i,v){ uncheckedRemarkValues[i]=v; }
+function updateRemarkValue(i,v){
+  remarkValues[i]=v;
+  const k=Object.keys(processedRows[i]).find(x=>x.toLowerCase()==='remarks');
+  if(k) processedRows[i][k]=v; else processedRows[i]['Remarks']=v;
+}
+
+function handleReceivedChange(i,isChecked){
+  receivedValues[i]=isChecked;
+  const sk=Object.keys(processedRows[i]).find(k=>k.toLowerCase()==='status');
+  if(sk) processedRows[i][sk]=isChecked?'Received':(rows[i][sk]||'Pending');
+  else processedRows[i]['Status']=isChecked?'Received':'Pending';
+  const rk=Object.keys(processedRows[i]).find(k=>k.toLowerCase()==='received');
+  if(rk) processedRows[i][rk]=isChecked; else processedRows[i]['Received']=isChecked;
+  if(isChecked) remarkValues[i]='Settled';
+  else { const or=rows[i]&&rows[i][Object.keys(rows[i]).find(k=>k.toLowerCase()==='remarks')]; remarkValues[i]=or||'Please settle'; }
+  const mk=Object.keys(processedRows[i]).find(k=>k.toLowerCase()==='remarks');
+  if(mk) processedRows[i][mk]=remarkValues[i]; else processedRows[i]['Remarks']=remarkValues[i];
+  statusEl.textContent=`Loaded ${rows.length} rows. Pending: ${countStatus('pending')}, Verified: ${countStatus('verified')}, Received: ${countStatus('received')}, Unchecked: ${getUncheckedCount()}`;
+  updateUncheckedCountBox();
+  renderPreview();
+}
+
+function updateButtons(){
+  const ok=processedRows.length>0;
+  exportXlsxBtn.disabled=!ok; exportCsvBtn.disabled=!ok; exportPngBtn.disabled=!ok;
+}
+
+function getTableHTMLForExport() {
+  const allColumns = new Set();
+  processedRows.forEach(row => { Object.keys(row).forEach(key => allColumns.add(key)); });
+  allColumns.add('Remarks'); allColumns.add('Received');
+  const cols = Array.from(allColumns);
+  cols.sort((a,b)=>{
+    if(a.toLowerCase()==='received')return -1;if(b.toLowerCase()==='received')return 1;
+    if(a.toLowerCase()==='remarks')return 1;if(b.toLowerCase()==='remarks')return -1;return 0;
+  });
+  let html="<table style='width:100%;border-collapse:collapse;font-size:14px;background:white;'><thead><tr>";
+  cols.forEach(c=>{
+    if(c.toLowerCase()==='received') html+=`<th style='padding:8px;border-bottom:2px solid #e2e8f0;text-align:center;background:#e8f5e9;color:#2e7d32;font-weight:600;'>${c}</th>`;
+    else if(c.toLowerCase()==='remarks') html+=`<th style='padding:8px;border-bottom:2px solid #e2e8f0;text-align:left;background:#fff3cd;color:#856404;font-weight:600;'>${c}</th>`;
+    else html+=`<th style='padding:8px;border-bottom:2px solid #e2e8f0;text-align:left;background:#f1f5f9;'>${c}</th>`;
+  });
+  html+="</tr></thead><tbody>";
+  processedRows.forEach((r,ri)=>{
+    const sk=Object.keys(r).find(k=>k.toLowerCase()==='status');
+    const sv=sk?String(r[sk]).toLowerCase():'';
+    const isP=sv==='pending',isR=sv==='received'||receivedValues[ri];
+    const rs=isR?'background-color:#e8f5e9;':isP?'background-color:#fff9db;':'';
+    html+=`<tr style='${rs}'>`+cols.map(c=>{
+      const v=r[c]??'';
+      if(c.toLowerCase()==='received'){
+        const chk=isR?'✓':'□',clr=isR?'#4caf50':'#666';
+        if(!isR) return `<td style='padding:8px;border-bottom:1px solid #e2e8f0;text-align:left;'><div style='display:flex;align-items:center;gap:5px;'><span style='font-size:16px;font-weight:bold;color:${clr};'>${chk}</span><div style='padding:6px 10px;background-color:#fff3cd;color:#856404;border:2px solid #dc3545;border-radius:6px;font-size:13px;font-weight:500;flex-grow:1;'>${uncheckedRemarkValues[ri]||'Enter remarks...'}</div></div></td>`;
+        return `<td style='padding:8px;border-bottom:1px solid #e2e8f0;text-align:center;font-size:16px;font-weight:bold;color:${clr};'>${chk}</td>`;
+      }
+      if(c.toLowerCase()==='remarks'){
+        let rv=remarkValues[ri]||(isR?'Settled':'Please settle');
+        let rs2=isR?'background-color:#c8e6c9;color:#2e7d32;border:1px solid #4caf50;':isP?'background-color:#fff3cd;color:#856404;border:2px solid #dc3545;':'';
+        return `<td style='padding:8px;border-bottom:1px solid #e2e8f0;'><div style='padding:6px 10px;border-radius:6px;font-weight:500;${rs2}'>${rv}</div></td>`;
+      }
+      return `<td style='padding:8px;border-bottom:1px solid #e2e8f0;'>${v}</td>`;
+    }).join('')+"</tr>";
+  });
+  html+="</tbody></table>";
+  return html;
+}
+
+function getCreatedBySummaryHTML() {
+  const names = Object.keys(createdByCounts);
+  if (names.length === 0) return '';
+  names.sort((a, b) => createdByCounts[b] - createdByCounts[a]);
+  const totalEntries = Object.values(createdByCounts).reduce((s, v) => s + v, 0);
+  
+  let html = `<div style="padding:16px 18px;background:linear-gradient(135deg,#f0f4ff,#e8eeff);border-radius:12px;border:1px solid #c7d2fe;">`;
+  html += `<div style="font-size:14px;font-weight:700;color:#3730a3;margin-bottom:10px;">Created By</div>`;
+  names.forEach(normName => {
+    const displayName = toTitleCase(normName);
+    const count = createdByCounts[normName];
+    html += `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px dashed #c7d2fe;font-size:14px;"><span style="color:#312e81;font-weight:600;min-width:200px;">${displayName}</span><span style="color:#6366f1;font-weight:700;margin:0 10px;">:</span><span style="color:#4f46e5;font-weight:800;font-size:15px;">${count}</span></div>`;
+  });
+  html += `<div style="display:flex;align-items:center;padding:6px 0 0 0;border-top:2px solid #a5b4fc;margin-top:6px;font-size:14px;"><span style="color:#312e81;font-weight:800;min-width:200px;">Total</span><span style="color:#6366f1;font-weight:700;margin:0 10px;">:</span><span style="color:#4f46e5;font-weight:800;font-size:15px;">${totalEntries}</span></div>`;
+  html += `</div>`;
+  return html;
+}
+
+exportXlsxBtn.onclick=()=>{
+ let ws=XLSX.utils.json_to_sheet(processedRows);
+ let wb=XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb,ws,'Merged');
+ XLSX.writeFile(wb,'MMROADWAYS_Settlement.xlsx');
+};
+
+exportCsvBtn.onclick=()=>{
+ let ws=XLSX.utils.json_to_sheet(processedRows);
+ let csv=XLSX.utils.sheet_to_csv(ws);
+ let blob=new Blob([csv],{type:'text/csv'});
+ let a=document.createElement('a');
+ a.href=URL.createObjectURL(blob);
+ a.download='MMROADWAYS_Settlement.csv';
+ a.click();
+};
+
+exportPngBtn.onclick=()=>{
+ const date=document.getElementById("reportDate").value || "No Date";
+ if(!processedRows.length) return;
+ const pC=countStatus('pending'),vC=countStatus('verified'),rC=countStatus('received'),uC=getUncheckedCount(),tC=rows.length;
+ const wrapper=document.createElement('div');
+ wrapper.style.padding="0";wrapper.style.margin="0";
+ wrapper.style.background="linear-gradient(to bottom right,#eef3ff,#e6edff)";
+ wrapper.style.fontFamily="system-ui,Segoe UI,Roboto";
+ wrapper.innerHTML=`
+   <div style="background:linear-gradient(90deg,#2563eb,#4f46e5);color:white;padding:22px;text-align:center;">
+     <div style="font-size:32px;font-weight:800;letter-spacing:2px;">MMROADWAYS</div>
+     <div style="font-size:16px;font-weight:500;opacity:0.9;">TripSheet</div>
+   </div>
+   <div style="background:white;padding:20px 30px;border-bottom:1px solid #e2e8f0;">
+     <div style="font-size:24px;font-weight:700;color:#111;margin-bottom:8px;">Today Settlement Report</div>
+     <div style="font-size:16px;color:#555;">Report Date: ${date}</div>
+     <div style="display:flex;align-items:center;margin-top:12px;gap:15px;flex-wrap:wrap;">
+       <div style="font-size:14px;font-weight:600;color:#333;">Summary:</div>
+       <div><span style="font-size:14px;color:#666;">Total:</span> <span style="font-size:14px;font-weight:700;color:#2563eb;margin-left:5px;margin-right:15px;">${tC}</span></div>
+       <div><span style="font-size:14px;color:#666;">Pending:</span> <span style="padding:4px 10px;background:#fef3c7;color:#92400e;border:1px solid #fbbf24;border-radius:12px;font-size:12px;font-weight:600;margin-left:5px;">${pC}</span></div>
+       <div><span style="font-size:14px;color:#666;">Verified:</span> <span style="padding:4px 10px;background:#d1fae5;color:#065f46;border:1px solid #10b981;border-radius:12px;font-size:12px;font-weight:600;margin-left:5px;">${vC}</span></div>
+       <div><span style="font-size:14px;color:#666;">Received:</span> <span style="padding:4px 10px;background:#e8f5e9;color:#2e7d32;border:1px solid #4caf50;border-radius:12px;font-size:12px;font-weight:600;margin-left:5px;">${rC}</span></div>
+       <div><span style="font-size:14px;color:#666;">Unchecked:</span> <span style="padding:4px 10px;background:#fff3cd;color:#856404;border:1px solid #dc3545;border-radius:12px;font-size:12px;font-weight:600;margin-left:5px;">${uC}</span></div>
+     </div>
+   </div>
+   <div style="padding:20px 20px 0 20px;">${getCreatedBySummaryHTML()}</div>
+   <div style="padding:20px;background:white;">${getTableHTMLForExport()}</div>
+   <div style="background:#f8fafc;padding:12px 20px;text-align:center;color:#666;font-size:14px;border-top:1px solid #e2e8f0;">Generated by MMROADWAYS(Vignesh)</div>
+ `;
+ document.body.appendChild(wrapper);
+ html2canvas(wrapper,{backgroundColor:null,scale:3,useCORS:true,logging:false}).then(canvas=>{
+   let a=document.createElement('a');
+   a.href=canvas.toDataURL("image/png");
+   a.download="MMROADWAYS_Settlement_Report.png";
+   a.click();
+   wrapper.remove();
+ });
+};
+</script>
+</body>
+</html>
