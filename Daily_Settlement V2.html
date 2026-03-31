@@ -42,11 +42,14 @@
  .unchecked-count-box{width:100%;min-width:150px;padding:6px 10px;border:2px solid #dc3545;border-radius:6px;font-size:13px;background-color:#fff3cd;color:#856404;font-weight:500;outline:none;box-sizing:border-box;text-align:center;cursor:default;}
  .cb-summary{padding:14px 18px;background:linear-gradient(135deg,#f0f4ff,#e8eeff);border-radius:12px;border:1px solid #c7d2fe;margin-bottom:16px;}
  .cb-summary-title{font-size:14px;font-weight:700;color:#3730a3;margin-bottom:10px;}
- .cb-row{display:flex;align-items:center;padding:5px 0;border-bottom:1px dashed #c7d2fe;font-size:14px;}
+ .cb-row{display:flex;align-items:center;padding:5px 0;border-bottom:1px dashed #c7d2fe;font-size:14px;flex-wrap:wrap;gap:4px;}
  .cb-row:last-child{border-bottom:none;}
  .cb-name{color:#312e81;font-weight:600;min-width:200px;}
  .cb-sep{color:#6366f1;font-weight:700;margin:0 10px;}
  .cb-count{color:#4f46e5;font-weight:800;font-size:15px;}
+ .cb-received{margin-left:16px;display:inline-flex;align-items:center;gap:5px;padding:3px 12px;background:#e8f5e9;border:1px solid #f30606;border-radius:20px;font-size:12px;font-weight:700;color:#2e7d32;}
+ .cb-received-dot{width:8px;height:8px;background:#20ec05;border-radius:50%;display:inline-block;}
+ .cb-total-row{border-top:2px solid #a5b4fc !important;margin-top:6px;padding-top:8px !important;}
 </style>
 </head>
 <body>
@@ -108,6 +111,7 @@ let remarkValues = {};
 let receivedValues = {};
 let uncheckedRemarkValues = {};
 let createdByCounts = {};
+let createdByReceivedCounts = {};
 const fileInput=document.getElementById("fileInput");
 const browseBtn=document.getElementById("browseBtn");
 const dropzone=document.getElementById("dropzone");
@@ -134,6 +138,7 @@ async function handleFiles(list){
  receivedValues = {};
  uncheckedRemarkValues = {};
  createdByCounts = {};
+ createdByReceivedCounts = {};
  previewArea.innerHTML="";
  statusEl.textContent="Loading...";
  uncheckedInfo.style.display = "none";
@@ -186,12 +191,11 @@ function getCreatedByColumnKey(row) {
   });
 }
 
-/* KEY FIX: Extract ONLY the name part — remove numbers, time, AM/PM, date etc. */
 function extractNameOnly(raw) {
   return String(raw || '').trim()
-    .replace(/\s*\d+.*/, '')    // remove everything from first digit onwards
-    .replace(/\b(Am|Pm|AM|PM|am|pm)\b/gi, '') // remove AM/PM
-    .replace(/[\s]+/g, ' ')     // multiple spaces → single
+    .replace(/\s*\d+.*/, '')
+    .replace(/\b(Am|Pm|AM|PM|am|pm)\b/gi, '')
+    .replace(/[\s]+/g, ' ')
     .trim();
 }
 
@@ -213,16 +217,22 @@ function toTitleCase(str) {
 
 function calculateCreatedByCounts() {
   createdByCounts = {};
+  createdByReceivedCounts = {};
   if (!rows.length) return;
   const cbKey = getCreatedByColumnKey(rows[0]);
   if (!cbKey) return;
-  rows.forEach(row => {
+  rows.forEach((row, index) => {
     let rawName = String(row[cbKey] || '').trim();
     if (!rawName || rawName.toLowerCase() === 'undefined' || rawName.toLowerCase() === 'null') return;
     let norm = normalizeName(rawName);
     if (!norm) return;
     if (createdByCounts[norm]) createdByCounts[norm]++;
     else createdByCounts[norm] = 1;
+    /* count received per person */
+    if (receivedValues[index]) {
+      if (createdByReceivedCounts[norm]) createdByReceivedCounts[norm]++;
+      else createdByReceivedCounts[norm] = 1;
+    }
   });
 }
 
@@ -273,15 +283,27 @@ function renderCreatedBySummary() {
   if (names.length === 0) return '';
   names.sort((a, b) => createdByCounts[b] - createdByCounts[a]);
   const totalEntries = Object.values(createdByCounts).reduce((s, v) => s + v, 0);
+  const totalReceived = Object.values(createdByReceivedCounts).reduce((s, v) => s + v, 0);
   
   let html = '<div class="cb-summary">';
   html += '<div class="cb-summary-title">Created By</div>';
   names.forEach(normName => {
     const displayName = toTitleCase(normName);
     const count = createdByCounts[normName];
-    html += `<div class="cb-row"><span class="cb-name">${displayName}</span><span class="cb-sep">:</span><span class="cb-count">${count}</span></div>`;
+    const rCount = createdByReceivedCounts[normName] || 0;
+    html += `<div class="cb-row">`;
+    html += `<span class="cb-name">${displayName}</span>`;
+    html += `<span class="cb-sep">:</span>`;
+    html += `<span class="cb-count">${count}</span>`;
+    html += `<span class="cb-received"><span class="cb-received-dot"></span>Verified: ${rCount}</span>`;
+    html += `</div>`;
   });
-  html += `<div class="cb-row" style="border-top:2px solid #a5b4fc;margin-top:6px;padding-top:8px;"><span class="cb-name" style="font-weight:800;">Total</span><span class="cb-sep">:</span><span class="cb-count">${totalEntries}</span></div>`;
+  html += `<div class="cb-row cb-total-row">`;
+  html += `<span class="cb-name" style="font-weight:800;">Total</span>`;
+  html += `<span class="cb-sep">:</span>`;
+  html += `<span class="cb-count">${totalEntries}</span>`;
+  html += `<span class="cb-received" style="background:#c8e6c9;"><span class="cb-received-dot"></span>Verified: ${totalReceived}</span>`;
+  html += `</div>`;
   html += '</div>';
   return html;
 }
@@ -347,6 +369,8 @@ function handleReceivedChange(i,isChecked){
   else { const or=rows[i]&&rows[i][Object.keys(rows[i]).find(k=>k.toLowerCase()==='remarks')]; remarkValues[i]=or||'Please settle'; }
   const mk=Object.keys(processedRows[i]).find(k=>k.toLowerCase()==='remarks');
   if(mk) processedRows[i][mk]=remarkValues[i]; else processedRows[i]['Remarks']=remarkValues[i];
+  /* recalculate per-person received counts */
+  calculateCreatedByCounts();
   statusEl.textContent=`Loaded ${rows.length} rows. Pending: ${countStatus('pending')}, Verified: ${countStatus('verified')}, Received: ${countStatus('received')}, Unchecked: ${getUncheckedCount()}`;
   updateUncheckedCountBox();
   renderPreview();
@@ -402,15 +426,29 @@ function getCreatedBySummaryHTML() {
   if (names.length === 0) return '';
   names.sort((a, b) => createdByCounts[b] - createdByCounts[a]);
   const totalEntries = Object.values(createdByCounts).reduce((s, v) => s + v, 0);
+  const totalReceived = Object.values(createdByReceivedCounts).reduce((s, v) => s + v, 0);
   
   let html = `<div style="padding:16px 18px;background:linear-gradient(135deg,#f0f4ff,#e8eeff);border-radius:12px;border:1px solid #c7d2fe;">`;
   html += `<div style="font-size:14px;font-weight:700;color:#3730a3;margin-bottom:10px;">Created By</div>`;
   names.forEach(normName => {
     const displayName = toTitleCase(normName);
     const count = createdByCounts[normName];
-    html += `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px dashed #c7d2fe;font-size:14px;"><span style="color:#312e81;font-weight:600;min-width:200px;">${displayName}</span><span style="color:#6366f1;font-weight:700;margin:0 10px;">:</span><span style="color:#4f46e5;font-weight:800;font-size:15px;">${count}</span></div>`;
+    const rCount = createdByReceivedCounts[normName] || 0;
+    html += `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px dashed #c7d2fe;font-size:14px;flex-wrap:wrap;gap:4px;">`;
+    html += `<span style="color:#312e81;font-weight:600;min-width:200px;">${displayName}</span>`;
+    html += `<span style="color:#6366f1;font-weight:700;margin:0 10px;">:</span>`;
+    html += `<span style="color:#4f46e5;font-weight:800;font-size:15px;">${count}</span>`;
+    html += `<span style="margin-left:16px;display:inline-flex;align-items:center;gap:5px;padding:3px 12px;background:#e8f5e9;border:1px solid #4caf50;border-radius:20px;font-size:12px;font-weight:700;color:#2e7d32;">`;
+    html += `<span style="width:8px;height:8px;background:#4caf50;border-radius:50%;display:inline-block;"></span>Received: ${rCount}</span>`;
+    html += `</div>`;
   });
-  html += `<div style="display:flex;align-items:center;padding:6px 0 0 0;border-top:2px solid #a5b4fc;margin-top:6px;font-size:14px;"><span style="color:#312e81;font-weight:800;min-width:200px;">Total</span><span style="color:#6366f1;font-weight:700;margin:0 10px;">:</span><span style="color:#4f46e5;font-weight:800;font-size:15px;">${totalEntries}</span></div>`;
+  html += `<div style="display:flex;align-items:center;padding:6px 0 0 0;border-top:2px solid #a5b4fc;margin-top:6px;font-size:14px;">`;
+  html += `<span style="color:#312e81;font-weight:800;min-width:200px;">Total</span>`;
+  html += `<span style="color:#6366f1;font-weight:700;margin:0 10px;">:</span>`;
+  html += `<span style="color:#4f46e5;font-weight:800;font-size:15px;">${totalEntries}</span>`;
+  html += `<span style="margin-left:16px;display:inline-flex;align-items:center;gap:5px;padding:3px 12px;background:#c8e6c9;border:1px solid #4caf50;border-radius:20px;font-size:12px;font-weight:700;color:#2e7d32;">`;
+  html += `<span style="width:8px;height:8px;background:#4caf50;border-radius:50%;display:inline-block;"></span>Received: ${totalReceived}</span>`;
+  html += `</div>`;
   html += `</div>`;
   return html;
 }
