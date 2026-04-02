@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TripTrack Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+:root{--bg:#f0f4f8;--surface:#fff;--card:#fff;--card2:#f8fafd;--border:#e2e8f0;--border2:#cbd5e1;--text:#0f172a;--text2:#334155;--muted:#64748b;--accent:#3b82f6;--accent2:#1d4ed8;--green:#16a34a;--green-bg:#dcfce7;--green-border:#86efac;--orange:#d97706;--orange-bg:#fef3c7;--orange-border:#fcd34d;--red:#dc2626;--red-bg:#fee2e2;--red-border:#fca5a5;--purple:#7c3aed;--purple-bg:#ede9fe;--purple-border:#c4b5fd;--blue-bg:#dbeafe;--blue-border:#93c5fd;--slate-bg:#f1f5f9;--slate-border:#cbd5e1;--teal:#0d9488;--teal-bg:#ccfbf1;--teal-border:#5eead4;--font-head:'Outfit',sans-serif;--font-body:'Plus Jakarta Sans',sans-serif;--radius:12px;--radius-lg:16px;--shadow:0 1px 3px rgba(0,0,0,.08),0 4px 12px rgba(0,0,0,.05);--shadow-lg:0 4px 20px rgba(0,0,0,.1),0 1px 3px rgba(0,0,0,.06)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh}
+.header{background:linear-gradient(135deg,#1e3a8a 0%,#1d4ed8 50%,#3b82f6 100%);padding:0 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 16px rgba(29,78,216,.3);min-height:68px}
+.header-left{display:flex;align-items:center;gap:14px}
+.logo{width:44px;height:44px;background:rgba(255,255,255,.2);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid rgba(255,255,255,.3)}
+.brand h1{font-family:var(--font-head);font-size:20px;font-weight:800;color:#fff;letter-spacing:-.3px}
+.brand p{font-size:12px;color:rgba(255,255,255,.7);margin-top:1px}
+.header-right{display:flex;gap:10px;flex-wrap:wrap}
+.btn{padding:8px 16px;border-radius:8px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.15);color:#fff;font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .18s;white-space:nowrap}
+.btn:hover{background:rgba(255,255,255,.25);transform:translateY(-1px);border-color:rgba(255,255,255,.4)}
+.btn-primary{background:#fff;color:#1d4ed8;border-color:#fff}
+.btn-primary:hover{background:#eff6ff;color:#1d4ed8}
+.ibtn{padding:7px 14px;border-radius:8px;border:1.5px solid var(--border2);background:var(--card);color:var(--text2);font-family:var(--font-body);font-size:13px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .18s;white-space:nowrap;box-shadow:var(--shadow)}
+.ibtn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+.ibtn-green{background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
+.ibtn-green:hover{background:#bbf7d0}
+.ibtn-orange{background:var(--orange-bg);color:var(--orange);border-color:var(--orange-border)}
+.ibtn-orange:hover{background:#fde68a}
+.ibtn-purple{background:var(--purple-bg);color:var(--purple);border-color:var(--purple-border)}
+.ibtn-purple:hover{background:#ddd6fe}
+.ibtn-sm{padding:4px 10px;font-size:11px;border-radius:6px}
+.btn-del-sm{background:var(--red-bg);color:var(--red);border:1.5px solid var(--red-border);padding:4px 10px;font-size:11px;border-radius:6px;cursor:pointer;font-family:var(--font-body);font-weight:600;transition:all .18s}
+.btn-del-sm:hover{background:#fecaca}
+.main{padding:24px 32px;max-width:1500px;margin:0 auto}
+.upload-panels{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--radius-lg);padding:28px;text-align:center;cursor:pointer;transition:all .2s;background:linear-gradient(135deg,#f0f7ff,#f8faff)}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent);background:#eff6ff;box-shadow:0 0 0 4px rgba(59,130,246,.1)}
+.upload-icon{font-size:32px;margin-bottom:8px}
+.upload-zone h3{font-family:var(--font-head);font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px}
+.upload-zone p{font-size:13px;color:var(--muted)}
+.hint{display:inline-flex;gap:6px;margin-top:10px;flex-wrap:wrap;justify-content:center}
+.tag{background:var(--blue-bg);color:var(--accent);border:1px solid var(--blue-border);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600}
+.tag.g{background:var(--green-bg);color:var(--green);border-color:var(--green-border)}
+.tag.t{background:var(--teal-bg);color:var(--teal);border-color:var(--teal-border)}
+#fileInput{display:none}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:20px}
+.stat-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);transition:all .2s;position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 var(--radius) var(--radius)}
+.stat-card.c-blue::after{background:var(--accent)}.stat-card.c-green::after{background:var(--green)}
+.stat-card.c-purple::after{background:var(--purple)}.stat-card.c-red::after{background:var(--red)}
+.stat-card.c-orange::after{background:var(--orange)}.stat-card.c-teal::after{background:var(--teal)}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg)}
+.stat-card .s-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;font-weight:600}
+.stat-card .s-val{font-family:var(--font-head);font-size:26px;font-weight:800}
+.s-blue{color:var(--accent)}.s-green{color:var(--green)}.s-orange{color:var(--orange)}
+.s-red{color:var(--red)}.s-purple{color:var(--purple)}.s-teal{color:var(--teal)}
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.toolbar-left{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.toolbar-right{display:flex;gap:8px;flex-wrap:wrap}
+.search-box{background:var(--card);border:1.5px solid var(--border2);border-radius:8px;padding:8px 13px;color:var(--text);font-family:var(--font-body);font-size:13px;width:220px;transition:border-color .2s;box-shadow:var(--shadow)}
+.search-box:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.search-box::placeholder{color:var(--muted)}
+select.filter-sel{background:var(--card);border:1.5px solid var(--border2);border-radius:8px;padding:8px 13px;color:var(--text2);font-family:var(--font-body);font-size:13px;cursor:pointer;box-shadow:var(--shadow);font-weight:500}
+select.filter-sel:focus{outline:none;border-color:var(--accent)}
+.multi-select{position:relative;min-width:200px;z-index:60}
+.ms-trigger{background:var(--card);border:1.5px solid var(--border2);border-radius:8px;padding:7px 36px 7px 12px;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:var(--shadow);color:var(--text2);transition:all .18s;position:relative;min-height:38px;flex-wrap:wrap}
+.ms-trigger:hover,.ms-trigger.active{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.ms-arrow{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:10px;color:var(--muted);transition:transform .2s;pointer-events:none}
+.ms-trigger.active .ms-arrow{transform:translateY(-50%) rotate(180deg)}
+.ms-clear{position:absolute;right:28px;top:50%;transform:translateY(-50%);background:var(--red-bg);color:var(--red);border:1px solid var(--red-border);border-radius:50%;width:18px;height:18px;display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;transition:all .15s;line-height:1;padding:0}
+.ms-clear:hover{background:var(--red);color:#fff;border-color:var(--red)}
+.ms-tag{background:var(--blue-bg);color:var(--accent2);border:1px solid var(--blue-border);border-radius:4px;padding:1px 7px;font-size:11px;font-weight:600;white-space:nowrap;max-width:100px;overflow:hidden;text-overflow:ellipsis}
+.ms-label-text{font-size:13px;color:var(--muted)}
+.ms-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--card);border:1.5px solid var(--border);border-radius:10px;box-shadow:var(--shadow-lg);z-index:100;max-height:260px;overflow-y:auto;display:none;padding:6px;animation:msOpen .15s ease}
+.ms-dropdown.open{display:block}
+@keyframes msOpen{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.ms-option{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--text2);transition:background .15s}
+.ms-option:hover{background:var(--card2)}
+.ms-option input[type="checkbox"]{accent-color:var(--accent);width:15px;height:15px;cursor:pointer;flex-shrink:0}
+.ms-option .opt-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ms-option .opt-count{font-size:10px;background:var(--slate-bg);color:var(--muted);border-radius:10px;padding:1px 7px;font-weight:700;flex-shrink:0}
+.ms-divider{height:1px;background:var(--border);margin:4px 6px}
+.table-container{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;overflow-x:auto;box-shadow:var(--shadow-lg)}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:1100px}
+thead{background:linear-gradient(135deg,#1e3a8a,#1d4ed8)}
+th{padding:13px 14px;text-align:left;font-family:var(--font-head);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.85);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tbody tr{transition:background .15s}
+tbody tr:nth-child(even) td{background:var(--card2)}
+tbody tr:hover td{background:#eff6ff !important}
+.vm-cell{vertical-align:middle;text-align:center;background:linear-gradient(180deg,#eff6ff,#dbeafe);border-right:2.5px solid #93c5fd;padding:14px 10px;position:relative}
+.vm-cell::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,#3b82f6,#1d4ed8)}
+.vm-emoji{font-size:30px;margin-bottom:6px;display:block}
+.vm-name{font-family:var(--font-head);font-size:12.5px;font-weight:800;color:#1e40af;word-break:break-all;line-height:1.35}
+.vm-count{margin-top:8px;display:inline-block}
+.vm-single{background:linear-gradient(180deg,#f0f7ff,#eff6ff);border-right:2px solid #bfdbfe}
+.vm-single::before{width:3px;background:linear-gradient(180deg,#60a5fa,#3b82f6)}
+.trip-id{font-family:var(--font-head);font-size:13px;font-weight:800;color:var(--accent2);background:var(--blue-bg);padding:3px 10px;border-radius:6px;border:1px solid var(--blue-border);display:inline-block}
+.driver-cell{color:var(--text2);font-size:13px}
+.merged-cell{display:flex;flex-direction:column;gap:1px}
+.merged-line{font-weight:600;color:var(--text);font-size:12.5px;display:flex;align-items:flex-start;gap:5px;line-height:1.6;padding:1px 0}
+.merged-line .ml-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:7px}
+.merged-line .ml-dot.blue{background:var(--accent)}
+.merged-line .ml-dot.green{background:var(--green)}
+.merged-line .ml-dot.orange{background:var(--orange)}
+.merged-line .ml-connector{width:1px;height:6px;background:var(--border2);margin-left:2.5px;flex-shrink:0}
+.route-dist{color:var(--orange);font-weight:700;font-size:11px;background:var(--orange-bg);padding:3px 10px;border-radius:6px;border:1px solid var(--orange-border);display:inline-flex;align-items:center;gap:4px;margin-top:2px}
+.route-code{color:var(--purple);font-weight:700;font-size:11px;background:var(--purple-bg);padding:2px 8px;border-radius:4px;border:1px solid var(--purple-border);display:inline-flex;align-items:center;gap:4px}
+.line-count-badge{font-size:10px;color:var(--teal);background:var(--teal-bg);padding:2px 7px;border-radius:4px;border:1px solid var(--teal-border);font-weight:700;display:inline-block;margin-top:4px}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.badge::before{content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.badge-completed{background:var(--green-bg);color:var(--green);border:1.5px solid var(--green-border)}
+.badge-completed::before{background:var(--green);box-shadow:0 0 5px rgba(22,163,74,.5)}
+.badge-inprogress{background:var(--blue-bg);color:var(--accent2);border:1.5px solid var(--blue-border)}
+.badge-inprogress::before{background:var(--accent);animation:pulse 1.5s infinite}
+.badge-delayed{background:var(--red-bg);color:var(--red);border:1.5px solid var(--red-border)}
+.badge-delayed::before{background:var(--red);box-shadow:0 0 5px rgba(220,38,38,.5)}
+.badge-scheduled{background:var(--purple-bg);color:var(--purple);border:1.5px solid var(--purple-border)}
+.badge-scheduled::before{background:var(--purple)}
+.badge-cancelled{background:var(--slate-bg);color:var(--muted);border:1.5px solid var(--slate-border)}
+.badge-cancelled::before{background:var(--muted)}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 4px rgba(59,130,246,.7)}50%{opacity:.4;box-shadow:0 0 10px rgba(59,130,246,.9)}}
+.actions-cell{display:flex;gap:6px;align-items:center}
+.group-sep td{border-bottom:2.5px solid var(--blue-border) !important}
+.empty-state{padding:60px 20px;text-align:center;color:var(--muted)}
+.empty-state .empty-icon{font-size:48px;margin-bottom:12px}
+.empty-state h3{font-family:var(--font-head);font-size:16px;color:var(--text);margin-bottom:6px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:28px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;animation:slideUp .22s ease;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal.modal-lg{max-width:680px}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;padding-bottom:16px;border-bottom:1.5px solid var(--border)}
+.modal-header h2{font-family:var(--font-head);font-size:18px;color:var(--text)}
+.close-btn{background:var(--card2);border:1.5px solid var(--border);color:var(--muted);font-size:16px;cursor:pointer;padding:4px 8px;border-radius:8px;transition:all .15s;line-height:1}
+.close-btn:hover{color:var(--red);border-color:var(--red-border);background:var(--red-bg)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group.full{grid-column:1/-1}
+.form-group label{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.form-group input,.form-group select,.form-group textarea{background:var(--card2);border:1.5px solid var(--border2);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--font-body);font-size:13px;transition:border-color .2s;resize:vertical}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.form-group input::placeholder,.form-group textarea::placeholder{color:var(--muted)}
+.form-hint{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;padding-top:18px;border-top:1.5px solid var(--border)}
+.modal-footer .ibtn{background:var(--card2);color:var(--text2)}
+.modal-save{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:var(--accent2)}
+.modal-save:hover{background:linear-gradient(135deg,var(--accent2),#1e3a8a);color:#fff;border-color:#1e3a8a}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--card);border:1.5px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13px;font-weight:600;z-index:300;display:flex;align-items:center;gap:8px;transform:translateY(80px);transition:transform .3s ease,opacity .3s;opacity:0;max-width:400px;box-shadow:var(--shadow-lg)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{border-color:var(--green-border);color:var(--green);background:var(--green-bg)}
+.toast.error{border-color:var(--red-border);color:var(--red);background:var(--red-bg)}
+.toast.info{border-color:var(--blue-border);color:var(--accent2);background:var(--blue-bg)}
+.section-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:10px}
+.section-title{font-family:var(--font-head);font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px;color:var(--text)}
+.count-pill{background:var(--blue-bg);color:var(--accent2);border-radius:20px;padding:3px 12px;font-size:11px;border:1px solid var(--blue-border);font-weight:700}
+.merge-indicator{background:var(--green-bg);border:1.5px solid var(--green-border);border-radius:10px;padding:10px 16px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--green);margin-bottom:14px;font-weight:600;box-shadow:var(--shadow)}
+.paste-example{background:var(--card2);border:1.5px solid var(--border);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--muted);font-family:monospace;line-height:1.6;margin-top:8px;max-height:140px;overflow-y:auto;white-space:pre-wrap}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+@media(max-width:768px){.header{padding:12px 16px}.main{padding:14px 16px}.form-grid{grid-template-columns:1fr}.search-box{width:100%}.multi-select{min-width:150px}.upload-panels{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">🚌</div>
+    <div class="brand"><h1>TripTrack Pro</h1><p>Vehicle & Route Management System</p></div>
+  </div>
+  <div class="header-right">
+    <button class="btn btn-primary" onclick="openModal()">＋ Add Trip</button>
+    <button class="btn" onclick="openPasteModal()">📋 Paste Route Text</button>
+    <button class="btn" onclick="document.getElementById('fileInput').click()">📂 Upload Excel/CSV</button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="handleFileUpload(event)">
+  </div>
+</div>
+
+<div class="main">
+  <div class="upload-panels">
+    <div class="upload-zone" id="dropZone" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" onclick="document.getElementById('fileInput').click()">
+      <div class="upload-icon">📊</div><h3>Excel / CSV Upload</h3><p>Drag & Drop அல்லது click பண்ணி file select பண்ணுங்க</p>
+      <div class="hint"><span class="tag">.xlsx</span><span class="tag">.xls</span><span class="tag g">.csv</span></div>
+    </div>
+    <div class="upload-zone" onclick="openPasteModal()">
+      <div class="upload-icon">📋</div><h3>Paste Route Text</h3><p>Multi-line route, departure, arrival text paste பண்ணுங்க</p>
+      <div class="hint"><span class="tag t">Gummidipoondi</span><span class="tag t">Chennai</span><span class="tag t">1351 KM</span></div>
+    </div>
+  </div>
+
+  <div class="merge-indicator" id="mergeIndicator" style="display:none"><span style="font-size:18px">✅</span><span id="mergeText"></span></div>
+
+  <div class="stats-grid">
+    <div class="stat-card c-blue"><div class="s-label">Total Trips</div><div class="s-val s-blue" id="st-total">0</div></div>
+    <div class="stat-card c-green"><div class="s-label">Completed</div><div class="s-val s-green" id="st-completed">0</div></div>
+    <div class="stat-card c-blue"><div class="s-label">In Progress</div><div class="s-val s-blue" id="st-inprogress">0</div></div>
+    <div class="stat-card c-purple"><div class="s-label">Scheduled</div><div class="s-val s-purple" id="st-scheduled">0</div></div>
+    <div class="stat-card c-red"><div class="s-label">Delayed</div><div class="s-val s-red" id="st-delayed">0</div></div>
+    <div class="stat-card c-orange"><div class="s-label">Cancelled</div><div class="s-val s-orange" id="st-cancelled">0</div></div>
+    <div class="stat-card c-teal"><div class="s-label">Vehicles</div><div class="s-val s-teal" id="st-vehicles">0</div></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <input type="text" class="search-box" id="searchInput" placeholder="🔍 Search trips, driver, route..." oninput="renderTable()">
+      <select class="filter-sel" id="statusFilter" onchange="renderTable()">
+        <option value="">All Status</option><option value="Completed">Completed</option><option value="In Progress">In Progress</option><option value="Scheduled">Scheduled</option><option value="Delayed">Delayed</option><option value="Cancelled">Cancelled</option>
+      </select>
+      <div class="multi-select" id="vehicleMultiSelect">
+        <div class="ms-trigger" id="msTrigger" onclick="toggleVehicleDropdown(event)">
+          <span class="ms-label-text" id="vehicleLabel">All Vehicles</span><span class="ms-arrow">▼</span>
+          <span class="ms-clear" id="msClear" style="display:none" onclick="clearVehicleFilter(event)">✕</span>
+        </div>
+        <div class="ms-dropdown" id="vehicleDropdown">
+          <label class="ms-option" style="background:var(--card2);font-weight:700;font-size:12px;color:var(--accent2)">
+            <input type="checkbox" id="selectAllVehicles" onchange="toggleAllVehicles(this.checked)"><span class="opt-text">Select All Vehicles</span>
+          </label><div class="ms-divider"></div><div id="vehicleOptions"></div>
+        </div>
+      </div>
+    </div>
+    <div class="toolbar-right">
+      <button class="ibtn ibtn-green" onclick="downloadExcel()">⬇ Excel</button>
+      <button class="ibtn ibtn-orange" onclick="downloadCSV()">⬇ CSV</button>
+      <button class="ibtn ibtn-purple" onclick="downloadImage()">📷 Image</button>
+    </div>
+  </div>
+
+  <div class="section-row"><div class="section-title">🚌 Trip Records <span class="count-pill" id="countPill">0 trips</span></div></div>
+
+  <div class="table-container" id="tableSnapshot">
+    <table id="tripTable"><thead><tr>
+      <th style="min-width:120px">Vehicle</th><th style="min-width:110px">Trip ID</th><th style="min-width:120px">Driver</th><th style="min-width:240px">Route</th><th style="min-width:180px">Departure</th><th style="min-width:180px">Arrival</th><th style="min-width:120px">Status</th><th style="min-width:130px">Actions</th>
+    </tr></thead>
+    <tbody id="tripBody">
+      <tr><td colspan="8"><div class="empty-state"><div class="empty-icon">🚌</div><h3>No trips yet</h3><p>Upload ஒரு file அல்லது "Paste Route Text" பண்ணுங்க</p></div></td></tr>
+    </tbody></table>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal modal-lg">
+    <div class="modal-header"><h2 id="modalTitle">✏️ New Trip Add பண்ணுங்க</h2><button class="close-btn" onclick="closeModal()">✕</button></div>
+    <div class="form-grid">
+      <div class="form-group"><label>Trip ID</label><input id="f-id" placeholder="TRIP-001"></div>
+      <div class="form-group"><label>Vehicle Number</label><input id="f-vehicle" placeholder="TN 01 AB 1234"></div>
+      <div class="form-group"><label>Driver Name</label><input id="f-driver" placeholder="Driver பெயர்"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="f-status"><option value="Scheduled">Scheduled</option><option value="In Progress">In Progress</option><option value="Completed">Completed</option><option value="Delayed">Delayed</option><option value="Cancelled">Cancelled</option></select>
+      </div>
+      <div class="form-group full"><label>Route (Multi-line)</label>
+        <textarea id="f-route" rows="4" placeholder="Gummidipoondi&#10;Arakkonam&#10;Chennai&#10;Mrf/MRF&#10;1351 KM in 39 Hrs 0 Mins"></textarea>
+        <div class="form-hint">ஒவ்வொரு line-லயும் ஒரு route point.</div>
+      </div>
+      <div class="form-group"><label>Departure (Multi-line)</label>
+        <textarea id="f-dep" rows="4" placeholder="Gummidipoondi&#10;2024-03-15 08:00 AM&#10;Loading started"></textarea>
+      </div>
+      <div class="form-group"><label>Arrival (Multi-line)</label>
+        <textarea id="f-arr" rows="4" placeholder="Chennai&#10;2024-03-16 10:00 PM&#10;Unloading done"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="ibtn" onclick="closeModal()">Cancel</button><button class="ibtn modal-save" onclick="saveTrip()">💾 Save Trip</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="pasteOverlay">
+  <div class="modal modal-lg">
+    <div class="modal-header"><h2>📋 Paste Trip Text — Multi-line Merge</h2><button class="close-btn" onclick="closePasteModal()">✕</button></div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:13px;color:var(--text2);font-weight:600;margin-bottom:8px">Format — blank line = next trip:</div>
+      <div class="paste-example">ROUTE:
+Gummidipoondi
+Arakkonam
+Chennai Beach
+Mrf/MRF
+1351 KM in 39 Hrs 0 Mins
+
+DEPARTURE:
+Gummidipoondi
+15-03-2024 08:00 AM
+Loading started
+
+ARRIVAL:
+Chennai
+16-03-2024 10:00 PM
+Unloading done</div>
+    </div>
+    <div class="form-group full"><label>Paste Text</label>
+      <textarea id="pasteArea" rows="12" style="font-family:monospace;font-size:13px;line-height:1.7" placeholder="ROUTE:&#10;Gummidipoondi&#10;Chennai&#10;1351 KM&#10;&#10;DEPARTURE:&#10;Gummidipoondi&#10;08:00 AM&#10;&#10;ARRIVAL:&#10;Chennai&#10;10:00 PM"></textarea>
+    </div>
+    <div class="form-grid" style="margin-top:14px">
+      <div class="form-group"><label>Vehicle (Optional)</label><input id="paste-vehicle" placeholder="TN 01 AB 1234"></div>
+      <div class="form-group"><label>Driver (Optional)</label><input id="paste-driver" placeholder="Driver பெயர்"></div>
+    </div>
+    <div class="modal-footer"><button class="ibtn" onclick="closePasteModal()">Cancel</button><button class="ibtn modal-save" onclick="parseAndAddPastedText()">📋 Parse & Add Trips</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var trips=[];
+var editIndex=-1;
+var selectedVehicles=new Set();
+
+function statusBadge(s){var m={'Completed':'badge-completed','In Progress':'badge-inprogress','Delayed':'badge-delayed','Scheduled':'badge-scheduled','Cancelled':'badge-cancelled'};return '<span class="badge '+(m[s]||'badge-scheduled')+'">'+s+'</span>';}
+function showToast(msg,type){type=type||'success';var t=document.getElementById('toast');var i={success:'✅',error:'❌',info:'ℹ️'};t.className='toast '+type;t.innerHTML=(i[type]||'✅')+' '+msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3500);}
+function lineCount(s){return s?s.split('\n').filter(function(l){return l.trim();}).length:0;}
+function maxLines(t){return Math.max(lineCount(t.route),lineCount(t.dep),lineCount(t.arr),1);}
+
+/* ═══ Webpage Cell Renderers ═══ */
+function renderMergedCell(text,dotColor){
+  if(!text)return '<span style="color:var(--muted);font-size:12px">—</span>';
+  var lines=text.split('\n').filter(function(l){return l.trim();});
+  if(!lines.length)return '<span style="color:var(--muted);font-size:12px">—</span>';
+  var h='<div class="merged-cell">';
+  for(var i=0;i<lines.length;i++){if(i>0)h+='<span class="ml-connector"></span>';h+='<span class="merged-line"><span class="ml-dot '+dotColor+'"></span>'+lines[i].trim()+'</span>';}
+  return h+'</div>';
+}
+function renderRouteCell(text){
+  if(!text)return '<span style="color:var(--muted);font-size:12px">—</span>';
+  var lines=text.split('\n').filter(function(l){return l.trim();});
+  if(!lines.length)return '<span style="color:var(--muted);font-size:12px">—</span>';
+  var h='<div class="merged-cell">';
+  for(var i=0;i<lines.length;i++){
+    var line=lines[i].trim();
+    if(/\d+\s*KM/i.test(line)||/\d+\s*Hrs/i.test(line)){h+='<span class="route-dist">📏 '+line+'</span>';}
+    else if(/^[A-Za-z]{2,8}\/[A-Za-z]{2,8}$/i.test(line)||/^[A-Z]{2,5}$/.test(line)){h+='<span class="route-code">🏷️ '+line+'</span>';}
+    else{if(i>0&&!(/\d+\s*KM/i.test(lines[i-1]))&&!(/^[A-Za-z]{2,8}\/[A-Za-z]{2,8}$/i.test(lines[i-1]))&&!(/^[A-Z]{2,5}$/.test(lines[i-1])))h+='<span class="ml-connector"></span>';h+='<span class="merged-line"><span class="ml-dot blue"></span>'+line+'</span>';}
+  }
+  return h+'</div>';
+}
+
+/* ═══ Excel-க்கு text convert — webpage dots style ═══ */
+function toExcelText(text,dot){
+  if(!text)return '';
+  return text.split('\n').filter(function(l){return l.trim();}).map(function(l){return dot+' '+l.trim();}).join('\n');
+}
+function toExcelRoute(text){
+  if(!text)return '';
+  return text.split('\n').filter(function(l){return l.trim();}).map(function(line){
+    var l=line.trim();
+    if(/\d+\s*KM/i.test(l)||/\d+\s*Hrs/i.test(l))return '📏 '+l;
+    if(/^[A-Za-z]{2,8}\/[A-Za-z]{2,8}$/i.test(l)||/^[A-Z]{2,5}$/.test(l))return '🏷️ '+l;
+    return '● '+l;
+  }).join('\n');
+}
+
+/* ═══ MULTI-SELECT VEHICLE FILTER ═══ */
+function toggleVehicleDropdown(e){if(e.target.closest('.ms-clear'))return;var dd=document.getElementById('vehicleDropdown'),tr=document.getElementById('msTrigger');var o=dd.classList.contains('open');dd.classList.toggle('open');tr.classList.toggle('active');if(!o)updateVehicleOptions();}
+function closeVehicleDropdown(){document.getElementById('vehicleDropdown').classList.remove('open');document.getElementById('msTrigger').classList.remove('active');}
+function toggleVehicle(v,c){if(c)selectedVehicles.add(v);else selectedVehicles.delete(v);updateVehicleLabel();updateSelectAllCheckbox();renderTable();}
+function toggleAllVehicles(c){var vs=getUniqueVehicles();if(c)vs.forEach(function(v){selectedVehicles.add(v);});else selectedVehicles.clear();updateVehicleOptions();renderTable();}
+function clearVehicleFilter(e){e.stopPropagation();selectedVehicles.clear();document.getElementById('selectAllVehicles').checked=false;updateVehicleOptions();renderTable();}
+function getUniqueVehicles(){var s={};trips.forEach(function(t){s[t.vehicle]=true;});return Object.keys(s);}
+function updateSelectAllCheckbox(){var vs=getUniqueVehicles(),sa=document.getElementById('selectAllVehicles');if(sa)sa.checked=vs.length>0&&vs.every(function(v){return selectedVehicles.has(v);});}
+function updateVehicleOptions(){var vs=getUniqueVehicles();document.getElementById('vehicleOptions').innerHTML=vs.map(function(v){var c=trips.filter(function(t){return t.vehicle===v;}).length;return '<label class="ms-option"><input type="checkbox" value="'+v+'" '+(selectedVehicles.has(v)?'checked':'')+' onchange="toggleVehicle(\''+v.replace(/'/g,"\\'")+'\',this.checked)"><span class="opt-text">🚌 '+v+'</span><span class="opt-count">'+c+'</span></label>';}).join('');updateVehicleLabel();}
+function updateVehicleLabel(){var l=document.getElementById('vehicleLabel'),c=document.getElementById('msClear');if(selectedVehicles.size===0){l.innerHTML='<span class="ms-label-text">All Vehicles</span>';c.style.display='none';}else if(selectedVehicles.size<=2){var tags=[];selectedVehicles.forEach(function(v){tags.push('<span class="ms-tag" title="'+v+'">'+v.replace(/^[A-Z]+\s*/,'')+'</span>');});l.innerHTML=tags.join('');c.style.display='flex';}else{l.innerHTML='<span class="ms-tag">'+selectedVehicles.size+' Selected</span>';c.style.display='flex';}}
+document.addEventListener('click',function(e){if(!document.getElementById('vehicleMultiSelect').contains(e.target))closeVehicleDropdown();});
+
+/* ═══ STATS ═══ */
+function updateStats(){
+  document.getElementById('st-total').textContent=trips.length;
+  document.getElementById('st-completed').textContent=trips.filter(function(t){return t.status==='Completed';}).length;
+  document.getElementById('st-inprogress').textContent=trips.filter(function(t){return t.status==='In Progress';}).length;
+  document.getElementById('st-scheduled').textContent=trips.filter(function(t){return t.status==='Scheduled';}).length;
+  document.getElementById('st-delayed').textContent=trips.filter(function(t){return t.status==='Delayed';}).length;
+  document.getElementById('st-cancelled').textContent=trips.filter(function(t){return t.status==='Cancelled';}).length;
+  document.getElementById('st-vehicles').textContent=new Set(trips.map(function(t){return t.vehicle;})).size;
+}
+
+/* ═══ TABLE RENDER — VEHICLE MERGE ═══ */
+function renderTable(){
+  var search=document.getElementById('searchInput').value.toLowerCase();
+  var sf=document.getElementById('statusFilter').value;
+  var filtered=trips.filter(function(t){
+    var tm=!search||Object.values(t).some(function(v){return String(v).toLowerCase().includes(search);});
+    return tm&&(!sf||t.status===sf)&&(selectedVehicles.size===0||selectedVehicles.has(t.vehicle));
+  });
+  filtered.sort(function(a,b){return (a.vehicle||'zzz').localeCompare(b.vehicle||'zzz');});
+
+  var groups=[];
+  for(var i=0;i<filtered.length;i++){
+    if(groups.length>0&&groups[groups.length-1][0].vehicle===filtered[i].vehicle){groups[groups.length-1].push(filtered[i]);}
+    else{groups.push([filtered[i]]);}
+  }
+
+  document.getElementById('countPill').textContent=filtered.length+' trips';
+  var tbody=document.getElementById('tripBody');
+
+  if(!filtered.length){
+    tbody.innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">'+(trips.length?'🔍':'🚌')+'</div><h3>'+(trips.length?'No results found':'No trips yet')+'</h3><p>'+(trips.length?'Filter மாத்துங்க':'Upload அல்லது Paste பண்ணுங்க')+'</p></div></td></tr>';
+    updateStats();return;
+  }
+
+  var html='';
+  groups.forEach(function(group,gi){
+    var vehicle=group[0].vehicle||'—';
+    var rs=group.length;
+    var isMulti=rs>1;
+    var vmClass=isMulti?'vm-cell':'vm-cell vm-single';
+
+    group.forEach(function(t,rowIdx){
+      var ri=trips.indexOf(t);
+      var ml=maxLines(t);
+      var isLast=rowIdx===rs-1;
+      html+='<tr'+(isLast?' class="group-sep"':'')+'>';
+
+      if(rowIdx===0){
+        html+='<td rowspan="'+rs+'" class="'+vmClass+'">';
+        html+='<span class="vm-emoji">'+(isMulti?'🚌':'🚐')+'</span>';
+        html+='<div class="vm-name">'+vehicle+'</div>';
+        html+='<div class="vm-count"><span class="line-count-badge">'+rs+' trip'+(rs>1?'s':'')+'</span></div>';
+        html+='</td>';
+      }
+
+      html+='<td><span class="trip-id">'+t.id+'</span></td>';
+      html+='<td><span class="driver-cell">'+(t.driver?'👤 '+t.driver:'—')+'</span></td>';
+      html+='<td>'+renderRouteCell(t.route)+'</td>';
+      html+='<td>'+renderMergedCell(t.dep,'green')+'</td>';
+      html+='<td>'+renderMergedCell(t.arr,'orange')+'</td>';
+      html+='<td>'+statusBadge(t.status)+(ml>1?'<span class="line-count-badge" style="margin-left:4px">'+ml+' lines</span>':'')+'</td>';
+      html+='<td><div class="actions-cell"><button class="ibtn ibtn-sm" onclick="editTrip('+ri+')">✏️</button><button class="btn-del-sm" onclick="deleteTrip('+ri+')">🗑️</button></div></td>';
+      html+='</tr>';
+    });
+  });
+
+  tbody.innerHTML=html;
+  updateStats();updateVehicleOptions();
+}
+
+/* ═══ MODALS ═══ */
+function openModal(idx){
+  editIndex=(idx===undefined)?-1:idx;
+  if(editIndex===-1){
+    document.getElementById('modalTitle').textContent='✏️ New Trip Add பண்ணுங்க';
+    ['f-id','f-vehicle','f-driver','f-route','f-dep','f-arr'].forEach(function(id){document.getElementById(id).value='';});
+    document.getElementById('f-status').value='Scheduled';
+  }else{
+    var t=trips[editIndex];
+    document.getElementById('modalTitle').textContent='✏️ Trip Edit பண்ணுங்க';
+    document.getElementById('f-id').value=t.id;document.getElementById('f-vehicle').value=t.vehicle;
+    document.getElementById('f-driver').value=t.driver;document.getElementById('f-route').value=t.route;
+    document.getElementById('f-dep').value=t.dep;document.getElementById('f-arr').value=t.arr;
+    document.getElementById('f-status').value=t.status;
+  }
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
+function editTrip(i){openModal(i);}
+function deleteTrip(i){if(!confirm('Delete பண்ணணுமா?'))return;trips.splice(i,1);renderTable();showToast('Deleted!','error');}
+function saveTrip(){
+  var id=document.getElementById('f-id').value.trim();
+  if(!id){showToast('Trip ID fill பண்ணுங்க!','error');return;}
+  var obj={id:id,vehicle:document.getElementById('f-vehicle').value.trim(),driver:document.getElementById('f-driver').value.trim(),route:document.getElementById('f-route').value.trim(),dep:document.getElementById('f-dep').value.trim(),arr:document.getElementById('f-arr').value.trim(),status:document.getElementById('f-status').value};
+  if(editIndex===-1){trips.push(obj);showToast('Trip added!');}else{trips[editIndex]=obj;showToast('Trip updated!');}
+  closeModal();renderTable();
+}
+
+/* ═══ PASTE MODAL ═══ */
+function openPasteModal(){document.getElementById('pasteOverlay').classList.add('open');}
+function closePasteModal(){document.getElementById('pasteOverlay').classList.remove('open');}
+function parseAndAddPastedText(){
+  var text=document.getElementById('pasteArea').value.trim();
+  if(!text){showToast('Text paste பண்ணுங்க!','error');return;}
+  var vehicle=document.getElementById('paste-vehicle').value.trim(),driver=document.getElementById('paste-driver').value.trim();
+  var blocks=text.split(/\n\s*\n\n*\n/).filter(function(b){return b.trim();});
+  var added=0,tn=trips.length;
+  blocks.forEach(function(block){
+    tn++;var rL=[],dL=[],aL=[],cur='none';
+    block.trim().split('\n').forEach(function(line){
+      var l=line.trim();if(!l)return;
+      if(/^ROUTE\s*:/i.test(l)){cur='route';return;}if(/^DEPARTURE\s*:/i.test(l)){cur='dep';return;}if(/^ARRIVAL\s*:/i.test(l)){cur='arr';return;}
+      if(cur==='route')rL.push(l);else if(cur==='dep')dL.push(l);else if(cur==='arr')aL.push(l);else rL.push(l);
+    });
+    trips.push({id:'TRIP-'+String(tn).padStart(3,'0'),vehicle:vehicle,driver:driver,route:rL.join('\n'),dep:dL.join('\n'),arr:aL.join('\n'),status:'Scheduled'});added++;
+  });
+  document.getElementById('pasteArea').value='';document.getElementById('paste-vehicle').value='';document.getElementById('paste-driver').value='';
+  closePasteModal();renderTable();
+  document.getElementById('mergeIndicator').style.display='flex';
+  document.getElementById('mergeText').textContent=added+' trip(s) added — Total: '+trips.length+' trips';
+  showToast(added+' trip(s) added!');
+}
+
+/* ═══ FILE UPLOAD ═══ */
+function handleDragOver(e){e.preventDefault();document.getElementById('dropZone').classList.add('drag-over');}
+function handleDragLeave(){document.getElementById('dropZone').classList.remove('drag-over');}
+function handleDrop(e){e.preventDefault();document.getElementById('dropZone').classList.remove('drag-over');if(e.dataTransfer.files[0])processFile(e.dataTransfer.files[0]);}
+function handleFileUpload(e){if(e.target.files[0])processFile(e.target.files[0]);e.target.value='';}
+function processFile(file){
+  var reader=new FileReader();
+  if(file.name.toLowerCase().endsWith('.csv')){reader.onload=function(e){parseCSV(e.target.result);};reader.readAsText(file);}
+  else{reader.onload=function(e){var wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});var ws=wb.Sheets[wb.SheetNames[0]];mergeRows(XLSX.utils.sheet_to_json(ws,{header:1}));};reader.readAsArrayBuffer(file);}
+}
+function parseCSV(text){var lines=text.trim().split('\n').map(function(l){return l.split(',').map(function(c){return c.trim().replace(/^"|"$/g,'');});});mergeRows(lines);}
+function normalizeHeader(h){return String(h).toLowerCase().replace(/\s+/g,'').replace(/_/g,'');}
+function mergeRows(rows){
+  if(rows.length<2){showToast('File empty!','error');return;}
+  var hr=rows[0].map(normalizeHeader);
+  var map={id:['tripid','id','trip_id','tripno'],vehicle:['vehicle','vehicleno','vehiclenumber','bus'],driver:['driver','drivername'],route:['route','routename','path'],dep:['departuretime','departure','deptime','dep'],arr:['arrivaltime','arrival','arrtime','arr'],status:['status','tripstatus','state']};
+  var idx={};for(var key in map){idx[key]=-1;for(var a=0;a<map[key].length;a++){var fi=hr.indexOf(map[key][a]);if(fi>=0){idx[key]=fi;break;}}}
+  var imported=[];
+  for(var i=1;i<rows.length;i++){
+    var r=rows[i];if(!r||r.every(function(c){return !c;}))continue;
+    var get=function(k){return idx[k]>=0?(r[idx[k]]||''):'';};
+    imported.push({id:String(get('id')||'TRIP-'+String(trips.length+imported.length+1).padStart(3,'0')),vehicle:String(get('vehicle')||''),driver:String(get('driver')||''),route:String(get('route')||''),dep:String(get('dep')||''),arr:String(get('arr')||''),status:String(get('status')||'Scheduled')});
+  }
+  var merged=0,updated=0;
+  for(var j=0;j<imported.length;j++){var imp=imported[j],ex=-1;for(var k=0;k<trips.length;k++){if(trips[k].id===imp.id){ex=k;break;}}if(ex>=0){trips[ex]=imp;updated++;}else{trips.push(imp);merged++;}}
+  document.getElementById('mergeIndicator').style.display='flex';
+  document.getElementById('mergeText').textContent=merged+' added, '+updated+' updated — Total: '+trips.length;
+  renderTable();showToast(imported.length+' records merged!');
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   EXCEL DOWNLOAD — EXACT WEBPAGE FORMAT
+   ஒவ்வொரு Trip = ஒரே Row | Vehicle Merge | Webpage-ல இருக்குற மாதிரி styling
+   ═══════════════════════════════════════════════════════════════════════ */
+async function downloadExcel(){
+  if(!trips.length){showToast('Data இல்ல!','error');return;}
+  showToast('Webpage format Excel generate பண்ணுறோம்... ⏳','info');
+
+  var wb=new ExcelJS.Workbook();wb.creator='TripTrack Pro';wb.created=new Date();
+  var SC={
+    'Completed':{bg:'DCFCE7',fg:'15803D',accent:'16A34A'},
+    'In Progress':{bg:'DBEAFE',fg:'1E40AF',accent:'3B82F6'},
+    'Delayed':{bg:'FEE2E2',fg:'B91C1C',accent:'DC2626'},
+    'Scheduled':{bg:'EDE9FE',fg:'6D28D9',accent:'7C3AED'},
+    'Cancelled':{bg:'F1F5F9',fg:'64748B',accent:'94A3B8'}
+  };
+  function getSC(s){return SC[s]||SC['Scheduled'];}
+
+  /* Border helpers */
+  function thinB(){var b={style:'thin',color:{argb:'CBD5E1'}};return{top:b,bottom:b,left:b,right:b};}
+  function headB(){var t={style:'thin',color:{argb:'1E3A8A'}},bm={style:'medium',color:{argb:'3B82F6'}};return{top:t,bottom:bm,left:t,right:t};}
+  function groupSepB(){var t={style:'thin',color:{argb:'CBD5E1'}},b={style:'double',color:{argb:'3B82F6'}};return{top:t,bottom:b,left:t,right:t};}
+
+  /* Column order = webpage order */
+  var headers=['Vehicle No.','Trip ID','Driver','Route','Departure','Arrival','Status'];
+  var colW=[{width:24},{width:14},{width:22},{width:52},{width:38},{width:38},{width:16}];
+
+  /* ── CORE: Webpage-ல இருக்குற மாதிரி — ஒவ்வொரு trip = ஒரே row ── */
+  function addTripsFormatted(ws,tripList,headerColor){
+    ws.columns=colW.map(function(c){return{width:c.width};});
+
+    /* Header row */
+    var hr=ws.addRow(headers);hr.height=36;
+    hr.eachCell(function(c){
+      c.fill={type:'pattern',pattern:'solid',fgColor:{argb:headerColor}};
+      c.font={bold:true,size:11,name:'Calibri',color:{argb:'FFFFFF'}};
+      c.alignment={horizontal:'center',vertical:'middle'};
+      c.border=headB();
+    });
+
+    /* Sort + Group by vehicle */
+    var sorted=tripList.slice().sort(function(a,b){return (a.vehicle||'zzz').localeCompare(b.vehicle||'zzz');});
+    var groups=[];
+    for(var i=0;i<sorted.length;i++){
+      if(groups.length>0&&groups[groups.length-1][0].vehicle===sorted[i].vehicle){groups[groups.length-1].push(sorted[i]);}
+      else{groups.push([sorted[i]]);}
+    }
+
+    groups.forEach(function(group,gi){
+      var vehicle=group[0].vehicle||'';
+      var isMulti=group.length>1;
+      var groupStartRow=ws.rowCount+1;
+
+      group.forEach(function(t,ti){
+        var sc=getSC(t.status);
+        var rowBg=gi%2===0?'F0F7FF':'FFFFFF';
+        var isLastTrip=ti===group.length-1;
+        var brd=isLastTrip?groupSepB():thinB();
+
+        /* Calculate row height based on max lines */
+        var ml=maxLines(t);
+        var rowHeight=Math.max(ml*16, 30);
+
+        /* ஒரே row-ல் அனைத்து data — webpage-ல இருக்குற மாதிரி */
+        var row=ws.addRow([
+          ti===0?(isMulti?'🚌 ':'🚐 ')+(vehicle||''):'',
+          t.id,
+          t.driver||'',
+          toExcelRoute(t.route),
+          toExcelText(t.dep,'●'),
+          toExcelText(t.arr,'●'),
+          t.status
+        ]);
+        row.height=rowHeight;
+
+        /* Col 1: Vehicle */
+        var c1=row.getCell(1);
+        c1.fill={type:'pattern',pattern:'solid',fgColor:{argb:isMulti?'DBEAFE':'EFF6FF'}};
+        c1.font={size:11,name:'Calibri',color:{argb:'1E40AF'},bold:true};
+        c1.alignment={horizontal:'center',vertical:'middle',wrapText:true};
+        c1.border=brd;
+
+        /* Col 2: Trip ID — webpage badge style (blue bg, dark blue text, blue border) */
+        var c2=row.getCell(2);
+        c2.fill={type:'pattern',pattern:'solid',fgColor:{argb:'DBEAFE'}};
+        c2.font={size:10,name:'Calibri',color:{argb:'1D4ED8'},bold:true};
+        c2.alignment={horizontal:'center',vertical:'middle'};
+        c2.border={top:{style:'thin',color:{argb:'93C5FD'}},bottom:{style:'thin',color:{argb:'93C5FD'}},left:{style:'thin',color:{argb:'93C5FD'}},right:{style:'thin',color:{argb:'93C5FD'}}};
+
+        /* Col 3: Driver */
+        var c3=row.getCell(3);
+        c3.fill={type:'pattern',pattern:'solid',fgColor:{argb:rowBg}};
+        c3.font={size:10,name:'Calibri',color:{argb:'334155'}};
+        c3.alignment={horizontal:'left',vertical:'middle',wrapText:true};
+        c3.border=brd;
+
+        /* Col 4: Route — dots, distance, codes (all in one cell, wrapText) */
+        var c4=row.getCell(4);
+        c4.fill={type:'pattern',pattern:'solid',fgColor:{argb:rowBg}};
+        c4.font={size:10,name:'Calibri',color:{argb:'0F172A'},bold:true};
+        c4.alignment={horizontal:'left',vertical:'top',wrapText:true};
+        c4.border=brd;
+
+        /* Col 5: Departure — green dots (all in one cell, wrapText) */
+        var c5=row.getCell(5);
+        c5.fill={type:'pattern',pattern:'solid',fgColor:{argb:'F0FDF4'}};
+        c5.font={size:10,name:'Calibri',color:{argb:'15803D'},bold:true};
+        c5.alignment={horizontal:'left',vertical:'top',wrapText:true};
+        c5.border=brd;
+
+        /* Col 6: Arrival — orange dots (all in one cell, wrapText) */
+        var c6=row.getCell(6);
+        c6.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFBEB'}};
+        c6.font={size:10,name:'Calibri',color:{argb:'92400E'},bold:true};
+        c6.alignment={horizontal:'left',vertical:'top',wrapText:true};
+        c6.border=brd;
+
+        /* Col 7: Status — webpage badge color style */
+        var c7=row.getCell(7);
+        c7.fill={type:'pattern',pattern:'solid',fgColor:{argb:sc.bg}};
+        c7.font={size:10,name:'Calibri',color:{argb:sc.fg},bold:true};
+        c7.alignment={horizontal:'center',vertical:'middle'};
+        c7.border={top:{style:'thin',color:{argb:sc.accent}},bottom:isLastTrip?{style:'medium',color:{argb:sc.accent}}:{style:'thin',color:{argb:sc.accent}},left:{style:'thin',color:{argb:sc.accent}},right:{style:'thin',color:{argb:sc.accent}}};
+      });
+
+      /* Vehicle column merge — same vehicle-ன் rows merge */
+      var groupEndRow=ws.rowCount;
+      if(group.length>1){
+        ws.mergeCells(groupStartRow,1,groupEndRow,1);
+      }
+    });
+
+    ws.views=[{state:'frozen',ySplit:1}];
+  }
+
+  /* ── Sheet 1: All Trips ── */
+  var ws1=wb.addWorksheet('All Trips',{properties:{tabColor:{argb:'1E3A8A'}}});
+  addTripsFormatted(ws1,trips,'1E3A8A');
+
+  /* ── Sheet 2: Summary ── */
+  var ws2=wb.addWorksheet('Summary',{properties:{tabColor:{argb:'D97706'}}});
+  ws2.columns=[{width:30},{width:15},{width:18}];
+  var tr=ws2.addRow(['TRIPTRACK PRO — SUMMARY REPORT','','']);tr.height=38;tr.eachCell(function(c){c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'1E3A8A'}};c.font={bold:true,size:14,name:'Calibri',color:{argb:'FFFFFF'}};c.alignment={vertical:'middle'};});ws2.mergeCells('A1:C1');
+  ws2.addRow([]);
+  var s1=ws2.addRow(['STATUS BREAKDOWN','','']);s1.height=28;s1.eachCell(function(c){c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'1D4ED8'}};c.font={bold:true,size:11,name:'Calibri',color:{argb:'FFFFFF'}};});ws2.mergeCells('A3:C3');
+  var sh=ws2.addRow(['Status','Count','%']);sh.height=24;sh.eachCell(function(c){c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'DBEAFE'}};c.font={bold:true,size:10,name:'Calibri',color:{argb:'1E40AF'}};c.alignment={horizontal:'center'};c.border=headB();});
+  var statuses=['Completed','In Progress','Scheduled','Delayed','Cancelled'];
+  statuses.forEach(function(s){var cnt=trips.filter(function(t){return t.status===s;}).length;var pct=trips.length?((cnt/trips.length)*100).toFixed(1)+'%':'0%';var sc=getSC(s);var r=ws2.addRow([s,cnt,pct]);r.height=24;r.eachCell(function(c,ci){c.fill={type:'pattern',pattern:'solid',fgColor:{argb:sc.bg}};c.font={size:10,name:'Calibri',color:{argb:sc.fg},bold:ci===1};c.alignment={horizontal:ci===0?'left':'center'};c.border=thinB();});});
+  var tot=ws2.addRow(['TOTAL',trips.length,'100%']);tot.height=26;tot.eachCell(function(c){c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF7ED'}};c.font={bold:true,size:11,name:'Calibri',color:{argb:'92400E'}};c.alignment={horizontal:c.column===1?'left':'center'};var tb=thinB();tb.bottom={style:'medium',color:{argb:'D97706'}};c.border=tb;});
+  ws2.addRow([]);
+  var s2=ws2.addRow(['VEHICLE TRIP COUNT','','']);s2.height=28;s2.eachCell(function(c){c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'7C3AED'}};c.font={bold:true,size:11,name:'Calibri',color:{argb:'FFFFFF'}};});ws2.mergeCells('A11:C11');
+  var vh=ws2.addRow(['Vehicle','Trips','Statuses']);vh.height=24;vh.eachCell(function(c){c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'EDE9FE'}};c.font={bold:true,size:10,name:'Calibri',color:{argb:'6D28D9'}};c.alignment={horizontal:'center'};c.border=headB();});
+  var vm={};trips.forEach(function(t){if(!vm[t.vehicle])vm[t.vehicle]={count:0,st:{}};vm[t.vehicle].count++;vm[t.vehicle].st[t.status]=true;});
+  Object.entries(vm).sort(function(a,b){return b[1].count-a[1].count;}).forEach(function(e,i){var r=ws2.addRow([e[0],e[1].count,Object.keys(e[1].st).join(', ')]);r.height=24;var bg=i===0?'FEF9C3':(i%2===0?'F5F3FF':'FFFFFF'),fg=i===0?'854D0E':'0F172A';r.eachCell(function(c,ci){c.fill={type:'pattern',pattern:'solid',fgColor:{argb:bg}};c.font={size:10,name:'Calibri',color:{argb:fg},bold:i===0||ci===2};c.alignment={horizontal:ci===0?'left':'center',wrapText:ci===2};c.border=thinB();});});
+  ws2.views=[{state:'frozen',ySplit:1}];
+
+  /* ── Sheets per status (same webpage format) ── */
+  var emoji={'Completed':'✅','In Progress':'🔄','Scheduled':'📅','Delayed':'⚠️','Cancelled':'❌'};
+  statuses.forEach(function(s){
+    var filtered=trips.filter(function(t){return t.status===s;});
+    if(!filtered.length)return;
+    var sc=getSC(s);
+    var wsS=wb.addWorksheet((emoji[s]||'')+' '+s,{properties:{tabColor:{argb:sc.accent}}});
+    addTripsFormatted(wsS,filtered,sc.accent);
+  });
+
+  /* Generate file */
+  var buffer=await wb.xlsx.writeBuffer();
+  var blob=new Blob([buffer],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='TripTrack_Webpage_Format.xlsx';a.click();
+  URL.revokeObjectURL(url);
+  showToast('Excel downloaded! Webpage-ல இருக்குற மாதிரி exact!','success');
+}
+
+/* ═══ CSV ═══ */
+function downloadCSV(){
+  if(!trips.length){showToast('Data இல்ல!','error');return;}
+  var h=['Vehicle','Trip ID','Driver','Route','Departure','Arrival','Status','Lines'];
+  var rows=[h];
+  trips.forEach(function(t){rows.push([t.vehicle,t.id,t.driver,t.route,t.dep,t.arr,t.status,maxLines(t)]);});
+  var csv=rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='TripTrack_Data.csv';a.click();
+  showToast('CSV downloaded!','success');
+}
+
+/* ═══ IMAGE ═══ */
+function downloadImage(){
+  if(!trips.length){showToast('Data இல்ல!','error');return;}
+  showToast('Screenshot... ⏳','info');
+  html2canvas(document.getElementById('tableSnapshot'),{backgroundColor:'#f0f4f8',scale:2,useCORS:true}).then(function(canvas){
+    var a=document.createElement('a');a.download='TripTrack_Table.png';a.href=canvas.toDataURL('image/png');a.click();
+    showToast('Image downloaded!','success');
+  });
+}
+
+/* ═══ INIT ═══ */
+renderTable();
+</script>
+</body>
+</html>
