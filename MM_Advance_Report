@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MMRoadways Advance Account</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ink: #0d1117;
+            --surface: #ffffff;
+            --surface2: #f6f8fa;
+            --border: #d0d7de;
+            --primary: #0969da;
+            --primary-dim: #dbeafe;
+            --success: #1a7f37;
+            --success-dim: #dcfce7;
+            --warn: #9a6700;
+            --warn-dim: #fef9c3;
+            --danger: #cf222e;
+            --muted: #57606a;
+            --radius: 10px;
+            --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.05);
+            --shadow-md: 0 4px 12px rgba(0,0,0,.1), 0 8px 32px rgba(0,0,0,.06);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--surface2); font-family: 'Sora', sans-serif; color: var(--ink); min-height: 100vh; padding: 16px; }
+        .dashboard { max-width: 1600px; margin: 0 auto; }
+
+        .app-header {
+            background: var(--ink); color: #fff;
+            padding: 20px 28px; border-radius: var(--radius);
+            margin-bottom: 18px; display: flex;
+            justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 12px; box-shadow: var(--shadow-md);
+        }
+        .header-left { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+        .header-left h1 { font-size: 1.4rem; font-weight: 700; }
+        .header-left p { font-size: .8rem; color: #8b949e; margin-top: 3px; }
+        .header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+        .badge { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18); padding: 5px 14px; border-radius: 20px; font-size: .75rem; display: flex; align-items: center; gap: 7px; }
+        .badge.green { background: rgba(26,127,55,.25); border-color: rgba(26,127,55,.5); color: #56d364; }
+        .dev-tag { font-size: .73rem; color: #8b949e; }
+        .dev-tag strong { color: #e3b341; }
+
+        .month-input-wrap {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.2);
+            border-radius: 8px; padding: 6px 12px;
+        }
+        .month-input-wrap label { font-size: .75rem; color: #8b949e; white-space: nowrap; }
+        .month-input-wrap input[type="month"] {
+            background: transparent; border: none; color: #fff;
+            font-family: 'Sora', sans-serif; font-size: .82rem; font-weight: 600;
+            outline: none; cursor: pointer; color-scheme: dark;
+        }
+        .month-display-badge {
+            background: rgba(227,179,65,.15); border: 1px solid rgba(227,179,65,.4);
+            border-radius: 6px; padding: 4px 10px; font-size: .78rem; font-weight: 700;
+            color: #e3b341; display: none; align-items: center; gap: 6px;
+        }
+
+        .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 18px; }
+        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 15px 18px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow); }
+        .stat-icon { width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
+        .stat-label { font-size: .68rem; text-transform: uppercase; letter-spacing: .8px; color: var(--muted); font-weight: 600; }
+        .stat-value { font-size: 1.15rem; font-weight: 700; margin-top: 2px; font-family: 'JetBrains Mono', monospace; }
+
+        .breakdown-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 18px; box-shadow: var(--shadow); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 8px; }
+        .card-title { font-size: .9rem; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+        .card-header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .modules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px; }
+        .module-chip { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 11px 13px; transition: all .2s; cursor: default; }
+        .module-chip:hover { border-color: var(--primary); background: var(--primary-dim); }
+        .module-chip .mname { font-size: .65rem; text-transform: uppercase; letter-spacing: .7px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+        .module-chip .mamount { font-size: .88rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+
+        .content-grid { display: grid; grid-template-columns: 290px 1fr; gap: 18px; align-items: start; }
+        @media (max-width: 860px) { .content-grid { grid-template-columns: 1fr; } }
+
+        .control-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); position: sticky; top: 16px; }
+        .panel-title { font-size: .95rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+        .upload-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 26px 14px; text-align: center; cursor: pointer; transition: all .25s; background: var(--surface2); margin-bottom: 14px; }
+        .upload-zone:hover, .upload-zone.over { border-color: var(--primary); background: var(--primary-dim); }
+        .upload-zone i { font-size: 2rem; color: var(--primary); margin-bottom: 8px; display: block; }
+        .upload-zone p { font-size: .8rem; color: var(--muted); }
+        .file-status { font-size: .78rem; margin-top: 8px; min-height: 18px; font-weight: 600; color: var(--primary); }
+
+        .info-box { background: var(--primary-dim); border-left: 3px solid var(--primary); padding: 10px 12px; font-size: .76rem; color: #1e40af; border-radius: 0 6px 6px 0; margin-bottom: 14px; line-height: 1.6; }
+        .info-box strong { display: block; margin-bottom: 4px; font-size: .78rem; }
+
+        .btn { width: 100%; padding: 11px; margin-bottom: 9px; border: none; border-radius: 8px; font-size: .86rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all .2s; font-family: 'Sora', sans-serif; }
+        .btn:disabled { opacity: .45; cursor: not-allowed; }
+        .btn-primary { background: var(--ink); color: #fff; }
+        .btn-primary:not(:disabled):hover { background: #21262d; }
+        .btn-success { background: var(--success); color: #fff; }
+        .btn-success:not(:disabled):hover { background: #116329; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--ink); }
+        .btn-outline:hover { background: var(--surface2); }
+
+        .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; display: flex; flex-direction: column; min-height: 500px; }
+        .table-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        .table-header h3 { font-size: .95rem; font-weight: 700; }
+        .table-subtitle { font-size: .72rem; color: var(--muted); }
+        .table-header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .table-container { overflow-x: auto; flex-grow: 1; }
+
+        table { width: 100%; border-collapse: collapse; font-size: .78rem; white-space: nowrap; }
+        th { background: var(--ink); color: #fff; font-weight: 600; padding: 11px 13px; text-align: left; border-bottom: 2px solid var(--border); position: sticky; top: 0; z-index: 10; font-size: .68rem; text-transform: uppercase; letter-spacing: .5px; }
+        td { padding: 9px 13px; border-bottom: 1px solid #f1f5f9; color: #374151; }
+        tr:hover td { background: #f8faff; }
+
+        .chip-veh { background: #dbeafe; color: #1d4ed8; border-radius: 4px; padding: 2px 7px; font-size: .68rem; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+        .chip-amt { font-family: 'JetBrains Mono', monospace; font-weight: 700; }
+        .cat-chip { border-radius: 3px; padding: 1px 6px; font-size: .65rem; font-weight: 700; margin-right: 5px; }
+
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 400px; color: var(--muted); text-align: center; }
+        .empty-state i { font-size: 3rem; margin-bottom: 14px; color: var(--border); }
+        .empty-state h4 { font-size: .95rem; margin-bottom: 5px; }
+        .empty-state p { font-size: .8rem; }
+
+        .toast-wrap { position: fixed; bottom: 22px; right: 22px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+        .toast { background: var(--surface); padding: 12px 16px; border-radius: 8px; box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 10px; animation: slin .25s ease; min-width: 260px; border-left: 4px solid #ccc; font-size: .82rem; }
+        .toast.success { border-left-color: var(--success); }
+        .toast.error   { border-left-color: var(--danger); }
+        .toast.info    { border-left-color: var(--primary); }
+        @keyframes slin { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        .spinner { width: 15px; height: 15px; border: 2px solid rgba(255,255,255,.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading .spinner { display: inline-block; }
+
+        .search-box { padding: 7px 11px; border: 1px solid var(--border); border-radius: 6px; font-size: .8rem; font-family: 'Sora', sans-serif; outline: none; width: 220px; }
+        .search-box:focus { border-color: var(--primary); }
+        .row-count { background: var(--ink); color: #fff; border-radius: 20px; padding: 3px 10px; font-size: .72rem; font-weight: 600; }
+
+        .btn-sm { padding: 6px 12px; border: none; border-radius: 6px; font-size: .75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all .2s; font-family: 'Sora', sans-serif; white-space: nowrap; }
+        .btn-sm:disabled { opacity: .45; cursor: not-allowed; }
+        .btn-sm-purple { background: #6b21a8; color: #fff; }
+        .btn-sm-purple:not(:disabled):hover { background: #5b21b6; }
+        .btn-sm-orange { background: #c2410c; color: #fff; }
+        .btn-sm-orange:not(:disabled):hover { background: #9a3412; }
+
+        .snap-overlay { display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 20px; }
+        .snap-overlay.active { display: flex; }
+        .snap-box { background: #fff; border-radius: 14px; padding: 20px; max-width: 96vw; max-height: 92vh; overflow: auto; box-shadow: 0 20px 60px rgba(0,0,0,.3); display: flex; flex-direction: column; gap: 12px; min-width: 320px; }
+        .snap-box-header { display: flex; justify-content: space-between; align-items: center; }
+        .snap-box-header h4 { font-size: .95rem; font-weight: 700; }
+        .snap-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--muted); padding: 4px 8px; border-radius: 4px; }
+        .snap-close:hover { background: var(--surface2); }
+        .snap-preview { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+        .snap-preview img { width: 100%; display: block; }
+        .snap-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+        .filter-active-badge { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; border-radius: 20px; padding: 3px 10px; font-size: .72rem; font-weight: 600; display: none; align-items: center; gap: 5px; }
+        .filter-active-badge.show { display: inline-flex; }
+        .filter-clear { cursor: pointer; color: var(--danger); margin-left: 4px; font-size: .8rem; }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+
+    <!-- HEADER -->
+    <div class="app-header">
+        <div class="header-left">
+            <div>
+                <h1><i class="fas fa-road" style="color:#e3b341; margin-right:10px;"></i>MMRoadways Advance Account</h1>
+                <p>Transport Financial Tracker</p>
+            </div>
+            <div class="month-input-wrap">
+                <label><i class="fas fa-calendar-alt" style="color:#e3b341;"></i> Month</label>
+                <input type="month" id="monthInput" title="Select reporting month">
+            </div>
+            <div class="month-display-badge" id="monthDisplayBadge">
+                <i class="fas fa-calendar-check"></i>
+                <span id="monthDisplayText"></span>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="badge green"><i class="fas fa-check-circle"></i> Active</div>
+            <div class="dev-tag">Developed by <strong>Vignesh</strong></div>
+        </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row">
+        <div class="stat-card"><div class="stat-icon" style="background:#dbeafe;color:#1d4ed8;"><i class="fas fa-list-ol"></i></div><div><div class="stat-label">Total Transactions</div><div class="stat-value" id="statRows">0</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:#dcfce7;color:#166534;"><i class="fas fa-indian-rupee-sign"></i></div><div><div class="stat-label">Grand Total</div><div class="stat-value" id="statAmount">₹0</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:#fef9c3;color:#854d0e;"><i class="fas fa-truck"></i></div><div><div class="stat-label">Unique Vehicles</div><div class="stat-value" id="statVehicles">0</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:#f3e8ff;color:#6b21a8;"><i class="fas fa-tags"></i></div><div><div class="stat-label">GC Advance</div><div class="stat-value" id="statGC">₹0</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:#fce7f3;color:#9d174d;"><i class="fas fa-arrow-down"></i></div><div><div class="stat-label">Unloading</div><div class="stat-value" id="statUnload">₹0</div></div></div>
+        <div class="stat-card"><div class="stat-icon" style="background:#e0f2fe;color:#0369a1;"><i class="fas fa-arrow-up"></i></div><div><div class="stat-label">Loading</div><div class="stat-value" id="statLoad">₹0</div></div></div>
+    </div>
+
+    <!-- BREAKDOWN -->
+    <div class="breakdown-card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fas fa-chart-pie" style="color:var(--primary);"></i> Expense Category Totals
+                <span class="filter-active-badge" id="catFilterBadge"><i class="fas fa-filter"></i> Filtered<span class="filter-clear" id="catFilterClear" title="Clear filter">✕</span></span>
+            </div>
+            <div class="card-header-right">
+                <span id="breakdownNote" style="font-size:.72rem;color:var(--muted);">Upload & process to view</span>
+                <button class="btn-sm btn-sm-purple" id="downloadOverallBtn" disabled><i class="fas fa-image"></i> Download Overall Image</button>
+            </div>
+        </div>
+        <div class="modules-grid" id="modulesGrid">
+            <div style="grid-column:1/-1;text-align:center;color:#999;padding:16px;font-size:.82rem;">Upload Excel and click Process Data</div>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="content-grid">
+        <aside class="control-panel">
+            <div class="panel-title"><i class="fas fa-sliders"></i> Controls</div>
+            <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none;">
+            <div class="upload-zone" id="dropZone">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>Drag & Drop <strong>Excel File</strong><br><span style="font-size:.72rem;">or click to browse</span></p>
+                <div class="file-status" id="fileStatus">No file selected</div>
+            </div>
+            <div class="info-box">
+                <strong>📌 Remarks Column Mapping Logic:</strong>
+                <b>GC ADV</b> → "GC ADVANCE" or "GC ADV"<br>
+                <b>LOADING</b> → "LOADING" (not unloading)<br>
+                <b>UNLOADING</b> → "UNLOADING" / "CHARGES"<br>
+                <b>ADBLUE ADV</b> → "ADBLUE"<br>
+                <b>REST ADV</b> → "REST ADV" / "REST ADVANCE"<br>
+                <b>EXTRA ADV</b> → "EXTRA ADV" / "EXTRA ADVANCE"<br>
+                <b>DIESEL</b> → "DIESEL"<br>
+                <b>WORKSHOP</b> → "WORKSHOP"<br>
+                <b>SALARY</b> → "SALARY"<br>
+                <b>ECHALLAN</b> → "CHALLAN" / "E CHALLAN"<br>
+                <b>ACCIDENT</b> → "ACCIDENT"<br>
+                <b>SLOA</b> → "SLOA"<br>
+                <b>CHIT/...</b> → "CHIT","WATER","FOOD"
+            </div>
+            <button class="btn btn-primary" id="processBtn"><div class="spinner"></div><span>Process Data</span></button>
+            <button class="btn btn-success" id="exportBtn" disabled><div class="spinner"></div><i class="fas fa-file-excel"></i> Download Excel Report</button>
+            <button class="btn btn-outline" id="resetBtn"><i class="fas fa-undo"></i> Reset</button>
+        </aside>
+
+        <main class="table-card">
+            <div class="table-header">
+                <div>
+                    <h3>Processed Report <span class="row-count" id="rowCountBadge">0 rows</span></h3>
+                    <div class="table-subtitle">Remarks → Vehicle extracted · Category auto-detected</div>
+                </div>
+                <div class="table-header-right">
+                    <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search vehicle / category..." style="display:none;">
+                    <button class="btn-sm btn-sm-orange" id="downloadFilteredBtn" disabled style="display:none;"><i class="fas fa-image"></i> Download Filtered Image</button>
+                </div>
+            </div>
+            <div class="table-container">
+                <table id="reportTable" style="display:none;"><thead id="tableHead"></thead><tbody id="tableBody"></tbody></table>
+                <div id="emptyState" class="empty-state"><i class="fas fa-table"></i><h4>No Data Yet</h4><p>Upload the Excel file and click Process Data.</p></div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- SNAPSHOT OVERLAY -->
+<div class="snap-overlay" id="snapOverlay">
+    <div class="snap-box">
+        <div class="snap-box-header">
+            <h4><i class="fas fa-image" style="color:var(--primary);margin-right:8px;"></i><span id="snapTitle">Image Preview</span></h4>
+            <button class="snap-close" id="snapClose">✕</button>
+        </div>
+        <div class="snap-preview"><img id="snapImg" src="" alt="Preview"></div>
+        <div class="snap-actions">
+            <button class="btn-sm" style="background:#f1f5f9;color:#374151;border:1px solid #d0d7de;" id="snapCancelBtn">Cancel</button>
+            <button class="btn-sm btn-sm-purple" id="snapDownloadBtn"><i class="fas fa-download"></i> Download PNG</button>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden render targets -->
+<div id="overallSnapshot" style="position:absolute;left:-9999px;top:0;width:1200px;background:#fff;"></div>
+<div id="filterSnapshot"  style="position:absolute;left:-9999px;top:0;background:#fff;"></div>
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+(function () {
+    "use strict";
+    if (typeof XLSX === 'undefined') { alert("Excel library failed to load."); return; }
+
+    const CATEGORIES = [
+        { key:"GC ADV",    test:r=>(r.includes("GC ADVANCE")||r.includes("GC ADV"))&&!r.includes("GC ADV RETURN")&&!r.includes("RETURN GC") },
+        { key:"ADBLUE ADV",test:r=>r.includes("ADBLUE") },
+        { key:"REST ADV",  test:r=>r.includes("REST ADV")||r.includes("REST ADVANCE") },
+        { key:"EXTRA ADV", test:r=>r.includes("EXTRA ADV")||r.includes("EXTRA ADVANCE") },
+        { key:"LOADING",   test:r=>r.includes("LOADING")&&!r.includes("UNLOADING")&&!r.includes("GC ADVANCE")&&!r.includes("GC ADV") },
+        { key:"UNLOADING", test:r=>r.includes("UNLOADING")||(r.includes("CHARGES")&&!r.includes("LOADING")&&!r.includes("GC")) },
+        { key:"SALARY",    test:r=>r.includes("SALARY") },
+        { key:"DIESEL",    test:r=>r.includes("DIESEL") },
+        { key:"WORKSHOP",  test:r=>r.includes("WORKSHOP")||r.includes("WORK SHOP")||r.includes("WRKSHOP") },
+        { key:"ECHALLAN",  test:r=>r.includes("CHALLAN")||r.includes("E CHALLAN")||r.includes("ECHALLAN") },
+        { key:"CHIT/CYLINER/WATER/FOOD",test:r=>r.includes("CHIT")||r.includes("CYLINER")||r.includes("CYLINDER")||r.includes("WATER")||r.includes("FOOD") },
+        { key:"ACCIDENT",  test:r=>r.includes("ACCIDENT") },
+        { key:"SLOA",      test:r=>r.includes("SLOA") }
+    ];
+    const CAT_KEYS = CATEGORIES.map(c=>c.key);
+
+    const CHIP_COLORS = {
+        "GC ADV":{bg:"#dcfce7",fg:"#166534"},
+        "ADBLUE ADV":{bg:"#e0f2fe",fg:"#0369a1"},
+        "REST ADV":{bg:"#fef9c3",fg:"#854d0e"},
+        "EXTRA ADV":{bg:"#f3e8ff",fg:"#6b21a8"},
+        "LOADING":{bg:"#e0f7fa",fg:"#00695c"},
+        "UNLOADING":{bg:"#fce7f3",fg:"#9d174d"},
+        "SALARY":{bg:"#ffedd5",fg:"#9a3412"},
+        "DIESEL":{bg:"#fef3c7",fg:"#92400e"},
+        "WORKSHOP":{bg:"#fef9c3",fg:"#78350f"},
+        "ECHALLAN":{bg:"#dbeafe",fg:"#1d4ed8"},
+        "CHIT/CYLINER/WATER/FOOD":{bg:"#ecfdf5",fg:"#065f46"},
+        "ACCIDENT":{bg:"#fee2e2",fg:"#991b1b"},
+        "SLOA":{bg:"#e9d5ff",fg:"#5b21b6"},
+        "_OTHER":{bg:"#f1f5f9",fg:"#475569"}
+    };
+    const CLR={hBg:"0D1117",hFg:"FFFFFF",even:"F6F8FA",odd:"FFFFFF",footBg:"E2E8F0",footFg:"1B262C"};
+
+    let rawWb=null,allRows=[],filteredRows=[],currentSearchQuery="";
+    let pendingSnapBlob=null,pendingSnapFilename="";
+
+    const $=id=>document.getElementById(id);
+    const fileInput=$('fileInput'),dropZone=$('dropZone'),fileStatus=$('fileStatus');
+    const processBtn=$('processBtn'),exportBtn=$('exportBtn'),resetBtn=$('resetBtn');
+    const tableBody=$('tableBody'),tableHead=$('tableHead'),emptyState=$('emptyState');
+    const modulesGrid=$('modulesGrid'),searchBox=$('searchBox'),rowCountBadge=$('rowCountBadge');
+    const monthInput=$('monthInput'),monthDisplayBadge=$('monthDisplayBadge'),monthDisplayText=$('monthDisplayText');
+    const downloadOverallBtn=$('downloadOverallBtn'),downloadFilteredBtn=$('downloadFilteredBtn');
+    const snapOverlay=$('snapOverlay'),snapImg=$('snapImg'),snapClose=$('snapClose');
+    const snapCancelBtn=$('snapCancelBtn'),snapDownloadBtn=$('snapDownloadBtn');
+    const catFilterBadge=$('catFilterBadge'),catFilterClear=$('catFilterClear');
+
+    // Default month = today
+    const now=new Date();
+    monthInput.value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    updateMonthBadge(monthInput.value);
+
+    function updateMonthBadge(val){
+        if(!val)return;
+        const[y,m]=val.split('-');
+        const names=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        monthDisplayText.textContent=`${names[parseInt(m)-1]} ${y}`;
+        monthDisplayBadge.style.display='flex';
+    }
+    monthInput.addEventListener('change',e=>updateMonthBadge(e.target.value));
+
+    function getMonthLabel(){
+        const val=monthInput.value; if(!val)return"";
+        const[y,m]=val.split('-');
+        const names=["January","February","March","April","May","June","July","August","September","October","November","December"];
+        return`${names[parseInt(m)-1]} ${y}`;
+    }
+
+    function toast(msg,type='info'){
+        const c=$('toastWrap'),t=document.createElement('div');
+        t.className=`toast ${type}`;
+        const ic={success:'fa-check-circle',error:'fa-times-circle',info:'fa-info-circle'};
+        const cl={success:'#1a7f37',error:'#cf222e',info:'#0969da'};
+        t.innerHTML=`<i class="fas ${ic[type]||ic.info}" style="color:${cl[type]||cl.info};font-size:1rem;flex-shrink:0;"></i><span>${msg}</span>`;
+        c.appendChild(t);
+        setTimeout(()=>{t.style.cssText+='opacity:0;transform:translateX(110%);transition:.3s;';setTimeout(()=>t.remove(),350);},3500);
+    }
+
+    const VEH_RE=/\b([A-Z]{2}\d{2}[A-Z]{1,4}\d{2,4})\b/g;
+    function extractVehicles(text){
+        if(!text)return"";
+        const m=text.toUpperCase().match(VEH_RE);
+        return m?[...new Set(m)].join(", "):"";
+    }
+
+    function classifyRemarks(rem,amount){
+        const result={};CAT_KEYS.forEach(k=>result[k]=0);
+        if(!amount||amount<=0)return result;
+        const r=(rem||"").toUpperCase();
+        for(const cat of CATEGORIES){if(cat.test(r)){result[cat.key]=amount;return result;}}
+        result["_OTHER"]=amount;return result;
+    }
+
+    function parseDate(raw){
+        if(!raw)return"";
+        if(typeof raw==='string')return raw.split(',')[0].trim();
+        if(typeof raw==='number'){const d=XLSX.SSF.parse_date_code(raw);if(d)return`${String(d.d).padStart(2,'0')}/${String(d.m).padStart(2,'0')}/${d.y}`;}
+        return String(raw);
+    }
+
+    function buildReport(ws){
+        const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:""});
+        if(raw.length<2)return[];
+        const hdr=raw[0].map(h=>(h||"").toString().toLowerCase().trim());
+        const col=(...keys)=>{for(const k of keys){const i=hdr.findIndex(h=>h.includes(k));if(i!==-1)return i;}return-1;};
+        const ci={date:col("date","transactiondate"),debit:col("debit","amount"),remarks:col("remarks","remark","note")};
+        if(ci.date===-1)ci.date=0;if(ci.debit===-1)ci.debit=4;if(ci.remarks===-1)ci.remarks=7;
+        const results=[];
+        for(let i=1;i<raw.length;i++){
+            const row=raw[i];if(!row||row.every(c=>c===""))continue;
+            const amount=parseFloat(row[ci.debit]);if(!amount||amount<=0)continue;
+            const remarksStr=(row[ci.remarks]||"").toString().trim();
+            if(remarksStr.toLowerCase().includes("pool account"))continue;
+            const cats=classifyRemarks(remarksStr,amount);
+            const rec={Date:parseDate(row[ci.date]),Vehicle:extractVehicles(remarksStr),Remarks:remarksStr,Amount:amount};
+            CAT_KEYS.forEach(k=>rec[k]=cats[k]||0);rec["_OTHER"]=cats["_OTHER"]||0;
+            rec._cat=CAT_KEYS.find(k=>cats[k]>0)||(cats["_OTHER"]>0?"OTHER":"—");
+            results.push(rec);
+        }
+        return results;
+    }
+
+    function renderDashboard(rows){
+        const grand=rows.reduce((s,r)=>s+r.Amount,0);
+        const vehs=new Set(rows.flatMap(r=>r.Vehicle?r.Vehicle.split(", "):[]).filter(Boolean));
+        $('statRows').textContent=rows.length.toLocaleString('en-IN');
+        $('statAmount').textContent="₹"+grand.toLocaleString('en-IN',{minimumFractionDigits:2});
+        $('statVehicles').textContent=vehs.size;
+        $('statGC').textContent="₹"+rows.reduce((s,r)=>s+(r["GC ADV"]||0),0).toLocaleString('en-IN');
+        $('statUnload').textContent="₹"+rows.reduce((s,r)=>s+(r["UNLOADING"]||0),0).toLocaleString('en-IN');
+        $('statLoad').textContent="₹"+rows.reduce((s,r)=>s+(r["LOADING"]||0),0).toLocaleString('en-IN');
+        renderModules(rows);
+    }
+
+    function renderModules(rows){
+        modulesGrid.innerHTML="";let totalMapped=0;
+        CAT_KEYS.forEach(key=>{
+            const t=rows.reduce((s,r)=>s+(r[key]||0),0);if(t<=0)return;
+            totalMapped+=t;const c=CHIP_COLORS[key]||CHIP_COLORS["_OTHER"];
+            const chip=document.createElement('div');chip.className='module-chip';chip.style.borderLeft=`3px solid ${c.fg}`;
+            chip.innerHTML=`<div class="mname" style="color:${c.fg}">${key}</div><div class="mamount">₹${t.toLocaleString('en-IN',{minimumFractionDigits:2})}</div>`;
+            modulesGrid.appendChild(chip);
+        });
+        const otherTotal=rows.reduce((s,r)=>s+(r["_OTHER"]||0),0);
+        if(otherTotal>0){
+            const chip=document.createElement('div');chip.className='module-chip';chip.style.borderLeft='3px solid #94a3b8';
+            chip.innerHTML=`<div class="mname" style="color:#64748b;">OTHER / MISC</div><div class="mamount">₹${otherTotal.toLocaleString('en-IN',{minimumFractionDigits:2})}</div>`;
+            modulesGrid.appendChild(chip);
+        }
+        if(!modulesGrid.children.length)modulesGrid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:#999;padding:16px;font-size:.82rem;">No categories matched.</div>';
+        $('breakdownNote').textContent=`Total mapped: ₹${totalMapped.toLocaleString('en-IN')} | Others: ₹${otherTotal.toLocaleString('en-IN')}`;
+    }
+
+    function renderTable(rows){
+        const activeCats=CAT_KEYS.filter(k=>rows.some(r=>(r[k]||0)>0));
+        const showHeaders=["Date","Vehicle","Remarks","Amount",...activeCats];
+        tableHead.innerHTML="<tr>"+showHeaders.map(h=>`<th>${h}</th>`).join("")+"</tr>";
+        tableBody.innerHTML=rows.map(r=>{
+            const cells=showHeaders.map(h=>{
+                if(h==="Vehicle")return`<td>${r.Vehicle?`<span class="chip-veh">${r.Vehicle}</span>`:'<span style="color:#ccc">—</span>'}</td>`;
+                if(h==="Amount")return`<td><span class="chip-amt">₹${r.Amount.toLocaleString('en-IN',{minimumFractionDigits:2})}</span></td>`;
+                if(h==="Remarks"){const catC=CHIP_COLORS[r._cat]||CHIP_COLORS["_OTHER"];const short=r.Remarks.length>70?r.Remarks.substring(0,70)+"…":r.Remarks;return`<td><span class="cat-chip" style="background:${catC.bg};color:${catC.fg};">${r._cat}</span><span title="${r.Remarks}">${short}</span></td>`;}
+                if(h==="Date")return`<td style="font-family:'JetBrains Mono',monospace;font-size:.72rem;">${r.Date}</td>`;
+                const val=r[h]||0;if(val>0){const c=CHIP_COLORS[h]||{};return`<td style="background:${c.bg||''};color:${c.fg||''};font-family:'JetBrains Mono',monospace;font-weight:700;">₹${val.toLocaleString('en-IN',{minimumFractionDigits:2})}</td>`;}
+                return`<td style="color:#d1d5db;">—</td>`;
+            });return`<tr>${cells.join('')}</tr>`;
+        }).join('');
+        rowCountBadge.textContent=rows.length.toLocaleString('en-IN')+" rows";
+        emptyState.style.display='none';$('reportTable').style.display='';
+        searchBox.style.display='';downloadFilteredBtn.style.display='';
+        downloadFilteredBtn.disabled=!rows.length;exportBtn.disabled=false;
+    }
+
+    function applySearch(query){
+        currentSearchQuery=query;
+        if(!query.trim()){filteredRows=[...allRows];catFilterBadge.classList.remove('show');}
+        else{
+            const q=query.toLowerCase();
+            filteredRows=allRows.filter(r=>(r.Vehicle&&r.Vehicle.toLowerCase().includes(q))||(r.Remarks&&r.Remarks.toLowerCase().includes(q))||(r._cat&&r._cat.toLowerCase().includes(q))||(r.Date&&r.Date.includes(q)));
+            catFilterBadge.classList.add('show');
+        }
+        renderTable(filteredRows);renderDashboard(filteredRows);
+    }
+    searchBox.addEventListener('input',e=>applySearch(e.target.value));
+    catFilterClear.addEventListener('click',()=>{searchBox.value="";applySearch("");});
+
+    function showSnapOverlay(canvas,filename){
+        canvas.toBlob(blob=>{
+            pendingSnapBlob=blob;pendingSnapFilename=filename;
+            snapImg.src=URL.createObjectURL(blob);
+            $('snapTitle').textContent=filename;snapOverlay.classList.add('active');
+        },'image/png');
+    }
+    [snapClose,snapCancelBtn].forEach(el=>el.addEventListener('click',closeSnap));
+    snapOverlay.addEventListener('click',e=>{if(e.target===snapOverlay)closeSnap();});
+    function closeSnap(){snapOverlay.classList.remove('active');pendingSnapBlob=null;snapImg.src="";}
+    snapDownloadBtn.addEventListener('click',()=>{
+        if(!pendingSnapBlob)return;
+        const a=document.createElement('a');a.href=URL.createObjectURL(pendingSnapBlob);a.download=pendingSnapFilename;a.click();
+        toast("Image downloaded!","success");closeSnap();
+    });
+
+    // ══════════════════════════════════════════════════════
+    // MONTH BANNER — big dark block, month is the HERO text
+    // ══════════════════════════════════════════════════════
+    function buildMonthBanner(monthLabel, isFiltered, filterQuery) {
+        const filterTag = isFiltered
+            ? `<div style="margin-top:6px;display:inline-block;background:#fef3c7;color:#78350f;border-radius:5px;padding:2px 10px;font-size:.7rem;font-weight:700;">🔍 Filter: "${filterQuery}"</div>`
+            : '';
+        return `
+        <div style="background:#0d1117;border-radius:12px;padding:0;margin-bottom:22px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.3);">
+            <!-- TOP STRIPE: title + dev -->
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 24px 10px;">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <div style="background:#e3b341;border-radius:8px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">🛣️</div>
+                    <div>
+                        <div style="color:#ffffff;font-size:.98rem;font-weight:700;letter-spacing:.2px;">MMRoadways Advance Account</div>
+                        <div style="color:#8b949e;font-size:.68rem;margin-top:1px;">Transport Financial Tracker</div>
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="color:#e3b341;font-size:.72rem;font-weight:600;">Developed by Vignesh</div>
+                    <div style="color:#6e7681;font-size:.65rem;margin-top:2px;">${new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}</div>
+                </div>
+            </div>
+            <!-- MONTH HERO BAND -->
+            <div style="background:#161b22;border-top:1px solid #21262d;border-bottom:1px solid #21262d;padding:16px 24px;display:flex;align-items:center;gap:18px;">
+                <div style="background:#e3b341;border-radius:8px;padding:8px 12px;text-align:center;flex-shrink:0;">
+                    <div style="color:#0d1117;font-size:.55rem;text-transform:uppercase;letter-spacing:1.2px;font-weight:800;">MONTH</div>
+                </div>
+                <div>
+                    <div style="color:#e3b341;font-size:2rem;font-weight:800;letter-spacing:.5px;line-height:1;font-family:'JetBrains Mono',monospace;">${monthLabel || 'ALL DATA'}</div>
+                    <div style="color:#6e7681;font-size:.65rem;margin-top:4px;text-transform:uppercase;letter-spacing:.8px;">Report Period${filterTag}</div>
+                </div>
+                <div style="margin-left:auto;background:#21262d;border:1px solid #30363d;border-radius:8px;padding:8px 16px;text-align:right;">
+                    <div style="color:#6e7681;font-size:.6rem;text-transform:uppercase;letter-spacing:.7px;">Generated</div>
+                    <div style="color:#c9d1d9;font-size:.78rem;font-weight:600;margin-top:2px;">${new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    // ── OVERALL SNAPSHOT ─────────────────────────────────
+    downloadOverallBtn.addEventListener('click',()=>{
+        if(!allRows.length){toast("No data to snapshot","error");return;}
+        toast("Generating overall image…","info");
+        const rows=filteredRows.length?filteredRows:allRows;
+        const monthLabel=getMonthLabel();
+        const isFiltered=currentSearchQuery.trim()!=="";
+        const grand=rows.reduce((s,r)=>s+r.Amount,0);
+        const vehs=new Set(rows.flatMap(r=>r.Vehicle?r.Vehicle.split(", "):[]).filter(Boolean));
+        const gcTotal=rows.reduce((s,r)=>s+(r["GC ADV"]||0),0);
+        const ulTotal=rows.reduce((s,r)=>s+(r["UNLOADING"]||0),0);
+        const ldTotal=rows.reduce((s,r)=>s+(r["LOADING"]||0),0);
+        const catRows=CAT_KEYS.map(key=>({key,total:rows.reduce((s,r)=>s+(r[key]||0),0)})).filter(c=>c.total>0);
+        const otherTotal=rows.reduce((s,r)=>s+(r["_OTHER"]||0),0);
+        if(otherTotal>0)catRows.push({key:"OTHER / MISC",total:otherTotal});
+
+        const statsHTML=[
+            {label:'Transactions',val:rows.length.toLocaleString('en-IN'),bg:'#dbeafe',ic:'#1d4ed8'},
+            {label:'Grand Total',val:'₹'+grand.toLocaleString('en-IN'),bg:'#dcfce7',ic:'#166534'},
+            {label:'Vehicles',val:vehs.size,bg:'#fef9c3',ic:'#854d0e'},
+            {label:'GC Advance',val:'₹'+gcTotal.toLocaleString('en-IN'),bg:'#f3e8ff',ic:'#6b21a8'},
+            {label:'Unloading',val:'₹'+ulTotal.toLocaleString('en-IN'),bg:'#fce7f3',ic:'#9d174d'},
+            {label:'Loading',val:'₹'+ldTotal.toLocaleString('en-IN'),bg:'#e0f2fe',ic:'#0369a1'},
+        ].map(s=>`<div style="background:${s.bg};border-radius:8px;padding:13px 16px;">
+            <div style="font-size:.6rem;text-transform:uppercase;letter-spacing:.8px;color:#555;font-weight:600;">${s.label}</div>
+            <div style="font-size:1rem;font-weight:700;font-family:'JetBrains Mono',monospace;color:${s.ic};margin-top:5px;">${s.val}</div>
+        </div>`).join('');
+
+        const catsHTML=catRows.map(c=>{
+            const clr=CHIP_COLORS[c.key]||CHIP_COLORS["_OTHER"];
+            return`<div style="background:${clr.bg};border-left:3px solid ${clr.fg};border-radius:8px;padding:11px 13px;">
+                <div style="font-size:.6rem;text-transform:uppercase;letter-spacing:.7px;color:${clr.fg};font-weight:600;margin-bottom:4px;">${c.key}</div>
+                <div style="font-size:.88rem;font-weight:700;font-family:'JetBrains Mono',monospace;color:${clr.fg};">₹${c.total.toLocaleString('en-IN',{minimumFractionDigits:2})}</div>
+            </div>`;
+        }).join('');
+
+        $('overallSnapshot').innerHTML=`
+        <div style="font-family:'Sora',sans-serif;background:#fff;padding:28px;min-width:900px;">
+            ${buildMonthBanner(monthLabel,isFiltered,currentSearchQuery)}
+            <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:20px;">${statsHTML}</div>
+            <div style="font-size:.73rem;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:#374151;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #e5e7eb;">📊 Expense Category Totals</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-bottom:20px;">${catsHTML}</div>
+            <div style="text-align:right;font-size:.62rem;color:#aaa;">MMRoadways Advance Account — Auto-generated report</div>
+        </div>`;
+
+        setTimeout(()=>{
+            html2canvas($('overallSnapshot'),{scale:2,backgroundColor:'#fff',useCORS:true})
+                .then(canvas=>showSnapOverlay(canvas,`MMRoadways_Overall_${(monthLabel||'Report').replace(/\s/g,'_')}.png`))
+                .catch(e=>toast("Snapshot failed: "+e.message,"error"));
+        },120);
+    });
+
+    // ── FILTERED SNAPSHOT ────────────────────────────────
+    downloadFilteredBtn.addEventListener('click',()=>{
+        if(!filteredRows.length){toast("No filtered data to snapshot","error");return;}
+        toast("Generating filtered image…","info");
+        const rows=filteredRows;
+        const monthLabel=getMonthLabel();
+        const isFiltered=currentSearchQuery.trim()!=="";
+        const grand=rows.reduce((s,r)=>s+r.Amount,0);
+        const vehs=new Set(rows.flatMap(r=>r.Vehicle?r.Vehicle.split(", "):[]).filter(Boolean));
+        const activeCats=CAT_KEYS.filter(k=>rows.some(r=>(r[k]||0)>0));
+
+        const miniStatsHTML=[
+            {bg:'#dbeafe',ic:'#1d4ed8',label:'Transactions',val:rows.length},
+            {bg:'#dcfce7',ic:'#166534',label:'Total Amount',val:'₹'+grand.toLocaleString('en-IN')},
+            {bg:'#fef9c3',ic:'#854d0e',label:'Vehicles',val:vehs.size},
+            ...activeCats.slice(0,3).map(k=>{
+                const t=rows.reduce((s,r)=>s+(r[k]||0),0);
+                const c=CHIP_COLORS[k]||CHIP_COLORS["_OTHER"];
+                return{bg:c.bg,ic:c.fg,label:k,val:'₹'+t.toLocaleString('en-IN')};
+            })
+        ].map(s=>`<div style="background:${s.bg};border-radius:8px;padding:10px 14px;flex:1;min-width:120px;">
+            <div style="font-size:.58rem;text-transform:uppercase;letter-spacing:.7px;color:${s.ic};font-weight:600;">${s.label}</div>
+            <div style="font-size:.92rem;font-weight:700;font-family:'JetBrains Mono',monospace;color:${s.ic};margin-top:3px;">${s.val}</div>
+        </div>`).join('');
+
+        const tableRowsHTML=rows.slice(0,60).map((r,idx)=>{
+            const catC=CHIP_COLORS[r._cat]||CHIP_COLORS["_OTHER"];
+            const bg=idx%2===0?'#f6f8fa':'#fff';
+            return`<tr style="background:${bg};">
+                <td style="padding:7px 12px;font-family:'JetBrains Mono',monospace;font-size:.65rem;">${r.Date}</td>
+                <td style="padding:7px 12px;"><span style="background:#dbeafe;color:#1d4ed8;border-radius:4px;padding:2px 6px;font-size:.62rem;font-weight:700;font-family:'JetBrains Mono',monospace;">${r.Vehicle||'—'}</span></td>
+                <td style="padding:7px 12px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                    <span style="background:${catC.bg};color:${catC.fg};border-radius:3px;padding:1px 5px;font-size:.6rem;font-weight:700;margin-right:4px;">${r._cat}</span>${r.Remarks.substring(0,55)}${r.Remarks.length>55?'…':''}
+                </td>
+                <td style="padding:7px 12px;font-family:'JetBrains Mono',monospace;font-weight:700;">₹${r.Amount.toLocaleString('en-IN')}</td>
+                ${activeCats.map(k=>{const v=r[k]||0;const c=CHIP_COLORS[k]||{};return v>0?`<td style="padding:7px 12px;background:${c.bg||''};color:${c.fg||''};font-family:'JetBrains Mono',monospace;font-weight:700;">₹${v.toLocaleString('en-IN')}</td>`:`<td style="padding:7px 12px;color:#d1d5db;">—</td>`;}).join('')}
+            </tr>`;
+        }).join('');
+
+        const footerHTML=`<tr style="background:#0d1117;">
+            <td style="padding:9px 12px;font-weight:700;color:#fff;" colspan="3">TOTAL (${rows.length} rows)</td>
+            <td style="padding:9px 12px;font-family:'JetBrains Mono',monospace;font-weight:700;color:#e3b341;">₹${grand.toLocaleString('en-IN')}</td>
+            ${activeCats.map(k=>{const t=rows.reduce((s,r)=>s+(r[k]||0),0);return`<td style="padding:9px 12px;font-family:'JetBrains Mono',monospace;font-weight:700;color:#e3b341;">${t>0?'₹'+t.toLocaleString('en-IN'):'—'}</td>`;}).join('')}
+        </tr>`;
+
+        $('filterSnapshot').innerHTML=`
+        <div style="font-family:'Sora',sans-serif;background:#fff;padding:28px;min-width:1100px;">
+            ${buildMonthBanner(monthLabel,isFiltered,currentSearchQuery)}
+            <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">${miniStatsHTML}</div>
+            <table style="width:100%;border-collapse:collapse;font-size:.72rem;">
+                <thead><tr>${["Date","Vehicle","Remarks","Amount",...activeCats].map(h=>`<th style="background:#0d1117;color:#fff;padding:9px 12px;text-align:left;font-size:.62rem;text-transform:uppercase;letter-spacing:.5px;">${h}</th>`).join('')}</tr></thead>
+                <tbody>
+                    ${tableRowsHTML}
+                    ${rows.length>60?`<tr><td colspan="${4+activeCats.length}" style="padding:10px 12px;text-align:center;color:#888;font-style:italic;font-size:.72rem;">… and ${rows.length-60} more rows</td></tr>`:''}
+                    ${footerHTML}
+                </tbody>
+            </table>
+            <div style="margin-top:10px;text-align:right;font-size:.62rem;color:#aaa;">MMRoadways Advance Account — Auto-generated report</div>
+        </div>`;
+
+        setTimeout(()=>{
+            html2canvas($('filterSnapshot'),{scale:2,backgroundColor:'#fff',useCORS:true})
+                .then(canvas=>{
+                    const mn=(monthLabel||'Report').replace(/\s/g,'_');
+                    const filt=currentSearchQuery.trim()?`_${currentSearchQuery.replace(/\s/g,'_')}`:'';
+                    showSnapOverlay(canvas,`MMRoadways_Filtered${filt}_${mn}.png`);
+                })
+                .catch(e=>toast("Snapshot failed: "+e.message,"error"));
+        },120);
+    });
+
+    // ── EXCEL EXPORT ─────────────────────────────────────
+    function exportToExcel(){
+        if(!allRows.length){toast("No data to export","error");return;}
+        try{
+            const wb=XLSX.utils.book_new();
+            const activeCats=CAT_KEYS.filter(k=>allRows.some(r=>(r[k]||0)>0));
+            const headers=["Date","Vehicle","Remarks","Amount",...activeCats];
+            const mainData=[headers];let grand=0;
+            allRows.forEach(r=>{mainData.push(headers.map(h=>(h==="Amount"||activeCats.includes(h))?r[h]||0:r[h]||""));grand+=r.Amount;});
+            const foot=new Array(headers.length).fill("");foot[1]="GRAND TOTAL";foot[3]=grand;mainData.push(foot);
+            const mainWs=XLSX.utils.aoa_to_sheet(mainData);
+            applyExcelStyle(mainWs,allRows.length,headers.length,activeCats,headers);
+            mainWs['!cols']=headers.map(h=>h==="Date"?{wch:14}:h==="Vehicle"?{wch:16}:h==="Remarks"?{wch:55}:h==="Amount"?{wch:13}:{wch:14});
+            XLSX.utils.book_append_sheet(wb,mainWs,"All Transactions");
+            activeCats.forEach(key=>{
+                const rows=allRows.filter(r=>(r[key]||0)>0);if(!rows.length)return;
+                const sd=[["Date","Vehicle","Remarks",key]];let total=0;const vehs=new Set();
+                rows.forEach(r=>{sd.push([r.Date,r.Vehicle,r.Remarks,r[key]]);total+=r[key];if(r.Vehicle)r.Vehicle.split(", ").forEach(v=>vehs.add(v));});
+                sd.push(["","","TOTAL",total]);sd.push(["","VEHICLES COUNT",vehs.size,""]);
+                const ws=XLSX.utils.aoa_to_sheet(sd);
+                const range=XLSX.utils.decode_range(ws['!ref']);
+                for(let R=range.s.r;R<=range.e.r;R++)for(let C=range.s.c;C<=range.e.c;C++){
+                    const addr=XLSX.utils.encode_cell({r:R,c:C});if(!ws[addr])continue;
+                    ws[addr].s=R===0?{fill:{fgColor:{rgb:CLR.hBg}},font:{bold:true,color:{rgb:CLR.hFg},sz:11},alignment:{horizontal:"center"}}
+                        :R>=rows.length?{fill:{fgColor:{rgb:CLR.footBg}},font:{bold:true,color:{rgb:CLR.footFg}}}
+                        :{fill:{fgColor:{rgb:R%2===0?CLR.even:CLR.odd}}};
+                    if(C===3&&R>0){ws[addr].z="#,##0.00";ws[addr].s.alignment={horizontal:"right"};}
+                }
+                ws['!cols']=[{wch:14},{wch:16},{wch:55},{wch:14}];
+                XLSX.utils.book_append_sheet(wb,ws,key.replace(/[\\/?*\[\]:]/g,"_").substring(0,31));
+            });
+            const otherRows=allRows.filter(r=>(r["_OTHER"]||0)>0);
+            if(otherRows.length){
+                const sd=[["Date","Vehicle","Remarks","Amount"]];let t=0;
+                otherRows.forEach(r=>{sd.push([r.Date,r.Vehicle,r.Remarks,r.Amount]);t+=r.Amount;});sd.push(["","","TOTAL",t]);
+                const ws=XLSX.utils.aoa_to_sheet(sd);ws['!cols']=[{wch:14},{wch:16},{wch:55},{wch:14}];
+                XLSX.utils.book_append_sheet(wb,ws,"Other_Misc");
+            }
+            XLSX.writeFile(wb,`MMRoadways_${(getMonthLabel()||new Date().toISOString().slice(0,10)).replace(/\s/g,'_')}.xlsx`);
+            toast("Excel downloaded successfully!","success");
+        }catch(e){console.error(e);toast("Export failed: "+e.message,"error");}
+    }
+
+    function applyExcelStyle(ws,dataCount,colCount,activeCats,headers){
+        if(!ws['!ref'])return;
+        const range=XLSX.utils.decode_range(ws['!ref']);
+        for(let R=range.s.r;R<=range.e.r;R++)for(let C=range.s.c;C<=range.e.c;C++){
+            const addr=XLSX.utils.encode_cell({r:R,c:C});if(!ws[addr])continue;
+            const isCat=activeCats.includes(headers[C]);
+            ws[addr].s=R===0?{fill:{fgColor:{rgb:isCat?"0F4C75":CLR.hBg}},font:{bold:true,color:{rgb:CLR.hFg},sz:11},alignment:{horizontal:"center"}}
+                :R===range.e.r?{fill:{fgColor:{rgb:CLR.footBg}},font:{bold:true,color:{rgb:CLR.footFg}},alignment:{horizontal:C>=3?"right":"left"}}
+                :{fill:{fgColor:{rgb:R%2===0?CLR.even:CLR.odd}},font:{color:{rgb:CLR.footFg}}};
+            if(C>=3&&R>0){ws[addr].z="#,##0.00";if(!ws[addr].s.alignment)ws[addr].s.alignment={horizontal:"right"};}
+        }
+    }
+
+    function reset(){
+        allRows=[];filteredRows=[];currentSearchQuery="";rawWb=null;
+        tableBody.innerHTML="";tableHead.innerHTML="";
+        emptyState.style.display='flex';$('reportTable').style.display='none';
+        exportBtn.disabled=true;downloadOverallBtn.disabled=true;
+        downloadFilteredBtn.disabled=true;downloadFilteredBtn.style.display='none';
+        fileStatus.textContent='No file selected';fileInput.value="";
+        searchBox.style.display='none';searchBox.value="";rowCountBadge.textContent="0 rows";
+        catFilterBadge.classList.remove('show');
+        ["statRows","statVehicles"].forEach(id=>$(id).textContent="0");
+        ["statAmount","statGC","statUnload","statLoad"].forEach(id=>$(id).textContent="₹0");
+        modulesGrid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:#999;padding:16px;font-size:.82rem;">Upload Excel and click Process Data</div>';
+        $('breakdownNote').textContent="Upload & process to view";
+    }
+
+    function handleFile(file){
+        fileStatus.innerHTML=`<i class="fas fa-spinner fa-spin"></i> Reading ${file.name}…`;
+        const reader=new FileReader();
+        reader.onload=e=>{
+            try{
+                rawWb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+                const sheet=rawWb.SheetNames.find(s=>s.toLowerCase()==='data')||rawWb.SheetNames[0];
+                fileStatus.innerHTML=`<i class="fas fa-file-excel" style="color:#1a7f37"></i> ${file.name} <span style="color:#888">(${sheet})</span>`;
+                toast(`File loaded: ${file.name}`,"success");
+            }catch(ex){fileStatus.innerHTML=`<span style="color:#cf222e">Error reading file</span>`;toast("Error: "+ex.message,"error");}
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    dropZone.addEventListener('click',()=>fileInput.click());
+    dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('over');});
+    dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('over'));
+    dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('over');if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0]);});
+    fileInput.addEventListener('change',e=>{if(e.target.files[0])handleFile(e.target.files[0]);});
+
+    processBtn.addEventListener('click',()=>{
+        if(!rawWb){toast("Please upload an Excel file first","error");return;}
+        processBtn.classList.add('loading');processBtn.querySelector('span').textContent="Processing…";
+        setTimeout(()=>{
+            try{
+                const sheetName=rawWb.SheetNames.find(s=>s.toLowerCase()==='data')||rawWb.SheetNames[0];
+                allRows=buildReport(rawWb.Sheets[sheetName]);filteredRows=[...allRows];currentSearchQuery="";
+                if(!allRows.length){toast("No valid debit transactions found!","error");}
+                else{renderDashboard(allRows);renderTable(filteredRows);downloadOverallBtn.disabled=false;toast(`✅ ${allRows.length} transactions processed!`,"success");}
+            }catch(ex){toast("Processing error: "+ex.message,"error");console.error(ex);}
+            finally{processBtn.classList.remove('loading');processBtn.querySelector('span').textContent="Process Data";}
+        },50);
+    });
+
+    exportBtn.addEventListener('click',e=>{e.preventDefault();exportBtn.classList.add('loading');setTimeout(()=>{exportToExcel();exportBtn.classList.remove('loading');},80);});
+    resetBtn.addEventListener('click',()=>{reset();toast("Reset done","info");});
+})();
+</script>
+</body>
+</html>
