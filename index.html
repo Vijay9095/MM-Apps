@@ -184,7 +184,6 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
 .dot-icon.rotated { transform: rotate(90deg); transition: transform 0.28s; }
 .dot-icon { transition: transform 0.28s; }
 
-/* Three-dot icon (SVG) */
 .dot-icon { display: flex; flex-direction: column; gap: 3.5px; align-items: center; justify-content: center; width: 16px; height: 16px; }
 .dot-icon span { display: block; width: 3.5px; height: 3.5px; background: currentColor; border-radius: 50%; }
 
@@ -201,9 +200,10 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
 }
 .sidebar.collapsed .nav-section { opacity: 0; }
 
+/* ── NAV ITEM WITH RELOAD ── */
 .nav-item {
   display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px 10px 16px;
+  padding: 10px 8px 10px 16px;
   margin: 2px 8px; border-radius: var(--radius);
   cursor: pointer; transition: all 0.18s ease;
   border: 1px solid transparent; position: relative; user-select: none;
@@ -236,6 +236,43 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
 .nav-num { font-size: 10px; font-weight: 800; color: rgba(255,255,255,0.20); min-width: 20px; text-align: right; flex-shrink: 0; transition: opacity 0.2s; }
 .nav-item.active .nav-num { color: rgba(255,255,255,0.6); }
 .sidebar.collapsed .nav-num { opacity: 0; width: 0; min-width: 0; overflow: hidden; }
+
+/* ── RELOAD BUTTON ── */
+.nav-reload-btn {
+  width: 24px; height: 24px; border-radius: 6px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.55);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: background 0.18s, color 0.18s, transform 0.3s;
+  font-size: 12px; line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+}
+.nav-item:hover .nav-reload-btn,
+.nav-item.active .nav-reload-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+.nav-item.active .nav-reload-btn {
+  background: rgba(255,255,255,0.18);
+  border-color: rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.85);
+}
+.nav-reload-btn:hover {
+  background: rgba(255,255,255,0.28) !important;
+  color: #fff !important;
+  transform: rotate(180deg) scale(1.1);
+}
+.nav-reload-btn.spinning {
+  animation: spin-reload 0.6s linear;
+}
+@keyframes spin-reload {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.sidebar.collapsed .nav-reload-btn { display: none; }
 
 .nav-badge-new {
   font-size: 8px; font-weight: 900;
@@ -288,6 +325,20 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
 .tb-crumb { font-size: 11px; color: var(--txt-muted); font-weight: 600; }
 .tb-crumb .crumb-active { color: var(--accent); font-weight: 700; }
 .tb-right { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
+
+/* ── TOPBAR RELOAD BUTTON ── */
+.btn-topbar-reload {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 20px;
+  border: 1.5px solid #bfdbfe; background: var(--blue-soft);
+  color: var(--blue); font-size: 11.5px; font-weight: 700;
+  font-family: 'Nunito', sans-serif; cursor: pointer;
+  transition: all 0.18s; white-space: nowrap;
+}
+.btn-topbar-reload:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
+.btn-topbar-reload:hover .tb-reload-icon { transform: rotate(180deg); }
+.tb-reload-icon { font-size: 13px; transition: transform 0.35s; display: inline-block; }
+.btn-topbar-reload.spinning .tb-reload-icon { animation: spin-reload 0.6s linear; }
 
 .chip { display: flex; align-items: center; gap: 6px; padding: 5px 13px; border-radius: 20px; font-size: 11.5px; font-weight: 700; white-space: nowrap; border: 1.5px solid; letter-spacing: 0.3px; }
 .chip-live { color: #15803d; border-color: #86efac; background: var(--green-soft); }
@@ -371,13 +422,15 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
   .sidebar.open { left: 0; }
   .sidebar.collapsed { width: var(--sb-w) !important; }
   .sidebar.collapsed .brand-text, .sidebar.collapsed .nav-info, .sidebar.collapsed .nav-num, .sidebar.collapsed .nav-section, .sidebar.collapsed .sb-footer-dev, .sidebar.collapsed .nav-badge-new { opacity: 1; max-width: 200px; }
-  .sidebar.collapsed .nav-item { justify-content: flex-start; padding: 10px 12px 10px 16px; }
+  .sidebar.collapsed .nav-item { justify-content: flex-start; padding: 10px 8px 10px 16px; }
   .sidebar.collapsed .nav-item::after { display: none; }
+  .sidebar.collapsed .nav-reload-btn { display: flex; }
   .mask.show { display: block; }
   .hamburger { display: block; }
   .chip-date, .chip-live, .user-name, .user-role { display: none; }
   .driver-card { padding: 36px 24px 30px; }
   .collapse-btn { display: none; }
+  .btn-topbar-reload span.reload-label { display: none; }
 }
 </style>
 </head>
@@ -421,7 +474,6 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
         <div class="brand-name">MM Roadways</div>
         <div class="brand-tag">Mgmt Suite</div>
       </div>
-      <!-- ⋮ Three-dot Collapse Button -->
       <button class="collapse-btn" id="collapseBtn" onclick="toggleCollapse()" title="Toggle Navigation">
         <div class="dot-icon">
           <span></span><span></span><span></span>
@@ -455,6 +507,10 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
         </div>
       </div>
       <div class="tb-right">
+        <button class="btn-topbar-reload" id="topbarReloadBtn" onclick="reloadActive()" title="Reload current module">
+          <span class="tb-reload-icon">🔄</span>
+          <span class="reload-label">Reload</span>
+        </button>
         <div class="chip chip-live"><span class="chip-live-dot"></span>LIVE</div>
         <div class="chip chip-date" id="dateBadge">─</div>
         <div class="chip chip-company">MM ROADWAYS</div>
@@ -502,14 +558,14 @@ const MODULES = [
   { icon:'📍', title:'Mileage',                      sub:'Mileage Calculation',         type:'file',          file:'MM_Roadways_Mileage.html',             isNew: false },
   { icon:'🔍', title:'Fuel Check',                   sub:'Transaction Comparator',      type:'file',          file:'mmfuell.html',                         isNew: false },
   { icon:'📊', title:'Trip Sheet',                   sub:'Pending Tripsheet',           type:'file',          file:'Pending_Tripsheet1.html',              isNew: false },
-  { icon:'🏷️', title:'FASTag',                       sub:'FASTag Dashboard',            type:'file',          file:'Fastag.html',                         isNew: false },
+  { icon:'🏷️', title:'FASTag',                       sub:'FASTag Dashboard',            type:'file',          file:'Fastag.html',                          isNew: false },
   { icon:'🔄', title:'File Converter',               sub:'XLS / CSV / JSON / PDF',      type:'file',          file:'All_File_Format.html',                 isNew: false },
   { icon:'🔢', title:'Advance Tripsheet Pending',    sub:'Vehicle Trip Counter',        type:'file',          file:'Advance_Tripsheet_pending.html',       isNew: true  },
   { icon:'📅', title:'Month Trip Count',             sub:'Monthly Vehicle Summary',     type:'file',          file:'Tripcount.html',                       isNew: true  },
   { icon:'💰', title:'Month-Wise-Trip-Expenses',     sub:'Monthly Trip Expense Report', type:'file',          file:'Month_Wise_Trip_Expenses.html',        isNew: true  },
   { icon:'❌', title:'Rejected Form',                sub:'Settlement Rejected',         type:'ext',           url:'https://mmsettlementrejected.vercel.app/', isNew: true },
   { icon:'🧾', title:'Trip Settlement',              sub:'Trip Settlement Records',     type:'file',          file:'Trip_Settlement.html',                 isNew: true  },
-  { icon:'💳', title:'Payment Sources',              sub:'Payment Source Tracker',      type:'file',          file:'Payment Sources.html',                 isNew: false  },
+  { icon:'💳', title:'Payment Sources',              sub:'Payment Source Tracker',      type:'file',          file:'Payment Sources.html',                 isNew: false },
 ];
 
 /* ── LOGIN ── */
@@ -596,18 +652,34 @@ function initApp() {
           : '';
       el.className = 'nav-item' + extraClass;
       el.setAttribute('data-title', mod.title);
+
+      const badgeOrNum = mod.isNew
+        ? `<span class="nav-badge-new">NEW</span>`
+        : `<span class="nav-num">${String(i + 1).padStart(2, '0')}</span>`;
+
       el.innerHTML = `
         <span class="nav-icon">${mod.icon}</span>
         <div class="nav-info">
           <div class="nav-title">${mod.title}</div>
           <div class="nav-sub">${mod.sub}</div>
         </div>
-        ${mod.isNew
-          ? `<span class="nav-badge-new">NEW</span>`
-          : `<span class="nav-num">${String(i + 1).padStart(2, '0')}</span>`
-        }
+        ${badgeOrNum}
+        <button class="nav-reload-btn" title="Reload ${mod.title}">↻</button>
       `;
-      el.addEventListener('click', () => { activate(i); closeSidebar(); });
+
+      /* Click on nav item (not reload btn) → activate */
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('.nav-reload-btn')) return;
+        activate(i);
+        closeSidebar();
+      });
+
+      /* Click on reload btn → reload that module */
+      el.querySelector('.nav-reload-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        reloadModule(i, el.querySelector('.nav-reload-btn'));
+      });
+
       navList.appendChild(el);
     });
 
@@ -671,9 +743,61 @@ function initApp() {
 
   activate(0);
 
-  // Init collapse button position
   const btn = document.getElementById('collapseBtn');
   btn.style.left = (235 - 40) + 'px';
+}
+
+/* ── RELOAD LOGIC ── */
+function reloadModule(idx, btnEl) {
+  const mod = MODULES[idx];
+  const fo  = frameMap[idx];
+
+  /* Spin the sidebar reload btn */
+  if (btnEl) {
+    btnEl.classList.remove('spinning');
+    void btnEl.offsetWidth;
+    btnEl.classList.add('spinning');
+    setTimeout(() => btnEl.classList.remove('spinning'), 650);
+  }
+
+  if (fo.type === 'file') {
+    /* If this module is active, show loader while reloading */
+    if (idx === activeIdx) {
+      document.getElementById('loader').classList.remove('hide');
+      fo.el.classList.remove('visible');
+    }
+    fo.loaded = false;
+    fo.el.src = '';
+    setTimeout(() => {
+      fo.el.src = mod.file;
+      fo.el.onload = () => {
+        fo.loaded = true;
+        if (idx === activeIdx) revealFrame(idx);
+      };
+      setTimeout(() => {
+        if (!fo.loaded) { fo.loaded = true; if (idx === activeIdx) revealFrame(idx); }
+      }, 3500);
+    }, 80);
+  } else {
+    /* For ext/driver-salary: just a visual flash to acknowledge reload */
+    fo.el.style.opacity = '0.4';
+    setTimeout(() => { fo.el.style.opacity = ''; }, 400);
+  }
+}
+
+/* Reload currently active module (topbar button) */
+function reloadActive() {
+  if (activeIdx < 0) return;
+  const topBtn = document.getElementById('topbarReloadBtn');
+  topBtn.classList.remove('spinning');
+  void topBtn.offsetWidth;
+  topBtn.classList.add('spinning');
+  setTimeout(() => topBtn.classList.remove('spinning'), 650);
+
+  /* Also spin the sidebar btn for the active item */
+  const navItems = document.querySelectorAll('.nav-item');
+  const sideBtn  = navItems[activeIdx] ? navItems[activeIdx].querySelector('.nav-reload-btn') : null;
+  reloadModule(activeIdx, sideBtn);
 }
 
 /* ── ACTIVATE MODULE ── */
