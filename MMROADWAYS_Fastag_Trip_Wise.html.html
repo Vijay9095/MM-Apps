@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MMROADWAYS Fastag — Vehicle Transaction Filter</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* ── Self-contained: no Google Fonts, no Font Awesome CDN ── */
+@import url('data:text/css,');
+
+:root {
+  --bg:#FFFFFF;--bg-secondary:#F8F9FA;--bg-tertiary:#F1F3F5;
+  --border:#E2E5E9;--border-light:#F0F1F3;
+  --text:#111111;--text-secondary:#555555;--text-tertiary:#8C8C8C;--text-muted:#B0B0B0;
+  --accent-bg:#F0F0F0;
+  --radius-sm:6px;--radius-md:10px;--radius-lg:14px;--radius-xl:18px;--radius-full:999px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.06);--shadow-md:0 4px 16px rgba(0,0,0,0.08);--shadow-lg:0 8px 32px rgba(0,0,0,0.12);
+  --transition:0.25s ease;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* ── SVG icons inline via background-image (no external icon font needed) ── */
+.ico{display:inline-flex;align-items:center;justify-content:center;width:1em;height:1em;vertical-align:middle;flex-shrink:0;}
+.ico svg{width:100%;height:100%;}
+
+.bg-pattern{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:radial-gradient(circle at 1px 1px,rgba(0,0,0,0.03) 1px,transparent 0);background-size:24px 24px;}
+.top-line{position:fixed;top:0;left:0;right:0;height:3px;background:var(--text);z-index:100;}
+#app{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:2.5rem 1.5rem 4rem;}
+
+/* ── Brand Header ── */
+.brand-header{text-align:center;margin-bottom:2.5rem;padding:1.5rem 1rem;}
+.brand-logo{display:inline-flex;align-items:center;gap:14px;margin-bottom:0.6rem;}
+.brand-icon{width:50px;height:50px;background:var(--text);border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;font-weight:900;letter-spacing:-1px;}
+.brand-name{font-size:26px;font-weight:800;color:var(--text);letter-spacing:-0.02em;}
+.brand-tagline{font-size:11px;color:var(--text-tertiary);letter-spacing:0.15em;text-transform:uppercase;font-weight:500;}
+.brand-tagline span{color:var(--text);font-weight:700;}
+.brand-divider{width:60px;height:2px;background:var(--text);margin:1rem auto 0;border-radius:var(--radius-full);}
+.section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-tertiary);margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ── Upload Zone ── */
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius-xl);padding:3rem 2rem;text-align:center;cursor:pointer;transition:var(--transition);background:var(--bg-secondary);margin-bottom:2rem;}
+.upload-zone:hover{border-color:var(--text);background:var(--bg-tertiary);}
+.upload-zone.dragover{border-color:var(--text);background:var(--accent-bg);transform:scale(1.005);}
+.upload-zone input{display:none;}
+.upload-icon-wrap{width:64px;height:64px;border-radius:50%;background:var(--accent-bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:28px;transition:var(--transition);}
+.upload-zone:hover .upload-icon-wrap{transform:translateY(-3px);background:var(--text);color:#fff;border-color:var(--text);}
+.upload-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;}
+.upload-desc{font-size:12px;color:var(--text-tertiary);line-height:1.5;}
+.upload-formats{display:flex;justify-content:center;gap:6px;margin-top:0.8rem;}
+.format-tag{padding:3px 10px;border-radius:var(--radius-full);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;border:1px solid var(--border);color:var(--text-secondary);background:var(--bg);}
+
+/* ── Filters Panel ── */
+.filters-panel{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow-sm);}
+.filters-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+.vrn-col{grid-column:1;}
+.datetime-col{grid-column:2 / span 2;display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.datetime-block{display:flex;flex-direction:column;gap:6px;}
+.datetime-block label.block-lbl{font-size:10px;color:var(--text-tertiary);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:5px;}
+.dt-inputs{display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:end;}
+.dt-inputs input{font-family:inherit;font-size:13px;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);width:100%;outline:none;transition:var(--transition);-webkit-appearance:none;appearance:none;}
+.dt-inputs input:focus{border-color:var(--text);box-shadow:0 0 0 2px rgba(0,0,0,0.08);}
+.dt-inputs input[type=date]::-webkit-calendar-picker-indicator,
+.dt-inputs input[type=time]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:0.5;}
+.time-wrap{position:relative;}
+.time-wrap input{padding-right:26px;}
+.time-x{position:absolute;right:6px;top:50%;transform:translateY(-50%);border:none;background:none;cursor:pointer;color:var(--text-muted);font-size:14px;line-height:1;padding:2px 4px;border-radius:3px;display:none;font-weight:700;}
+.time-x:hover{color:var(--text);background:var(--accent-bg);}
+.time-x.show{display:block;}
+.optional-hint{font-size:9px;color:var(--text-muted);margin-top:2px;}
+
+/* ── VRN Dropdown ── */
+.filter-group{display:flex;flex-direction:column;gap:5px;}
+.filter-group > label{font-size:10px;color:var(--text-tertiary);font-weight:700;text-transform:uppercase;letter-spacing:0.08em;display:flex;align-items:center;gap:5px;}
+.vrn-trigger{display:flex;align-items:center;width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);cursor:pointer;transition:border-color 0.2s;min-height:38px;user-select:none;}
+.vrn-trigger:hover{border-color:var(--text-secondary);}
+.vrn-trigger.is-open{border-color:var(--text);box-shadow:0 0 0 2px rgba(0,0,0,0.08);}
+.vrn-label{flex:1;padding:9px 8px 9px 12px;font-size:13px;font-family:inherit;color:var(--text-tertiary);text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none;border:none;outline:none;cursor:pointer;}
+.vrn-label.has-val{color:var(--text);}
+.vrn-x{display:none;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;margin-right:2px;background:none;border:none;cursor:pointer;color:var(--text-tertiary);font-size:16px;font-weight:700;transition:background 0.15s,color 0.15s;line-height:1;}
+.vrn-x:hover{background:var(--accent-bg);color:var(--text);}
+.vrn-x.show{display:flex;}
+.vrn-arrow{padding:0 10px;color:var(--text-tertiary);font-size:11px;transition:transform 0.2s;flex-shrink:0;}
+.vrn-arrow.up{transform:rotate(180deg);}
+#vrnDrop{position:fixed;z-index:999999;background:var(--bg);border:2px solid var(--text);border-radius:var(--radius-sm);box-shadow:0 10px 40px rgba(0,0,0,0.18);display:none;flex-direction:column;overflow:hidden;}
+#vrnDrop.show{display:flex;}
+.vrn-search-bar{padding:8px;border-bottom:1px solid var(--border);background:var(--bg-secondary);flex-shrink:0;position:relative;}
+#vrnSearch{width:100%;padding:7px 10px 7px 10px;font-size:12px;font-family:inherit;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg);color:var(--text);outline:none;transition:border-color 0.15s;}
+#vrnSearch:focus{border-color:var(--text);}
+#vrnList{overflow-y:auto;flex:1;}
+.vo{padding:9px 12px;font-size:13px;cursor:pointer;color:var(--text);display:flex;align-items:center;gap:10px;transition:background 0.1s;border-bottom:1px solid var(--border-light);}
+.vo:last-child{border-bottom:none;}
+.vo:hover{background:var(--bg-secondary);}
+.vo.sel{background:var(--accent-bg);font-weight:600;}
+.vo .vi{width:26px;height:26px;border-radius:5px;background:var(--accent-bg);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text-secondary);flex-shrink:0;}
+.vo.all-v .vi{background:var(--text);color:#fff;}
+.vo-cnt{margin-left:auto;font-size:10px;font-weight:700;flex-shrink:0;background:var(--accent-bg);color:var(--text-secondary);padding:2px 8px;border-radius:var(--radius-full);border:1px solid var(--border);}
+.vo-none{padding:16px 12px;font-size:12px;color:var(--text-muted);text-align:center;}
+mark{background:#ffe44d;border-radius:2px;padding:0 1px;}
+
+/* ── Buttons ── */
+.btn-row{display:flex;gap:8px;align-items:center;margin-bottom:1.25rem;flex-wrap:wrap;}
+.btn{padding:9px 18px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:var(--transition);display:inline-flex;align-items:center;gap:7px;}
+.btn:hover{background:var(--text);color:#fff;border-color:var(--text);transform:translateY(-1px);box-shadow:var(--shadow-md);}
+.btn:active{transform:translateY(0) scale(0.98);}
+.btn-primary{background:var(--text);color:#fff;border-color:var(--text);}
+.btn-primary:hover{background:#333;border-color:#333;}
+.btn-pdf{background:var(--bg);color:var(--text);border:1px solid var(--text);}
+.btn-pdf:hover{background:var(--text);color:#fff;}
+.btn-print{background:var(--bg);color:var(--text);border:1px solid #555;}
+.btn-print:hover{background:#333;color:#fff;border-color:#333;}
+.btn-reset{color:var(--text-secondary);border-color:var(--border);}
+.btn-reset:hover{background:var(--bg-tertiary);color:var(--text);border-color:var(--text-secondary);}
+.result-badge{margin-left:auto;padding:5px 12px;border-radius:var(--radius-full);background:var(--accent-bg);color:var(--text-secondary);font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;border:1px solid var(--border);}
+
+/* ── Stats ── */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:1.25rem;}
+.stat-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-md);padding:1rem 1.2rem;position:relative;overflow:hidden;box-shadow:var(--shadow-sm);transition:var(--transition);}
+.stat-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px);}
+.stat-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:var(--text);}
+.stat-icon{width:32px;height:32px;border-radius:var(--radius-sm);background:var(--accent-bg);display:flex;align-items:center;justify-content:center;font-size:16px;color:var(--text-secondary);margin-bottom:8px;}
+.stat-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;font-weight:700;margin-bottom:3px;}
+.stat-value{font-size:22px;font-weight:800;color:var(--text);}
+
+/* ── Table ── */
+.table-container{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);}
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+thead tr{background:var(--text);position:sticky;top:0;z-index:2;}
+th{padding:10px 14px;text-align:left;font-weight:600;color:#fff;font-size:10px;text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid var(--text);white-space:nowrap;}
+td{padding:9px 14px;border-bottom:1px solid var(--border-light);color:var(--text);white-space:nowrap;font-size:12px;}
+tr:last-child td{border-bottom:none;}
+tbody tr{transition:var(--transition);}
+tbody tr:hover td{background:var(--bg-secondary);}
+.debit-cell{font-weight:700;color:var(--text)!important;}
+.empty-state{text-align:center;padding:3.5rem 2rem;color:var(--text-muted);}
+.empty-state p{font-size:13px;line-height:1.6;color:var(--text-tertiary);}
+
+/* ── Toast ── */
+.toast-container{position:fixed;top:20px;right:20px;z-index:99999;display:flex;flex-direction:column;gap:8px;}
+.toast{padding:12px 18px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;color:#fff;background:#222;box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:8px;animation:toastIn 0.35s cubic-bezier(0.34,1.56,0.64,1);max-width:340px;}
+.toast.error{border-left:3px solid #e55;}.toast.success{border-left:3px solid #5b5;}.toast.info{border-left:3px solid #aaa;}
+.toast.fade-out{animation:toastOut 0.25s ease forwards;}
+@keyframes toastIn{from{opacity:0;transform:translateX(60px) scale(0.95);}to{opacity:1;transform:translateX(0) scale(1);}}
+@keyframes toastOut{to{opacity:0;transform:translateX(60px) scale(0.95);}}
+.fade-up{animation:fadeUp 0.4s ease both;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.delay-1{animation-delay:.08s}.delay-2{animation-delay:.16s}.delay-3{animation-delay:.24s}.delay-4{animation-delay:.32s}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:10px}::-webkit-scrollbar-thumb:hover{background:var(--text-muted)}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  .brand-name{font-size:20px}.brand-icon{width:40px;height:40px;font-size:18px}
+  .stats-grid{grid-template-columns:1fr}.filters-grid{grid-template-columns:1fr!important}
+  .vrn-col,.datetime-col{grid-column:1!important}.datetime-col{grid-template-columns:1fr!important}
+  .dt-inputs{grid-template-columns:1fr}
+  .btn-row{flex-direction:column;align-items:stretch}.result-badge{margin-left:0;justify-content:center}
+  .upload-zone{padding:2rem 1.5rem}#app{padding:1.5rem 1rem 3rem}
+  .btn{justify-content:center;}
+}
+</style>
+</head>
+<body>
+<div class="top-line"></div>
+<div class="bg-pattern"></div>
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- VRN Dropdown Portal -->
+<div id="vrnDrop">
+  <div class="vrn-search-bar">
+    <input type="text" id="vrnSearch" placeholder="🔍 Search vehicle number..." autocomplete="off">
+  </div>
+  <div id="vrnList"></div>
+</div>
+
+<div id="app">
+  <!-- Header -->
+  <header class="brand-header fade-up">
+    <div class="brand-logo">
+      <div class="brand-icon">MM</div>
+      <div><div class="brand-name">MMROADWAYS Fastag</div></div>
+    </div>
+    <div class="brand-tagline">Vehicle <span>Transaction</span> Filter System</div>
+    <div class="brand-divider"></div>
+  </header>
+
+  <!-- Upload -->
+  <div class="upload-zone fade-up delay-1" id="dropZone" onclick="document.getElementById('fileInput').click()">
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" aria-label="Upload file">
+    <div class="upload-icon-wrap">📤</div>
+    <p class="upload-title">Click to upload or drag &amp; drop</p>
+    <p class="upload-desc">Upload your Excel/CSV file with VRN, Date &amp; Time, Transaction Description, Debit Amt columns</p>
+    <div class="upload-formats">
+      <span class="format-tag">.xlsx</span><span class="format-tag">.xls</span><span class="format-tag">.csv</span>
+    </div>
+  </div>
+
+  <!-- Main Content (hidden until file loaded) -->
+  <div id="mainContent" style="display:none">
+    <div class="section-label fade-up delay-1">⚙ Filter Options</div>
+    <div class="filters-panel fade-up delay-1">
+      <div class="filters-grid">
+
+        <!-- VRN (col 1) -->
+        <div class="filter-group vrn-col">
+          <label>🚛 VRN Filter</label>
+          <div id="vrnTrigger" class="vrn-trigger" role="button" tabindex="0" aria-haspopup="listbox">
+            <span class="vrn-label" id="vrnLabel">All Vehicles</span>
+            <button type="button" class="vrn-x" id="vrnX" title="Clear" aria-label="Clear VRN">✕</button>
+            <span class="vrn-arrow" id="vrnArrow">▾</span>
+          </div>
+          <input type="hidden" id="vrnVal" value="">
+        </div>
+
+        <!-- Date + Time (cols 2+3) -->
+        <div class="datetime-col">
+
+          <!-- Start -->
+          <div class="datetime-block">
+            <label class="block-lbl">📅 Start Date &amp; Time</label>
+            <div class="dt-inputs">
+              <input type="date" id="startDate" aria-label="Start date">
+              <div class="time-wrap">
+                <input type="time" id="startTime" aria-label="Start time">
+                <button class="time-x" id="startTimeX" title="Clear time" onclick="clearTime('start')">✕</button>
+              </div>
+            </div>
+            <div class="optional-hint">ℹ Time is optional — leave blank to match full day</div>
+          </div>
+
+          <!-- End -->
+          <div class="datetime-block">
+            <label class="block-lbl">📅 End Date &amp; Time</label>
+            <div class="dt-inputs">
+              <input type="date" id="endDate" aria-label="End date">
+              <div class="time-wrap">
+                <input type="time" id="endTime" aria-label="End time">
+                <button class="time-x" id="endTimeX" title="Clear time" onclick="clearTime('end')">✕</button>
+              </div>
+            </div>
+            <div class="optional-hint">ℹ Time is optional — leave blank to match full day</div>
+          </div>
+
+        </div><!-- /datetime-col -->
+      </div><!-- /filters-grid -->
+    </div><!-- /filters-panel -->
+
+    <div class="btn-row fade-up delay-2">
+      <button class="btn btn-primary" onclick="applyFilters()">⚡ Apply Filters</button>
+      <button class="btn btn-reset" onclick="resetFilters()">↺ Reset</button>
+      <button class="btn btn-pdf" onclick="downloadPDF()">📄 Download PDF</button>
+      <button class="btn btn-print" onclick="printFiltered()">🖨 Print</button>
+      <div class="result-badge" id="resultCount">✓ <span>0 records</span></div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid fade-up delay-3">
+      <div class="stat-card">
+        <div class="stat-icon">📊</div>
+        <div class="stat-label">Total Records</div>
+        <div class="stat-value" id="statTotal">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🔍</div>
+        <div class="stat-label">Filtered Records</div>
+        <div class="stat-value" id="statFiltered">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">₹</div>
+        <div class="stat-label">Total Debit</div>
+        <div class="stat-value" id="statDebit">₹0</div>
+      </div>
+    </div>
+
+    <div class="section-label fade-up delay-4">📋 Transaction Data</div>
+    <div class="table-container fade-up delay-4">
+      <div class="table-scroll">
+        <table id="dataTable">
+          <thead><tr id="tableHead"></tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="emptyMsg" style="display:none" class="empty-state">
+    <p>🔎 No records match the selected filters.<br>Try adjusting your filter criteria.</p>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────────
+var allData=[],filteredData=[],headers=[];
+var allVRNs=[],selVRN='',dropOpen=false;
+var parsedDateTimes=[];
+var dateColKey='',vrnColKey='';
+
+// ── Toast ──────────────────────────────────────────────────────────────────────
+function toast(msg,type){
+  var c=document.getElementById('toastContainer');
+  var t=document.createElement('div');
+  t.className='toast '+(type||'info');
+  t.textContent=msg;
+  c.appendChild(t);
+  setTimeout(function(){
+    t.classList.add('fade-out');
+    setTimeout(function(){if(t.parentNode)t.remove();},250);
+  },3500);
+}
+
+// ── Time clear buttons ─────────────────────────────────────────────────────────
+function clearTime(side){
+  document.getElementById(side+'Time').value='';
+  document.getElementById(side+'TimeX').classList.remove('show');
+}
+document.getElementById('startTime').addEventListener('input',function(){
+  document.getElementById('startTimeX').classList.toggle('show',!!this.value);
+});
+document.getElementById('endTime').addEventListener('input',function(){
+  document.getElementById('endTimeX').classList.toggle('show',!!this.value);
+});
+
+// ── Drag & Drop ────────────────────────────────────────────────────────────────
+var dz=document.getElementById('dropZone');
+dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('dragover');});
+dz.addEventListener('dragleave',function(){dz.classList.remove('dragover');});
+dz.addEventListener('drop',function(e){e.preventDefault();dz.classList.remove('dragover');loadFile(e.dataTransfer.files[0]);});
+document.getElementById('fileInput').addEventListener('change',function(e){
+  if(e.target.files[0])loadFile(e.target.files[0]);
+  // Reset so same file can be re-selected
+  e.target.value='';
+});
+
+// ── Excel serial → JS Date ─────────────────────────────────────────────────────
+function excelSerialToDate(serial){
+  if(typeof serial!=='number'||isNaN(serial)||serial<1)return null;
+  var intPart=Math.floor(serial),fracPart=serial-intPart;
+  var days=intPart>60?intPart-1:intPart;
+  var baseMs=(days-1)*86400000;
+  var base=new Date(Date.UTC(1900,0,1)+baseMs);
+  var timeMs=Math.round(fracPart*86400000);
+  return new Date(Date.UTC(base.getUTCFullYear(),base.getUTCMonth(),base.getUTCDate())+timeMs);
+}
+
+// ── Parse any date/datetime → local JS Date ────────────────────────────────────
+function parseRowDateTime(raw){
+  if(raw===undefined||raw===null||raw==='')return null;
+  if(raw instanceof Date){
+    if(isNaN(raw))return null;
+    return new Date(raw.getFullYear(),raw.getMonth(),raw.getDate(),raw.getHours(),raw.getMinutes(),raw.getSeconds());
+  }
+  if(typeof raw==='number'){
+    var d=excelSerialToDate(raw);
+    if(!d)return null;
+    return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate(),d.getUTCHours(),d.getUTCMinutes(),d.getUTCSeconds());
+  }
+  var s=String(raw).trim();
+  if(!s)return null;
+  var m;
+  // YYYY-MM-DD HH:MM:SS or YYYY-MM-DDTHH:MM:SS
+  m=s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[T ](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if(m)return new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0));
+  // DD-MM-YYYY HH:MM:SS
+  m=s.match(/^(\d{1,2})[-\/\.](\d{1,2})[-\/\.](\d{4})[T ](\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if(m)return new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5],+(m[6]||0));
+  // YYYY-MM-DD only
+  m=s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
+  if(m)return new Date(+m[1],+m[2]-1,+m[3],0,0,0);
+  // DD-MM-YYYY only
+  m=s.match(/^(\d{1,2})[-\/\.](\d{1,2})[-\/\.](\d{4})$/);
+  if(m)return new Date(+m[3],+m[2]-1,+m[1],0,0,0);
+  var fb=new Date(s);
+  if(!isNaN(fb))return new Date(fb.getFullYear(),fb.getMonth(),fb.getDate(),fb.getHours(),fb.getMinutes(),fb.getSeconds());
+  return null;
+}
+
+// Build filter boundary DateTime
+function buildFilterDT(dateVal,timeVal,side){
+  if(!dateVal)return null;
+  var p=dateVal.split('-');
+  if(timeVal){var t=timeVal.split(':');return new Date(+p[0],+p[1]-1,+p[2],+t[0],+t[1],0);}
+  return side==='end'
+    ?new Date(+p[0],+p[1]-1,+p[2],23,59,59)
+    :new Date(+p[0],+p[1]-1,+p[2],0,0,0);
+}
+
+// ── Load File ──────────────────────────────────────────────────────────────────
+function loadFile(file){
+  if(!file){toast('No file selected.','error');return;}
+  var ext=file.name.split('.').pop().toLowerCase();
+  if(!['xlsx','xls','csv'].includes(ext)){toast('Invalid file format. Use .xlsx, .xls, or .csv','error');return;}
+  toast('Reading file...','info');
+  var reader=new FileReader();
+  reader.onerror=function(){toast('Failed to read file. Try again.','error');};
+  reader.onload=function(e){
+    try{
+      var data=e.target.result;
+      // Two passes: one for display (formatted), one for raw (for date numbers)
+      var wb=XLSX.read(data,{type:'binary',cellDates:true,raw:false,dateNF:'yyyy-mm-dd hh:mm:ss'});
+      var wbRaw=XLSX.read(data,{type:'binary',cellDates:false,raw:true});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var wsRaw=wbRaw.Sheets[wbRaw.SheetNames[0]];
+      var displayRows=XLSX.utils.sheet_to_json(ws,{header:1,raw:false,defval:''});
+      var rawValRows=XLSX.utils.sheet_to_json(wsRaw,{header:1,raw:true,defval:''});
+      if(!displayRows||displayRows.length<2){toast('File is empty or has only headers.','error');return;}
+      headers=displayRows[0].map(function(h){return String(h||'').trim();});
+      if(!headers.length){toast('Could not read column headers.','error');return;}
+      dateColKey=headers.find(function(h){return /date/i.test(h);})||'';
+      vrnColKey=headers.find(function(h){return /vrn/i.test(h);})||headers[0];
+      var dateColIdx=headers.indexOf(dateColKey);
+      allData=[];parsedDateTimes=[];
+      displayRows.slice(1).forEach(function(row,i){
+        if(!row||!row.some(function(c){return c!==undefined&&c!=='';}))return;
+        var obj={};
+        headers.forEach(function(h,j){obj[h]=row[j]!==undefined?String(row[j]).trim():'';});
+        allData.push(obj);
+        var rawDateVal;
+        if(dateColIdx>=0){
+          var dv=row[dateColIdx];
+          if(dv instanceof Date){rawDateVal=dv;}
+          else{
+            var rv=rawValRows[i+1]?rawValRows[i+1][dateColIdx]:undefined;
+            rawDateVal=(typeof rv==='number')?rv:dv;
+          }
+        }
+        parsedDateTimes.push(parseRowDateTime(rawDateVal));
+      });
+      filteredData=allData.slice();
+      buildVRNs();
+      renderTable();
+      document.getElementById('mainContent').style.display='block';
+      document.getElementById('dropZone').style.display='none';
+      var pc=parsedDateTimes.filter(function(d){return d!==null;}).length;
+      toast('Loaded '+allData.length+' records ('+pc+' with valid dates)','success');
+    }catch(err){
+      toast('Error reading file: '+(err.message||err),'error');
+      console.error('File parse error:',err);
+    }
+  };
+  reader.readAsBinaryString(file);
+}
+
+// ── Build VRN list ─────────────────────────────────────────────────────────────
+function buildVRNs(){
+  var seen={};allVRNs=[];
+  allData.forEach(function(r){
+    var v=r[vrnColKey];
+    if(v&&!seen[v]){seen[v]=true;allVRNs.push(v);}
+  });
+  allVRNs.sort();
+}
+
+// ── Dropdown helpers ───────────────────────────────────────────────────────────
+function placeDropdown(){
+  var trig=document.getElementById('vrnTrigger');
+  var dd=document.getElementById('vrnDrop');
+  var r=trig.getBoundingClientRect();
+  var availH=window.innerHeight-r.bottom-60;
+  var lh=Math.max(80,Math.min(220,availH));
+  dd.style.left=r.left+'px';
+  dd.style.top=(r.bottom+2)+'px';
+  dd.style.width=Math.max(r.width,240)+'px';
+  document.getElementById('vrnList').style.maxHeight=lh+'px';
+}
+
+function openDrop(){
+  dropOpen=true;
+  fillList('');
+  placeDropdown();
+  document.getElementById('vrnDrop').classList.add('show');
+  document.getElementById('vrnTrigger').classList.add('is-open');
+  document.getElementById('vrnArrow').textContent='▴';
+  setTimeout(function(){document.getElementById('vrnSearch').focus();},20);
+}
+
+function closeDrop(){
+  dropOpen=false;
+  document.getElementById('vrnDrop').classList.remove('show');
+  document.getElementById('vrnTrigger').classList.remove('is-open');
+  document.getElementById('vrnArrow').textContent='▾';
+  document.getElementById('vrnSearch').value='';
+}
+
+function fillList(q){
+  q=(q||'').trim().toLowerCase();
+  var matched=q?allVRNs.filter(function(v){return v.toLowerCase().includes(q);}):allVRNs;
+  var html='';
+  if(!q){
+    html+='<div class="vo all-v'+(selVRN===''?' sel':'')+'" data-v="" data-l="All Vehicles">'
+      +'<span class="vi">☰</span>'
+      +'<span style="flex:1">All Vehicles</span>'
+      +'<span class="vo-cnt">'+allVRNs.length+'</span></div>';
+  }
+  if(matched.length===0){
+    html+='<div class="vo-none">No vehicle found for "'+eH(q)+'"</div>';
+  } else {
+    matched.forEach(function(v){
+      var label=q?v.replace(new RegExp('('+eR(q)+')','gi'),'<mark>$1</mark>'):eH(v);
+      html+='<div class="vo'+(v===selVRN?' sel':'')+'" data-v="'+eH(v)+'" data-l="'+eH(v)+'">'
+        +'<span class="vi">🚗</span>'
+        +'<span style="flex:1;overflow:hidden;text-overflow:ellipsis">'+label+'</span></div>';
+    });
+  }
+  document.getElementById('vrnList').innerHTML=html;
+  document.getElementById('vrnList').querySelectorAll('.vo').forEach(function(el){
+    el.addEventListener('click',function(){pick(el.dataset.v,el.dataset.l);});
+  });
+}
+
+function pick(val,label){
+  selVRN=val;
+  document.getElementById('vrnVal').value=val;
+  var lbl=document.getElementById('vrnLabel');
+  lbl.textContent=val?label:'All Vehicles';
+  lbl.classList.toggle('has-val',!!val);
+  document.getElementById('vrnX').classList.toggle('show',!!val);
+  closeDrop();
+}
+
+document.getElementById('vrnTrigger').addEventListener('click',function(e){
+  if(e.target.closest('#vrnX'))return;
+  if(dropOpen)closeDrop();else openDrop();
+});
+document.getElementById('vrnTrigger').addEventListener('keydown',function(e){
+  if(e.key==='Enter'||e.key===' '){e.preventDefault();if(dropOpen)closeDrop();else openDrop();}
+  if(e.key==='Escape')closeDrop();
+});
+document.getElementById('vrnX').addEventListener('click',function(e){
+  e.stopPropagation();pick('','All Vehicles');
+});
+document.getElementById('vrnSearch').addEventListener('input',function(){fillList(this.value);});
+document.addEventListener('click',function(e){
+  if(!document.getElementById('vrnTrigger').contains(e.target)&&
+     !document.getElementById('vrnDrop').contains(e.target))closeDrop();
+});
+window.addEventListener('scroll',function(){if(dropOpen)placeDropdown();},true);
+window.addEventListener('resize',function(){if(dropOpen)placeDropdown();});
+
+// ── Apply Filters ──────────────────────────────────────────────────────────────
+function applyFilters(){
+  var sv=document.getElementById('vrnVal').value;
+  var startDT=buildFilterDT(document.getElementById('startDate').value,document.getElementById('startTime').value,'start');
+  var endDT=buildFilterDT(document.getElementById('endDate').value,document.getElementById('endTime').value,'end');
+  var dateActive=!!(startDT||endDT),skip=0;
+  filteredData=allData.filter(function(row,i){
+    if(sv&&row[vrnColKey]!==sv)return false;
+    if(dateActive){
+      var rdt=parsedDateTimes[i];
+      if(!rdt){skip++;return false;}
+      if(startDT&&rdt<startDT)return false;
+      if(endDT&&rdt>endDT)return false;
+    }
+    return true;
+  });
+  renderTable();
+  if(filteredData.length===0){
+    toast('No records found for the selected filters.','info');
+  } else {
+    var msg='Found '+filteredData.length+' records.';
+    if(skip>0)msg+=' ('+skip+' skipped — unparseable date)';
+    toast(msg,'success');
+  }
+}
+
+// ── Reset Filters ──────────────────────────────────────────────────────────────
+function resetFilters(){
+  pick('','All Vehicles');
+  ['startDate','startTime','endDate','endTime'].forEach(function(id){
+    document.getElementById(id).value='';
+  });
+  document.getElementById('startTimeX').classList.remove('show');
+  document.getElementById('endTimeX').classList.remove('show');
+  filteredData=allData.slice();
+  renderTable();
+  toast('Filters cleared.','info');
+}
+
+// ── Render Table ───────────────────────────────────────────────────────────────
+function renderTable(){
+  var head=document.getElementById('tableHead');
+  var body=document.getElementById('tableBody');
+  var em=document.getElementById('emptyMsg');
+  var tc=document.querySelector('.table-container');
+  var dc=headers.find(function(h){return /debit/i.test(h);});
+  head.innerHTML=headers.map(function(h){return'<th>'+eH(h)+'</th>';}).join('');
+  if(filteredData.length===0){
+    body.innerHTML='';
+    em.style.display='block';
+    tc.style.display='none';
+  } else {
+    em.style.display='none';
+    tc.style.display='block';
+    body.innerHTML=filteredData.map(function(row){
+      return'<tr>'+headers.map(function(h){
+        var v=row[h]||'';
+        return(h===dc)?'<td class="debit-cell">'+eH(v)+'</td>':'<td>'+eH(v)+'</td>';
+      }).join('')+'</tr>';
+    }).join('');
+  }
+  document.getElementById('statTotal').textContent=allData.length.toLocaleString('en-IN');
+  document.getElementById('statFiltered').textContent=filteredData.length.toLocaleString('en-IN');
+  var tot=0;
+  if(dc)filteredData.forEach(function(r){
+    var v=parseFloat(String(r[dc]).replace(/[^0-9.\-]/g,''));
+    if(!isNaN(v))tot+=v;
+  });
+  document.getElementById('statDebit').textContent='₹'+tot.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.querySelector('#resultCount span').textContent=filteredData.length+' records';
+}
+
+function eH(s){var d=document.createElement('div');d.textContent=String(s);return d.innerHTML;}
+function eR(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}
+
+// ── Build Report HTML ──────────────────────────────────────────────────────────
+function buildReportHTML(forPDF){
+  var sv=document.getElementById('vrnVal').value;
+  var sd=document.getElementById('startDate').value,st=document.getElementById('startTime').value;
+  var ed=document.getElementById('endDate').value,et=document.getElementById('endTime').value;
+  var dc=headers.find(function(h){return /debit/i.test(h);});
+  var tot=0;
+  if(dc)filteredData.forEach(function(r){
+    var v=parseFloat(String(r[dc]).replace(/[^0-9.\-]/g,''));
+    if(!isNaN(v))tot+=v;
+  });
+  var rows=filteredData.map(function(row,idx){
+    var bg=(!forPDF&&idx%2===0)?'#ffffff':(!forPDF?'#f7f7f7':'');
+    var style=bg?' style="background:'+bg+'"':'';
+    return'<tr'+style+'>'+headers.map(function(h){
+      var v=row[h]||'';
+      var s=(h===dc)?' style="text-align:right;font-weight:700;"':'';
+      return'<td'+s+'>'+eH(v)+'</td>';
+    }).join('')+'</tr>';
+  }).join('');
+  var fp=[];
+  if(sv)fp.push('VRN: <strong>'+eH(sv)+'</strong>');
+  if(sd)fp.push('From: <strong>'+sd+(st?' '+st:'')+'</strong>');
+  if(ed)fp.push('To: <strong>'+ed+(et?' '+et:'')+'</strong>');
+  var now=new Date();
+  var ds=now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  var ts=now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  var di=headers.indexOf(dc);
+  var tc2=di>=0?di:headers.length-1;
+  var h='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>MMROADWAYS Report</title><style>';
+  h+='@page{margin:12mm 10mm;size:A4 portrait;}*{box-sizing:border-box;margin:0;padding:0;}';
+  h+='body{font-family:"Segoe UI",Arial,sans-serif;font-size:9px;color:#000;-webkit-print-color-adjust:exact;print-color-adjust:exact;}';
+  h+='.hdr{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:10px;}';
+  h+='.brand{display:flex;align-items:center;gap:8px;}.logo{width:32px;height:32px;border:2px solid #000;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;}';
+  h+='.brand h1{font-size:15px;font-weight:800;}.brand p{font-size:7px;color:#555;text-transform:uppercase;letter-spacing:.1em;font-weight:600;}';
+  h+='.dt{text-align:right;font-size:8px;color:#555;line-height:1.6;}.dt strong{color:#000;}';
+  h+='.fil{border:1px solid #999;padding:5px 10px;margin-bottom:8px;font-size:8px;color:#333;}';
+  h+='.sum{display:flex;gap:8px;margin-bottom:10px;}.sb{flex:1;border:1px solid #000;padding:6px 10px;text-align:center;}';
+  h+='.sl{font-size:7px;color:#666;text-transform:uppercase;letter-spacing:.07em;font-weight:600;margin-bottom:2px;}.sv{font-size:14px;font-weight:800;}';
+  h+='table{width:100%;border-collapse:collapse;margin-bottom:8px;}thead tr{background:#000;}';
+  h+='th{padding:6px 7px;text-align:left;font-size:7px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.05em;border:1px solid #000;white-space:nowrap;}';
+  h+='td{padding:5px 7px;border:1px solid #ccc;font-size:8px;white-space:nowrap;}';
+  if(forPDF)h+='tr:nth-child(even) td{background:#f5f5f5;}';
+  h+='.tr td{font-weight:800;background:#e8e8e8!important;border-top:2px solid #000;font-size:9px;}';
+  h+='.footer{text-align:center;padding-top:6px;border-top:1px solid #ccc;font-size:7px;color:#888;}.footer strong{color:#000;}';
+  h+='</style></head><body>';
+  h+='<div class="hdr"><div class="brand"><div class="logo">MM</div><div><h1>MMROADWAYS Fastag</h1><p>Vehicle Transaction Report</p></div></div>';
+  h+='<div class="dt"><strong>'+ds+'</strong><br>'+ts+'</div></div>';
+  if(fp.length)h+='<div class="fil"><strong>Filters:</strong> '+fp.join(' &bull; ')+'</div>';
+  h+='<div class="sum">';
+  h+='<div class="sb"><div class="sl">Filtered Records</div><div class="sv">'+filteredData.length+'</div></div>';
+  h+='<div class="sb"><div class="sl">Total Debit</div><div class="sv">&#8377;'+tot.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})+'</div></div>';
+  h+=sv?'<div class="sb"><div class="sl">Vehicle (VRN)</div><div class="sv">'+eH(sv)+'</div></div>'
+       :'<div class="sb"><div class="sl">Total in File</div><div class="sv">'+allData.length+'</div></div>';
+  h+='</div>';
+  h+='<table><thead><tr>'+headers.map(function(col){return'<th>'+eH(col)+'</th>';}).join('')+'</tr></thead>';
+  h+='<tbody>'+rows;
+  h+='<tr class="tr"><td colspan="'+tc2+'" style="text-align:right">Total Debit Amount:</td>';
+  h+='<td style="text-align:right">&#8377;'+tot.toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2})+'</td></tr>';
+  h+='</tbody></table>';
+  h+='<div class="footer"><strong>MMROADWAYS Fastag</strong> &mdash; Confidential Transaction Report</div>';
+  return h;
+}
+
+function printFiltered(){
+  if(filteredData.length===0){toast('No data to print.','error');return;}
+  var h=buildReportHTML(false)+'<script>window.onload=function(){window.print();};<\/script></body></html>';
+  try{
+    var blob=new Blob([h],{type:'text/html;charset=utf-8'});
+    var url=URL.createObjectURL(blob);
+    var win=window.open(url,'_blank');
+    if(!win){toast('Popup blocked. Please allow popups for this page.','error');return;}
+    toast('Print preview opening...','success');
+    setTimeout(function(){URL.revokeObjectURL(url);},120000);
+  }catch(err){toast('Could not open print window: '+(err.message||err),'error');}
+}
+
+function downloadPDF(){
+  if(filteredData.length===0){toast('No data to export.','error');return;}
+  var h=buildReportHTML(true)+'</body></html>';
+  try{
+    var blob=new Blob([h],{type:'text/html;charset=utf-8'});
+    var url=URL.createObjectURL(blob);
+    var win=window.open(url,'_blank');
+    if(!win){
+      // Fallback: force download
+      var a=document.createElement('a');
+      a.href=url;
+      a.download='MMROADWAYS_Report_'+new Date().toISOString().slice(0,10)+'.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast('Popup blocked — file downloaded as HTML. Open it and print to PDF.','info');
+    } else {
+      win.addEventListener('load',function(){try{win.focus();win.print();}catch(e){}});
+      toast('PDF preview opened. Use browser Print → Save as PDF.','success');
+    }
+    setTimeout(function(){URL.revokeObjectURL(url);},120000);
+  }catch(err){toast('Export error: '+(err.message||err),'error');}
+}
+</script>
+</body>
+</html>
