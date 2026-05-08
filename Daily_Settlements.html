@@ -1,709 +1,873 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ta">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>MMROADWAYS — Vehicle Expense Tracker</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MMROADWAYS — PDF Merger Tool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <style>
- body{font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial;margin:0;background:linear-gradient(to bottom right,#eef3ff,#e6edff);} 
- .container{max-width:1200px;margin:40px auto;padding:20px;} 
- .brand-header{text-align:center;margin-bottom:30px;} 
- .brand-name{font-size:42px;font-weight:800;color:#2563eb;margin:0;text-shadow:2px 2px 4px rgba(0,0,0,0.1);letter-spacing:1px;} 
- .brand-subtitle{font-size:18px;color:#4f46e5;margin-top:5px;font-weight:500;} 
- h1{font-size:34px;margin:0 0 10px;color:#111;text-align:center;} 
- .sub{color:#555;margin-bottom:30px;text-align:center;} 
- .card{background:#fff;border-radius:14px;box-shadow:0 4px 14px rgba(0,0,0,0.08);margin-bottom:28px;padding:0;} 
- .card-header{padding:16px 22px;background:linear-gradient(90deg,#2563eb,#4f46e5);color:#fff;border-radius:14px 14px 0 0;font-size:18px;font-weight:600;} 
- .card-body{padding:22px;} 
- label{font-weight:600;color:#444;} 
- input[type=date]{padding:8px 10px;border:2px solid #cbd5e1;border-radius:8px;font-size:15px;} 
- .dropzone{border:2px dashed #cbd5e1;border-radius:12px;padding:40px;text-align:center;background:#f8fafc;transition:0.2s;} 
- .dropzone:hover{border-color:#2563eb;background:#eff6ff;} 
- button{cursor:pointer;border:none;border-radius:8px;padding:10px 18px;font-weight:600;} 
- .btn-primary{background:#2563eb;color:#fff;} 
- .btn-primary:hover{background:#1d4ed8;} 
- .btn-secondary{background:#e2e8f0;color:#334155;} 
- table{width:100%;border-collapse:collapse;margin-top:18px;font-size:14px;background:white;} 
- th,td{padding:8px;border-bottom:1px solid #e2e8f0;text-align:left;} 
- th{background:#f1f5f9;position:sticky;top:0;} 
- .preview-area{max-height:420px;overflow:auto;} 
- .status{font-size:14px;color:#444;margin-top:4px;} 
- .export-buttons{display:flex;gap:12px;flex-wrap:wrap;} 
- .remark-textbox{width:100%;min-width:150px;padding:6px 10px;border:2px solid #dc3545;border-radius:6px;font-size:13px;background-color:#fff3cd;color:#856404;font-weight:500;outline:none;box-sizing:border-box;} 
- .remark-textbox:focus{border-color:#ff6b7c;box-shadow:0 0 0 3px rgba(220,53,69,0.1);} 
- .pending-row{background-color:#fff9db !important;} 
- .received-row{background-color:#e8f5e9 !important;} 
- .count-badge{padding:4px 10px;border-radius:12px;font-size:12px;font-weight:600;margin:0 8px;} 
- .pending-badge{background:#fef3c7;color:#92400e;border:1px solid #fbbf24;} 
- .verified-badge{background:#d1fae5;color:#065f46;border:1px solid #10b981;}
- .received-badge{background:#e8f5e9;color:#2e7d32;border:1px solid #4caf50;}
- .unchecked-badge{background:#fff3cd;color:#856404;border:1px solid #dc3545;}
- .remarks-header{background:#fff3cd !important;color:#856404;font-weight:600;}
- .received-header{background:#e8f5e9 !important;color:#2e7d32;font-weight:600;}
- .received-checkbox{width:20px;height:20px;cursor:pointer;border:2px solid #4caf50;border-radius:4px;outline:none;margin-right:5px;}
- .received-checkbox:checked{background-color:#4caf50;border-color:#4caf50;}
- .unchecked-textbox{width:calc(100% - 30px);min-width:120px;padding:6px 10px;border:2px solid #dc3545;border-radius:6px;font-size:13px;background-color:#fff3cd;color:#856404;font-weight:500;outline:none;box-sizing:border-box;text-align:center;}
- .unchecked-textbox:focus{border-color:#ff6b7c;box-shadow:0 0 0 3px rgba(220,53,69,0.1);}
- .unchecked-count-box{width:100%;min-width:150px;padding:6px 10px;border:2px solid #dc3545;border-radius:6px;font-size:13px;background-color:#fff3cd;color:#856404;font-weight:500;outline:none;box-sizing:border-box;text-align:center;cursor:default;}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f0f2f5;
+    color: #1a1a2e;
+    min-height: 100vh;
+  }
+
+  header {
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    color: white;
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+  }
+
+  header .logo {
+    width: 40px; height: 40px;
+    background: #e94560;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+
+  header h1 { font-size: 22px; font-weight: 600; }
+  header p { font-size: 13px; opacity: 0.7; margin-top: 2px; }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 20px;
+  }
+
+  /* Upload Zone */
+  .upload-zone {
+    border: 2.5px dashed #b0b8d0;
+    border-radius: 16px;
+    background: white;
+    text-align: center;
+    padding: 48px 24px;
+    cursor: pointer;
+    transition: all 0.25s;
+    margin-bottom: 24px;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: #e94560;
+    background: #fff5f7;
+  }
+  .upload-zone .upload-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+  }
+  .upload-zone h2 {
+    font-size: 18px;
+    color: #1a1a2e;
+    margin-bottom: 6px;
+  }
+  .upload-zone p {
+    color: #6b7a99;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+  .upload-zone input[type="file"] { display: none; }
+
+  .btn-upload {
+    background: #e94560;
+    color: white;
+    border: none;
+    padding: 11px 28px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .btn-upload:hover { background: #c73652; }
+  .btn-upload:active { transform: scale(0.97); }
+
+  /* File List */
+  .file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  .file-item {
+    background: white;
+    border-radius: 12px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    border: 1px solid #e8ecf4;
+    animation: fadeIn 0.25s ease;
+  }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(-6px); } to { opacity:1; transform: translateY(0); } }
+
+  .file-icon {
+    width: 42px; height: 42px;
+    background: #fff0f3;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .file-info { flex: 1; min-width: 0; }
+  .file-name {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #1a1a2e;
+  }
+  .file-meta { font-size: 12px; color: #8894b0; margin-top: 2px; }
+
+  .file-order {
+    background: #e94560;
+    color: white;
+    border-radius: 50%;
+    width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .btn-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #aab2c8;
+    font-size: 18px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+    flex-shrink: 0;
+  }
+  .btn-remove:hover { color: #e94560; background: #fff0f3; }
+
+  /* Controls */
+  .controls {
+    background: white;
+    border-radius: 14px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    border: 1px solid #e8ecf4;
+  }
+  .controls h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #1a1a2e;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .controls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .control-group label {
+    font-size: 12px;
+    color: #6b7a99;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .control-group select,
+  .control-group input[type="number"] {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid #e0e5f0;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #1a1a2e;
+    background: #f8f9fc;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .control-group select:focus,
+  .control-group input[type="number"]:focus {
+    border-color: #e94560;
+    background: white;
+  }
+
+  /* Action Buttons */
+  .action-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+  }
+
+  .btn-merge {
+    background: linear-gradient(135deg, #e94560, #c73652);
+    color: white;
+    border: none;
+    padding: 13px 32px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    box-shadow: 0 4px 14px rgba(233,69,96,0.3);
+  }
+  .btn-merge:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(233,69,96,0.35); }
+  .btn-merge:active { transform: scale(0.97); }
+  .btn-merge:disabled {
+    background: #c4cad8;
+    box-shadow: none;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-clear {
+    background: white;
+    color: #6b7a99;
+    border: 1.5px solid #e0e5f0;
+    padding: 13px 24px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-clear:hover { border-color: #e94560; color: #e94560; }
+
+  /* Progress */
+  .progress-bar-wrap {
+    background: #e8ecf4;
+    border-radius: 100px;
+    height: 6px;
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #e94560, #ff8c69);
+    border-radius: 100px;
+    transition: width 0.3s ease;
+    width: 0%;
+  }
+  .progress-label {
+    font-size: 13px;
+    color: #6b7a99;
+    text-align: center;
+  }
+  .progress-wrap { margin-bottom: 20px; }
+
+  /* Preview Section */
+  .preview-section {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    border: 1px solid #e8ecf4;
+    margin-bottom: 24px;
+  }
+
+  .preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f0f2f8;
+  }
+  .preview-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a2e;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .page-count {
+    background: #e94560;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .btn-download {
+    background: #16a085;
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+  }
+  .btn-download:hover { background: #138a72; }
+
+  /* Page Grid */
+  .pages-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .merged-page {
+    border: 1.5px solid #e8ecf4;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .merged-page-label {
+    background: #f8f9fc;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7a99;
+    border-bottom: 1px solid #e8ecf4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .merged-page-label .page-badge {
+    background: #1a1a2e;
+    color: white;
+    border-radius: 5px;
+    padding: 2px 8px;
+    font-size: 11px;
+  }
+
+  .two-col-canvases {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    background: #e8ecf4;
+  }
+
+  .canvas-wrapper {
+    background: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .canvas-label {
+    font-size: 11px;
+    color: #6b7a99;
+    padding: 8px 12px 6px;
+    font-weight: 600;
+    width: 100%;
+    background: #fdfdff;
+    border-bottom: 1px solid #f0f2f8;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .canvas-wrapper canvas {
+    max-width: 100%;
+    display: block;
+  }
+
+  .canvas-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: #b0b8d0;
+    font-size: 13px;
+    background: #fafbff;
+    border-left: 1px solid #e8ecf4;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    gap: 16px;
+    background: #f8f9fc;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #6b7a99;
+  }
+  .stat-item strong { color: #1a1a2e; font-size: 15px; }
+
+  /* empty state */
+  .empty-state {
+    text-align: center;
+    padding: 48px;
+    color: #8894b0;
+    font-size: 14px;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: #1a1a2e;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    z-index: 9999;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(20px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+
+  @media (max-width: 600px) {
+    .controls-grid { grid-template-columns: 1fr; }
+    .two-col-canvases { grid-template-columns: 1fr; }
+    .canvas-empty { border-left: none; border-top: 1px solid #e8ecf4; }
+  }
 </style>
 </head>
 <body>
+
+<header>
+  <div class="logo">📄</div>
+  <div>
+    <h1>PDF Merger — 2-Up Layout</h1>
+    <p>Multiple PDF files upload → Merge → Page-level 2-column view → Download</p>
+  </div>
+</header>
+
 <div class="container">
- <div class="brand-header">
-   <div class="brand-name">MMROADWAYS</div>
-   <div class="brand-subtitle">TripSheet</div>
- </div>
- 
- <h1>Today Settlement</h1>
- <div class="sub">Upload Excel files to automatically detect and display vehicle, driver, and expense data</div>
 
- <div class="card">
-   <div class="card-header">Step 1: Select Date</div>
-   <div class="card-body">
-     <label>Report Date:</label>
-     <input type="date" id="reportDate" />
-   </div>
- </div>
+  <!-- Upload Zone -->
+  <div class="upload-zone" id="uploadZone">
+    <input type="file" id="fileInput" accept="application/pdf" multiple>
+    <div class="upload-icon">📁</div>
+    <h2>PDF Files-ஐ இங்கே Drag & Drop பண்ணுங்கள்</h2>
+    <p>அல்லது கீழே உள்ள button-ஐ click பண்ணி files select பண்ணுங்கள் (Multiple files OK)</p>
+    <button class="btn-upload" onclick="document.getElementById('fileInput').click()">
+      📂 PDF Files தேர்ந்தெடு
+    </button>
+  </div>
 
- <div class="card">
-   <div class="card-header">Step 2: Upload Excel Files</div>
-   <div class="card-body">
-     <div class="dropzone" id="dropzone">
-       <div style="font-size:16px;font-weight:600;color:#333;margin-bottom:6px;">Drag & Drop Excel Files Here</div>
-       <div style="color:#666;font-size:14px;margin-bottom:14px;">or click to browse (xlsx, xls, csv)</div>
-       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" multiple style="display:none;" />
-       <button class="btn-primary" id="browseBtn">Select Files</button>
-     </div>
-   </div>
- </div>
+  <!-- File List -->
+  <div class="file-list" id="fileList"></div>
 
- <div class="card">
-   <div class="card-header">Step 3: Preview & Export</div>
-   <div class="card-body">
-     <div class="status" id="status">No data loaded.</div>
-     <div class="preview-area" id="previewArea"></div>
-     <br>
-     <div style="margin-top:10px;margin-bottom:10px;">
-       <div id="uncheckedInfo" style="display:none;">
-         <label>Unchecked Count Summary:</label>
-         <input type="text" id="uncheckedCountBox" class="unchecked-count-box" readonly />
-       </div>
-     </div>
-     <div class="export-buttons">
-       <button class="btn-primary" id="exportXlsxBtn" disabled>Export XLSX</button>
-       <button class="btn-primary" id="exportCsvBtn" disabled>Export CSV</button>
-       <button class="btn-primary" id="exportPngBtn" disabled>Export PNG</button>
-     </div>
-   </div>
- </div>
+  <!-- Controls -->
+  <div class="controls" id="controlsSection" style="display:none;">
+    <h3>⚙️ Settings</h3>
+    <div class="controls-grid">
+      <div class="control-group">
+        <label>Layout</label>
+        <select id="layoutSelect">
+          <option value="side-by-side">Side-by-Side (2 files per page)</option>
+          <option value="single">Single Column</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Page Scale (%)</label>
+        <input type="number" id="scaleInput" value="100" min="50" max="200" step="10">
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Bar -->
+  <div class="action-bar" id="actionBar" style="display:none;">
+    <button class="btn-merge" id="mergeBtn" onclick="startMerge()">
+      🔀 Merge & Preview
+    </button>
+    <button class="btn-clear" onclick="clearAll()">
+      🗑 Clear All
+    </button>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-wrap" id="progressWrap" style="display:none;">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="progress-label" id="progressLabel">Processing...</div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar" id="statsBar" style="display:none;"></div>
+
+  <!-- Preview -->
+  <div class="preview-section" id="previewSection" style="display:none;">
+    <div class="preview-header">
+      <h3>🖥 Merged Preview <span class="page-count" id="pageCountBadge">0 pages</span></h3>
+      <button class="btn-download" id="downloadBtn" onclick="downloadMergedPDF()">
+        ⬇️ Download PDF
+      </button>
+    </div>
+    <div class="pages-grid" id="pagesGrid"></div>
+  </div>
+
 </div>
 
-<script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script>
-let files=[], rows=[], processedRows=[];
-let remarkValues = {}; // Store remark values by row index
-let receivedValues = {}; // Store received checkbox values by row index
-let uncheckedRemarkValues = {}; // Store remarks for unchecked items
-const fileInput=document.getElementById("fileInput");
-const browseBtn=document.getElementById("browseBtn");
-const dropzone=document.getElementById("dropzone");
-const previewArea=document.getElementById("previewArea");
-const statusEl=document.getElementById("status");
-const exportXlsxBtn=document.getElementById("exportXlsxBtn");
-const exportCsvBtn=document.getElementById("exportCsvBtn");
-const exportPngBtn=document.getElementById("exportPngBtn");
-const uncheckedInfo = document.getElementById("uncheckedInfo");
-const uncheckedCountBox = document.getElementById("uncheckedCountBox");
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-browseBtn.onclick=()=>fileInput.click();
-dropzone.onclick=()=>fileInput.click();
-dropzone.ondragover=e=>{e.preventDefault();dropzone.style.background="#e0f2fe"};
-dropzone.ondragleave=()=>dropzone.style.background="#f8fafc";
-dropzone.ondrop=e=>{e.preventDefault();dropzone.style.background="#f8fafc";handleFiles(e.dataTransfer.files)};
-fileInput.onchange=e=>handleFiles(e.target.files);
+let uploadedFiles = [];
+let mergedPdfBytes = null;
 
-async function handleFiles(list){
- files=[...list];
- rows=[];
- processedRows=[];
- remarkValues = {};
- receivedValues = {};
- uncheckedRemarkValues = {};
- previewArea.innerHTML=""; // reset
- statusEl.textContent="Loading...";
- uncheckedInfo.style.display = "none";
- uncheckedCountBox.value = "";
- await load();
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+
+// Drag and Drop
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  const files = Array.from(e.dataTransfer.files).filter(f => f.type === 'application/pdf');
+  addFiles(files);
+});
+
+fileInput.addEventListener('change', () => {
+  addFiles(Array.from(fileInput.files));
+  fileInput.value = '';
+});
+
+function addFiles(files) {
+  files.forEach(f => {
+    if (!uploadedFiles.find(x => x.name === f.name && x.size === f.size)) {
+      uploadedFiles.push(f);
+    }
+  });
+  renderFileList();
+  showHideControls();
 }
 
-async function load(){
- try {
-   let all=[];
-   for(const f of files){
-     const data=await f.arrayBuffer();
-     const wb=XLSX.read(data,{type:'array'});
-     wb.SheetNames.forEach(s=>{
-       let sh=XLSX.utils.sheet_to_json(wb.Sheets[s],{defval:''});
-       if(sh.length) sh.forEach(r=>all.push(r));
-     });
-   }
-   
-   rows = all;
-   processedRows = processRows(all);
-   
-   // Update status with all counts - USE processedRows for accurate counts
-   const pendingCount = countStatus('pending');
-   const verifiedCount = countStatus('verified');
-   const receivedCount = countStatus('received');
-   const uncheckedCount = getUncheckedCount();
-   statusEl.textContent=`Loaded ${rows.length} rows. Pending: ${pendingCount}, Verified: ${verifiedCount}, Received: ${receivedCount}, Unchecked: ${uncheckedCount}`;
-   
-   // Show unchecked count box
-   if (rows.length > 0) {
-     uncheckedInfo.style.display = "block";
-     updateUncheckedCountBox();
-   }
-   
-   renderPreview();
-   updateButtons();
- } catch(err){
-   statusEl.textContent="Error loading file";
-   console.error(err);
- }
+function renderFileList() {
+  const list = document.getElementById('fileList');
+  list.innerHTML = '';
+  uploadedFiles.forEach((f, i) => {
+    const size = (f.size / 1024).toFixed(1) + ' KB';
+    const item = document.createElement('div');
+    item.className = 'file-item';
+    item.innerHTML = `
+      <div class="file-order">${i + 1}</div>
+      <div class="file-icon">📄</div>
+      <div class="file-info">
+        <div class="file-name" title="${f.name}">${f.name}</div>
+        <div class="file-meta">${size} &nbsp;•&nbsp; PDF</div>
+      </div>
+      <button class="btn-remove" onclick="removeFile(${i})" title="Remove">✕</button>
+    `;
+    list.appendChild(item);
+  });
 }
 
-function processRows(allRows) {
-  return allRows.map((row, index) => {
-    const newRow = {...row};
-    
-    // Check if Status column exists (case-insensitive check)
-    const statusKey = Object.keys(row).find(key => 
-      key.toLowerCase() === 'status'
-    );
-    
-    // Check if Received column exists (case-insensitive check)
-    const receivedKey = Object.keys(row).find(key => 
-      key.toLowerCase() === 'received'
-    );
-    
-    // Check if Remarks column exists (case-insensitive check)
-    const remarkKey = Object.keys(row).find(key => 
-      key.toLowerCase() === 'remarks'
-    );
-    
-    // Initialize unchecked remark value if not already set
-    if (!uncheckedRemarkValues[index]) {
-      uncheckedRemarkValues[index] = 'Enter remarks...';
+function removeFile(i) {
+  uploadedFiles.splice(i, 1);
+  renderFileList();
+  showHideControls();
+  hidePrevResults();
+}
+
+function clearAll() {
+  uploadedFiles = [];
+  mergedPdfBytes = null;
+  renderFileList();
+  showHideControls();
+  hidePrevResults();
+}
+
+function hidePrevResults() {
+  document.getElementById('previewSection').style.display = 'none';
+  document.getElementById('statsBar').style.display = 'none';
+  document.getElementById('pagesGrid').innerHTML = '';
+}
+
+function showHideControls() {
+  const show = uploadedFiles.length > 0;
+  document.getElementById('controlsSection').style.display = show ? 'block' : 'none';
+  document.getElementById('actionBar').style.display = show ? 'flex' : 'none';
+}
+
+function setProgress(pct, label) {
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+}
+
+async function startMerge() {
+  if (uploadedFiles.length === 0) return showToast('⚠️ Files இல்லை. Upload பண்ணுங்கள்.');
+  if (uploadedFiles.length === 1) return showToast('ℹ️ குறைந்தது 2 files upload பண்ணுங்கள்.');
+
+  const mergeBtn = document.getElementById('mergeBtn');
+  mergeBtn.disabled = true;
+  mergeBtn.textContent = '⏳ Processing...';
+  document.getElementById('progressWrap').style.display = 'block';
+  hidePrevResults();
+
+  try {
+    const layout = document.getElementById('layoutSelect').value;
+    const scale = parseFloat(document.getElementById('scaleInput').value) / 100;
+
+    // 1. Read all PDFs
+    setProgress(10, 'PDF files படிக்கிறது...');
+    const pdfDocs = [];
+    for (let i = 0; i < uploadedFiles.length; i++) {
+      const arrBuf = await uploadedFiles[i].arrayBuffer();
+      const pdfjs = await pdfjsLib.getDocument({ data: arrBuf.slice(0) }).promise;
+      const pdflib = await PDFLib.PDFDocument.load(arrBuf);
+      pdfDocs.push({ name: uploadedFiles[i].name, pdfjs, pdflib, pageCount: pdfjs.numPages });
+      setProgress(10 + (i / uploadedFiles.length) * 30, `File ${i+1}/${uploadedFiles.length} படிக்கிறது...`);
     }
-    
-    // Initialize received checkbox value
-    if (!receivedValues[index]) {
-      receivedValues[index] = false;
-    }
-    
-    // If received column exists in the original data, use its value
-    if (receivedKey) {
-      receivedValues[index] = String(row[receivedKey]).trim().toLowerCase() === 'true' || 
-                             row[receivedKey] === true || 
-                             row[receivedKey] === 1;
-    }
-    
-    if (statusKey) {
-      const statusValue = String(row[statusKey]).trim().toLowerCase();
-      
-      // Check for "Pending" status
-      if (statusValue === 'pending') {
-        // Initialize remark value for this row if not already set
-        if (!remarkValues[index]) {
-          remarkValues[index] = remarkKey ? (row[remarkKey] || 'Please settle') : 'Please settle';
-        }
-        
-        // Add or update remarks to the row
-        if (remarkKey) {
-          newRow[remarkKey] = remarkValues[index];
-        } else {
-          newRow['Remarks'] = remarkValues[index];
+
+    // 2. Build merged PDF using pdf-lib
+    setProgress(45, 'PDF merge பண்றோம்...');
+    const mergedDoc = await PDFLib.PDFDocument.create();
+
+    if (layout === 'side-by-side') {
+      // pair files: file0 & file1 side by side, file2 & file3, etc.
+      const maxPages = Math.max(...pdfDocs.map(d => d.pageCount));
+      const pairs = Math.ceil(uploadedFiles.length / 2);
+
+      for (let pair = 0; pair < pairs; pair++) {
+        const leftDoc = pdfDocs[pair * 2];
+        const rightDoc = pdfDocs[pair * 2 + 1];
+
+        const pagesLeft = leftDoc ? leftDoc.pageCount : 0;
+        const pagesRight = rightDoc ? rightDoc.pageCount : 0;
+        const pairMaxPages = Math.max(pagesLeft, pagesRight);
+
+        for (let pi = 0; pi < pairMaxPages; pi++) {
+          const mergedPage = mergedDoc.addPage([842, 595]); // A4 Landscape
+          const pw = 842, ph = 595;
+
+          // Left side
+          if (leftDoc && pi < pagesLeft) {
+            const [embeddedPage] = await mergedDoc.embedPdf(leftDoc.pdflib, [pi]);
+            const { width: ew, height: eh } = embeddedPage;
+            const scW = (pw / 2 - 10) / ew;
+            const scH = (ph - 20) / eh;
+            const sc = Math.min(scW, scH) * scale;
+            const x = ((pw / 2) - ew * sc) / 2;
+            const y = (ph - eh * sc) / 2;
+            mergedPage.drawPage(embeddedPage, { x, y, width: ew * sc, height: eh * sc });
+          }
+
+          // Divider line
+          mergedPage.drawLine({
+            start: { x: pw / 2, y: 0 },
+            end: { x: pw / 2, y: ph },
+            color: PDFLib.rgb(0.8, 0.82, 0.88),
+            thickness: 1
+          });
+
+          // Right side
+          if (rightDoc && pi < pagesRight) {
+            const [embeddedPage] = await mergedDoc.embedPdf(rightDoc.pdflib, [pi]);
+            const { width: ew, height: eh } = embeddedPage;
+            const scW = (pw / 2 - 10) / ew;
+            const scH = (ph - 20) / eh;
+            const sc = Math.min(scW, scH) * scale;
+            const x = pw / 2 + ((pw / 2) - ew * sc) / 2;
+            const y = (ph - eh * sc) / 2;
+            mergedPage.drawPage(embeddedPage, { x, y, width: ew * sc, height: eh * sc });
+          }
         }
       }
-      
-      // Update status if received is checked
-      if (receivedValues[index] && statusValue !== 'received') {
-        newRow[statusKey] = 'Received';
+    } else {
+      // Single column merge
+      for (const doc of pdfDocs) {
+        const pages = await mergedDoc.copyPages(doc.pdflib, doc.pdflib.getPageIndices());
+        pages.forEach(p => mergedDoc.addPage(p));
       }
     }
-    
-    // Update Received column in newRow
-    if (receivedKey) {
-      newRow[receivedKey] = receivedValues[index];
-    } else {
-      newRow['Received'] = receivedValues[index];
-    }
-    
-    return newRow;
-  });
-}
 
-function countStatus(statusType) {
-  let count = 0;
-  processedRows.forEach(row => {
-    const statusKey = Object.keys(row).find(key => 
-      key.toLowerCase() === 'status'
-    );
-    if (statusKey && String(row[statusKey]).toLowerCase() === statusType.toLowerCase()) {
-      count++;
-    }
-  });
-  return count;
-}
+    setProgress(80, 'PDF save பண்றோம்...');
+    mergedPdfBytes = await mergedDoc.save();
 
-function getUncheckedCount() {
-  let uncheckedCount = 0;
-  Object.values(receivedValues).forEach(value => {
-    if (!value) uncheckedCount++;
-  });
-  
-  // If not all rows have receivedValues, count remaining rows as unchecked
-  if (Object.keys(receivedValues).length < rows.length) {
-    uncheckedCount += (rows.length - Object.keys(receivedValues).length);
+    // 3. Render Preview
+    setProgress(88, 'Preview render பண்றோம்...');
+    await renderPreview(pdfDocs, layout);
+
+    setProgress(100, 'முடிந்தது! ✅');
+
+    // Show stats
+    const statsBar = document.getElementById('statsBar');
+    statsBar.style.display = 'flex';
+    statsBar.innerHTML = `
+      <div class="stat-item">📁 <strong>${uploadedFiles.length}</strong> Files merged</div>
+      <div class="stat-item">📄 <strong>${mergedDoc.getPageCount()}</strong> Total pages</div>
+      <div class="stat-item">💾 <strong>${(mergedPdfBytes.length / 1024).toFixed(1)} KB</strong> Size</div>
+      <div class="stat-item">🖼 <strong>${layout === 'side-by-side' ? '2-Column' : 'Single'}</strong> Layout</div>
+    `;
+
+    showToast('✅ PDF Merge முடிந்தது!');
+
+    setTimeout(() => {
+      document.getElementById('progressWrap').style.display = 'none';
+    }, 1500);
+
+  } catch (err) {
+    console.error(err);
+    showToast('❌ Error: ' + err.message);
+    document.getElementById('progressWrap').style.display = 'none';
   }
-  
-  return uncheckedCount;
+
+  mergeBtn.disabled = false;
+  mergeBtn.innerHTML = '🔀 Merge & Preview';
 }
 
-function updateUncheckedCountBox() {
-  const uncheckedCount = getUncheckedCount();
-  uncheckedCountBox.value = `${uncheckedCount} items unchecked`;
-}
+async function renderPreview(pdfDocs, layout) {
+  const grid = document.getElementById('pagesGrid');
+  grid.innerHTML = '';
 
-function renderPreview(){
- if(!processedRows.length){ previewArea.innerHTML=""; return; }
- 
- // Get all columns from all rows, ensuring Remarks and Received columns are included
- const allColumns = new Set();
- processedRows.forEach(row => {
-   Object.keys(row).forEach(key => allColumns.add(key));
- });
- 
- // Ensure Remarks and Received columns exist (add if missing from all rows)
- allColumns.add('Remarks');
- allColumns.add('Received');
- 
- const cols = Array.from(allColumns);
- 
- // Sort columns to put Received first and Remarks at the end (for better visibility)
- cols.sort((a, b) => {
-   if (a.toLowerCase() === 'received') return -1;
-   if (b.toLowerCase() === 'received') return 1;
-   if (a.toLowerCase() === 'remarks') return 1;
-   if (b.toLowerCase() === 'remarks') return -1;
-   return 0;
- });
- 
- let html="<table><thead><tr>";
- 
- cols.forEach(c => {
-   // Highlight Received header
-   if (c.toLowerCase() === 'received') {
-     html += `<th class="received-header">${c}</th>`;
-   } 
-   // Highlight Remarks header
-   else if (c.toLowerCase() === 'remarks') {
-     html += `<th class="remarks-header">${c}</th>`;
-   } else {
-     html += `<th>${c}</th>`;
-   }
- });
- 
- html += "</tr></thead><tbody>";
- 
- processedRows.slice(0,300).forEach((r, rowIndex)=>{
-   const statusKey = Object.keys(r).find(key => 
-     key.toLowerCase() === 'status'
-   );
-   
-   const statusValue = statusKey ? String(r[statusKey]).toLowerCase() : '';
-   const isPending = statusValue === 'pending';
-   const isReceived = statusValue === 'received' || receivedValues[rowIndex];
-   
-   // Add row class based on status
-   let rowClass = '';
-   if (isReceived) {
-     rowClass = 'class="received-row"';
-   } else if (isPending) {
-     rowClass = 'class="pending-row"';
-   }
-   
-   html += `<tr ${rowClass}>` + cols.map(c=>{
-     const cellValue = r[c] ?? '';
-     
-     // Check if this is a Received cell
-     if (c.toLowerCase() === 'received') {
-       const checkboxId = `received-${rowIndex}`;
-       const isChecked = isReceived;
-       
-       // For unchecked items, show checkbox + text box
-       if (!isChecked) {
-         return `<td style="text-align:left;">
-           <input type="checkbox" 
-                  id="${checkboxId}" 
-                  class="received-checkbox" 
-                  ${isChecked ? 'checked' : ''}
-                  data-row-index="${rowIndex}"
-                  onchange="handleReceivedChange(${rowIndex}, this.checked)">
-           <input type="text" 
-                  id="unchecked-remark-${rowIndex}"
-                  class="unchecked-textbox" 
-                  value="${uncheckedRemarkValues[rowIndex] || 'Enter remarks...'}" 
-                  placeholder="Enter remarks..."
-                  data-row-index="${rowIndex}"
-                  onchange="updateUncheckedRemark(${rowIndex}, this.value)"
-                  onkeyup="updateUncheckedRemark(${rowIndex}, this.value)">
-         </td>`;
-       } else {
-         // For checked items, just show checkbox
-         return `<td style="text-align:center;">
-           <input type="checkbox" 
-                  id="${checkboxId}" 
-                  class="received-checkbox" 
-                  ${isChecked ? 'checked' : ''}
-                  data-row-index="${rowIndex}"
-                  onchange="handleReceivedChange(${rowIndex}, this.checked)">
-         </td>`;
-       }
-     } 
-     // Check if this is a remarks cell and the row is pending
-     else if (c.toLowerCase() === 'remarks' && isPending && !isReceived) {
-       // Create a unique ID for the textbox
-       const textboxId = `remark-${rowIndex}`;
-       
-       // Return textbox for pending remarks
-       return `<td>
-         <input type="text" 
-                id="${textboxId}" 
-                class="remark-textbox" 
-                value="${remarkValues[rowIndex] || 'Please settle'}" 
-                placeholder="Enter remarks..."
-                data-row-index="${rowIndex}"
-                onchange="updateRemarkValue(${rowIndex}, this.value)"
-                onkeyup="updateRemarkValue(${rowIndex}, this.value)">
-       </td>`;
-     } 
-     // For received rows, show remarks as text
-     else if (c.toLowerCase() === 'remarks' && isReceived) {
-       return `<td style="background-color:#e8f5e9; color:#2e7d32; font-weight:500;">
-         ${remarkValues[rowIndex] || 'Settled'}
-       </td>`;
-     }
-     // For pending rows with remarks (non-editable cell)
-     else if (c.toLowerCase() === 'remarks' && isPending) {
-       return `<td style="background-color:#fff3cd; color:#856404; font-weight:500;">
-         ${remarkValues[rowIndex] || 'Please settle'}
-       </td>`;
-     }
-     else {
-       return `<td>${cellValue}</td>`;
-     }
-   }).join('') + "</tr>";
- });
- 
- html += "</tbody></table>";
- previewArea.innerHTML=html;
-}
+  const previewSection = document.getElementById('previewSection');
+  previewSection.style.display = 'block';
 
-// Function to update unchecked remark value
-function updateUncheckedRemark(rowIndex, value) {
-  uncheckedRemarkValues[rowIndex] = value;
-}
+  if (layout === 'side-by-side') {
+    const pairs = Math.ceil(pdfDocs.length / 2);
+    let totalMergedPage = 0;
 
-// Function to update remark value
-function updateRemarkValue(rowIndex, value) {
-  remarkValues[rowIndex] = value;
-  
-  // Update the corresponding row in processedRows
-  const remarkKey = Object.keys(processedRows[rowIndex]).find(key => 
-    key.toLowerCase() === 'remarks'
-  );
-  
-  if (remarkKey) {
-    processedRows[rowIndex][remarkKey] = value;
-  } else {
-    processedRows[rowIndex]['Remarks'] = value;
-  }
-}
+    for (let pair = 0; pair < pairs; pair++) {
+      const leftDoc = pdfDocs[pair * 2];
+      const rightDoc = pdfDocs[pair * 2 + 1];
+      const pagesLeft = leftDoc ? leftDoc.pageCount : 0;
+      const pagesRight = rightDoc ? rightDoc.pageCount : 0;
+      const pairMaxPages = Math.max(pagesLeft, pagesRight);
 
-// Function to handle received checkbox change
-function handleReceivedChange(rowIndex, isChecked) {
-  receivedValues[rowIndex] = isChecked;
-  
-  // Update status to "Received" when checked
-  const statusKey = Object.keys(processedRows[rowIndex]).find(key => 
-    key.toLowerCase() === 'status'
-  );
-  
-  if (statusKey) {
-    if (isChecked) {
-      processedRows[rowIndex][statusKey] = 'Received';
-    } else {
-      // If unchecked, revert to original status or "Pending"
-      processedRows[rowIndex][statusKey] = rows[rowIndex][statusKey] || 'Pending';
-    }
-  } else {
-    processedRows[rowIndex]['Status'] = isChecked ? 'Received' : 'Pending';
-  }
-  
-  // Update Received column in processedRows
-  const receivedKey = Object.keys(processedRows[rowIndex]).find(key => 
-    key.toLowerCase() === 'received'
-  );
-  
-  if (receivedKey) {
-    processedRows[rowIndex][receivedKey] = isChecked;
-  } else {
-    processedRows[rowIndex]['Received'] = isChecked;
-  }
-  
-  // If received is checked, update remark to "Settled"
-  if (isChecked) {
-    const remarkKey = Object.keys(processedRows[rowIndex]).find(key => 
-      key.toLowerCase() === 'remarks'
-    );
-    
-    remarkValues[rowIndex] = 'Settled';
-    
-    if (remarkKey) {
-      processedRows[rowIndex][remarkKey] = 'Settled';
-    } else {
-      processedRows[rowIndex]['Remarks'] = 'Settled';
-    }
-  } else {
-    // If unchecked, revert to original remark or "Please settle"
-    const originalRemark = rows[rowIndex] && rows[rowIndex][Object.keys(rows[rowIndex]).find(key => 
-      key.toLowerCase() === 'remarks'
-    )];
-    remarkValues[rowIndex] = originalRemark || 'Please settle';
-    
-    const remarkKey = Object.keys(processedRows[rowIndex]).find(key => 
-      key.toLowerCase() === 'remarks'
-    );
-    
-    if (remarkKey) {
-      processedRows[rowIndex][remarkKey] = remarkValues[rowIndex];
-    } else {
-      processedRows[rowIndex]['Remarks'] = remarkValues[rowIndex];
-    }
-  }
-  
-  // Update status counts - USE processedRows for accurate counts
-  const pendingCount = countStatus('pending');
-  const verifiedCount = countStatus('verified');
-  const receivedCount = countStatus('received');
-  const uncheckedCount = getUncheckedCount();
-  statusEl.textContent=`Loaded ${rows.length} rows. Pending: ${pendingCount}, Verified: ${verifiedCount}, Received: ${receivedCount}, Unchecked: ${uncheckedCount}`;
-  
-  // Update unchecked count box
-  updateUncheckedCountBox();
-  
-  // Re-render preview to reflect changes
-  renderPreview();
-}
+      for (let pi = 0; pi < pairMaxPages; pi++) {
+        totalMergedPage++;
 
-function updateButtons(){
- const ok=processedRows.length>0;
- exportXlsxBtn.disabled=!ok;
- exportCsvBtn.disabled=!ok;
- exportPngBtn.disabled=!ok;
-}
+        const block = document.createElement('div');
+        block.className = 'merged-page';
 
-// Helper function to generate HTML for PNG export
-function getTableHTMLForExport() {
-  // Get all columns from all rows
-  const allColumns = new Set();
-  processedRows.forEach(row => {
-    Object.keys(row).forEach(key => allColumns.add(key));
-  });
-  
-  // Ensure Remarks and Received columns exist
-  allColumns.add('Remarks');
-  allColumns.add('Received');
-  const cols = Array.from(allColumns);
-  
-  // Sort columns to put Received first and Remarks at the end
-  cols.sort((a, b) => {
-    if (a.toLowerCase() === 'received') return -1;
-    if (b.toLowerCase() === 'received') return 1;
-    if (a.toLowerCase() === 'remarks') return 1;
-    if (b.toLowerCase() === 'remarks') return -1;
-    return 0;
-  });
-  
-  let html="<table style='width:100%;border-collapse:collapse;font-size:14px;background:white;'><thead><tr>";
-  
-  cols.forEach(c => {
-    if (c.toLowerCase() === 'received') {
-      html += `<th style='padding:8px;border-bottom:2px solid #e2e8f0;text-align:center;background:#e8f5e9;color:#2e7d32;font-weight:600;'>${c}</th>`;
-    } else if (c.toLowerCase() === 'remarks') {
-      html += `<th style='padding:8px;border-bottom:2px solid #e2e8f0;text-align:left;background:#fff3cd;color:#856404;font-weight:600;'>${c}</th>`;
-    } else {
-      html += `<th style='padding:8px;border-bottom:2px solid #e2e8f0;text-align:left;background:#f1f5f9;'>${c}</th>`;
-    }
-  });
-  
-  html += "</tr></thead><tbody>";
-  
-  processedRows.forEach((r, rowIndex)=>{
-    const statusKey = Object.keys(r).find(key => 
-      key.toLowerCase() === 'status'
-    );
-    
-    const statusValue = statusKey ? String(r[statusKey]).toLowerCase() : '';
-    const isPending = statusValue === 'pending';
-    const isReceived = statusValue === 'received' || receivedValues[rowIndex];
-    
-    const rowStyle = isReceived ? 'background-color:#e8f5e9;' : 
-                   isPending ? 'background-color:#fff9db;' : '';
-    
-    html += `<tr style='${rowStyle}'>` + cols.map(c=>{
-      const cellValue = r[c] ?? '';
-      
-      // Check if this is a Received cell
-      if (c.toLowerCase() === 'received') {
-        const isChecked = isReceived;
-        const checkSymbol = isChecked ? '✓' : '□';
-        const color = isChecked ? '#4caf50' : '#666';
-        
-        if (!isChecked) {
-          const uncheckedRemark = uncheckedRemarkValues[rowIndex] || 'Enter remarks...';
-          return `<td style='padding:8px;border-bottom:1px solid #e2e8f0;text-align:left;'>
-            <div style='display:flex;align-items:center;gap:5px;'>
-              <span style='font-size:16px;font-weight:bold;color:${color};'>${checkSymbol}</span>
-              <div style='padding:6px 10px;background-color:#fff3cd;color:#856404;border:2px solid #dc3545;border-radius:6px;font-size:13px;font-weight:500;flex-grow:1;'>
-                ${uncheckedRemark}
-              </div>
-            </div>
-          </td>`;
-        } else {
-          return `<td style='padding:8px;border-bottom:1px solid #e2e8f0;text-align:center;font-size:16px;font-weight:bold;color:${color};'>
-            ${checkSymbol}
-          </td>`;
-        }
-      } 
-      // Check if this is a remarks cell
-      else if (c.toLowerCase() === 'remarks') {
-        let remarkValue = remarkValues[rowIndex] || (isReceived ? 'Settled' : 'Please settle');
-        let remarkStyle = '';
-        
-        if (isReceived) {
-          remarkStyle = 'background-color:#c8e6c9;color:#2e7d32;border:1px solid #4caf50;';
-        } else if (isPending) {
-          remarkStyle = 'background-color:#fff3cd;color:#856404;border:2px solid #dc3545;';
-        }
-        
-        return `<td style='padding:8px;border-bottom:1px solid #e2e8f0;'>
-          <div style='padding:6px 10px;border-radius:6px;font-weight:500;${remarkStyle}'>
-            ${remarkValue}
+        const leftName = leftDoc ? truncate(leftDoc.name) : '';
+        const rightName = rightDoc ? truncate(rightDoc.name) : '';
+
+        block.innerHTML = `
+          <div class="merged-page-label">
+            <span class="page-badge">Page ${totalMergedPage}</span>
+            ${leftName} ${rightDoc ? '↔ ' + rightName : ''}
           </div>
-        </td>`;
-      } else {
-        return `<td style='padding:8px;border-bottom:1px solid #e2e8f0;'>${cellValue}</td>`;
+          <div class="two-col-canvases" id="pair-${pair}-page-${pi}"></div>
+        `;
+        grid.appendChild(block);
+
+        const twoCol = block.querySelector('.two-col-canvases');
+
+        // Left canvas
+        const leftWrap = document.createElement('div');
+        leftWrap.className = 'canvas-wrapper';
+        leftWrap.innerHTML = `<div class="canvas-label">📄 ${leftName} — Page ${pi + 1}</div>`;
+        twoCol.appendChild(leftWrap);
+
+        if (leftDoc && pi < pagesLeft) {
+          const c = document.createElement('canvas');
+          leftWrap.appendChild(c);
+          renderPageToCanvas(leftDoc.pdfjs, pi + 1, c);
+        } else {
+          leftWrap.innerHTML += `<div class="canvas-empty">இந்த page இல்லை</div>`;
+        }
+
+        // Right canvas
+        const rightWrap = document.createElement('div');
+        rightWrap.className = 'canvas-wrapper';
+        rightWrap.innerHTML = `<div class="canvas-label">📄 ${rightName ? rightName + ' — Page ' + (pi + 1) : '—'}</div>`;
+        twoCol.appendChild(rightWrap);
+
+        if (rightDoc && pi < pagesRight) {
+          const c = document.createElement('canvas');
+          rightWrap.appendChild(c);
+          renderPageToCanvas(rightDoc.pdfjs, pi + 1, c);
+        } else {
+          rightWrap.innerHTML += `<div class="canvas-empty">${rightDoc ? 'இந்த page இல்லை' : 'File இல்லை'}</div>`;
+        }
       }
-    }).join('') + "</tr>";
-  });
-  
-  html += "</tbody></table>";
-  return html;
+    }
+
+    document.getElementById('pageCountBadge').textContent = totalMergedPage + ' pages';
+
+  } else {
+    let pageNum = 0;
+    for (const doc of pdfDocs) {
+      for (let pi = 1; pi <= doc.pageCount; pi++) {
+        pageNum++;
+        const block = document.createElement('div');
+        block.className = 'merged-page';
+        block.innerHTML = `
+          <div class="merged-page-label">
+            <span class="page-badge">Page ${pageNum}</span>
+            ${truncate(doc.name)} — Page ${pi}
+          </div>
+          <div class="canvas-wrapper" style="border:none;"></div>
+        `;
+        grid.appendChild(block);
+        const cw = block.querySelector('.canvas-wrapper');
+        const c = document.createElement('canvas');
+        cw.appendChild(c);
+        renderPageToCanvas(doc.pdfjs, pi, c);
+      }
+    }
+    document.getElementById('pageCountBadge').textContent = pageNum + ' pages';
+  }
 }
 
-exportXlsxBtn.onclick=()=>{
- // Use processedRows which includes user-entered remarks and received status
- let ws=XLSX.utils.json_to_sheet(processedRows);
- let wb=XLSX.utils.book_new();
- XLSX.utils.book_append_sheet(wb,ws,'Merged');
- XLSX.writeFile(wb,'MMROADWAYS_Settlement.xlsx');
-};
+async function renderPageToCanvas(pdfjsDoc, pageNum, canvas) {
+  try {
+    const page = await pdfjsDoc.getPage(pageNum);
+    const viewport = page.getViewport({ scale: 1.2 });
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    canvas.style.maxWidth = '100%';
+    const ctx = canvas.getContext('2d');
+    await page.render({ canvasContext: ctx, viewport }).promise;
+  } catch (e) {
+    console.warn('Canvas render error:', e);
+  }
+}
 
-exportCsvBtn.onclick=()=>{
- let ws=XLSX.utils.json_to_sheet(processedRows);
- let csv=XLSX.utils.sheet_to_csv(ws);
- let blob=new Blob([csv],{type:'text/csv'});
- let a=document.createElement('a');
- a.href=URL.createObjectURL(blob);
- a.download='MMROADWAYS_Settlement.csv';
- a.click();
-};
+function downloadMergedPDF() {
+  if (!mergedPdfBytes) return showToast('⚠️ முதலில் Merge பண்ணுங்கள்');
+  const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'merged_output.pdf';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('⬇️ Download தொடங்கியது!');
+}
 
-exportPngBtn.onclick=()=>{
- const date=document.getElementById("reportDate").value || "No Date";
- if(!processedRows.length) return;
+function truncate(name) {
+  return name.length > 30 ? name.substring(0, 28) + '...' : name;
+}
 
- const pendingCount = countStatus('pending');
- const verifiedCount = countStatus('verified');
- const receivedCount = countStatus('received');
- const uncheckedCount = getUncheckedCount();
- const totalCount = rows.length;
-
- // Create wrapper with MMROADWAYS branding
- const wrapper=document.createElement('div');
- wrapper.style.padding="0";
- wrapper.style.margin="0";
- wrapper.style.background="linear-gradient(to bottom right,#eef3ff,#e6edff)";
- wrapper.style.fontFamily="system-ui,Segoe UI,Roboto";
- wrapper.innerHTML = `
-   <div style="background:linear-gradient(90deg,#2563eb,#4f46e5);color:white;padding:22px;text-align:center;">
-     <div style="font-size:32px;font-weight:800;letter-spacing:2px;">MMROADWAYS</div>
-     <div style="font-size:16px;font-weight:500;opacity:0.9;">TripSheet</div>
-   </div>
-   <div style="background:white;padding:20px 30px;border-bottom:1px solid #e2e8f0;">
-     <div style="font-size:24px;font-weight:700;color:#111;margin-bottom:8px;">Today Settlement Report</div>
-     <div style="font-size:16px;color:#555;">Report Date: ${date}</div>
-     <div style="display:flex;align-items:center;margin-top:12px;gap:15px;">
-       <div style="font-size:14px;font-weight:600;color:#333;">Summary:</div>
-       <div style="display:flex;align-items:center;">
-         <span style="font-size:14px;color:#666;">Total:</span>
-         <span style="font-size:14px;font-weight:700;color:#2563eb;margin-left:5px;margin-right:15px;">${totalCount}</span>
-       </div>
-       <div style="display:flex;align-items:center;">
-         <span style="font-size:14px;color:#666;">Pending:</span>
-         <span style="padding:4px 10px;background:#fef3c7;color:#92400e;border:1px solid #fbbf24;border-radius:12px;font-size:12px;font-weight:600;margin-left:5px;">${pendingCount}</span>
-       </div>
-       <div style="display:flex;align-items:center;">
-         <span style="font-size:14px;color:#666;">Verified:</span>
-         <span style="padding:4px 10px;background:#d1fae5;color:#065f46;border:1px solid #10b981;border-radius:12px;font-size:12px;font-weight:600;margin-left:5px;">${verifiedCount}</span>
-       </div>
-       <div style="display:flex;align-items:center;">
-         <span style="font-size:14px;color:#666;">Received:</span>
-         <span style="padding:4px 10px;background:#e8f5e9;color:#2e7d32;border:1px solid #4caf50;border-radius:12px;font-size:12px;font-weight:600;margin-left:5px;">${receivedCount}</span>
-       </div>
-       <div style="display:flex;align-items:center;">
-         <span style="font-size:14px;color:#666;">Unchecked:</span>
-         <span style="padding:4px 10px;background:#fff3cd;color:#856404;border:1px solid #dc3545;border-radius:12px;font-size:12px;font-weight:600;margin-left:5px;">${uncheckedCount}</span>
-       </div>
-     </div>
-     <div style="margin-top:10px;padding:8px 12px;background:#fff3cd;border:2px solid #dc3545;border-radius:6px;display:inline-block;">
-       <span style="font-size:13px;font-weight:600;color:#856404;">Unchecked Items: ${uncheckedCount}</span>
-     </div>
-   </div>
-   <div style="padding:20px;background:white;">${getTableHTMLForExport()}</div>
-   <div style="background:#f8fafc;padding:12px 20px;text-align:center;color:#666;font-size:14px;border-top:1px solid #e2e8f0;">
-     Generated by MMROADWAYS(Vignesh)
-   </div>
- `;
- document.body.appendChild(wrapper);
-
- // Capture with high quality
- html2canvas(wrapper,{
-   backgroundColor:null,
-   scale:3,
-   useCORS:true,
-   logging:false
- }).then(canvas=>{
-   let a=document.createElement('a');
-   a.href=canvas.toDataURL("image/png");
-   a.download="MMROADWAYS_Settlement_Report.png";
-   a.click();
-   wrapper.remove();
- });
-};
+function showToast(msg) {
+  const old = document.querySelector('.toast');
+  if (old) old.remove();
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
 </script>
 </body>
 </html>
