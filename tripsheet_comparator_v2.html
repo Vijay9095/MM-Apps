@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trip Sheet Comparator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --white: #ffffff;
+    --off-white: #f8f9fb;
+    --bg: #f4f6fa;
+    --border: #e2e6ef;
+    --border-strong: #c8d0e0;
+    --text: #1a1d2e;
+    --text-muted: #6b7280;
+    --text-light: #9ca3af;
+    --blue: #2563eb;
+    --blue-light: #eff6ff;
+    --blue-mid: #dbeafe;
+    --blue-dark: #1d4ed8;
+    --green: #16a34a;
+    --green-light: #f0fdf4;
+    --green-mid: #dcfce7;
+    --green-dark: #15803d;
+    --red: #dc2626;
+    --red-light: #fff1f1;
+    --red-mid: #fee2e2;
+    --orange: #ea580c;
+    --orange-light: #fff7ed;
+    --orange-mid: #fed7aa;
+    --purple: #7c3aed;
+    --purple-light: #f5f3ff;
+    --purple-mid: #ede9fe;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow: 0 4px 16px rgba(0,0,0,0.08);
+    --shadow-lg: 0 10px 40px rgba(0,0,0,0.12);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-xs: 6px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-sm);
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text);
+    letter-spacing: -0.3px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--blue);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-icon svg { width: 18px; height: 18px; fill: white; }
+  .header-badge {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--blue);
+    background: var(--blue-light);
+    border: 1px solid var(--blue-mid);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── MAIN ── */
+  main { max-width: 1400px; margin: 0 auto; padding: 28px 32px; }
+
+  /* ── UPLOAD SECTION ── */
+  .upload-section {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+  .section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .upload-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .upload-card {
+    border: 2px dashed var(--border-strong);
+    border-radius: var(--radius);
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    background: var(--off-white);
+  }
+  .upload-card:hover { border-color: var(--blue); background: var(--blue-light); }
+  .upload-card.has-file { border-style: solid; border-color: var(--green); background: var(--green-light); }
+  .upload-card.dragging { border-color: var(--blue); background: var(--blue-light); transform: scale(1.01); }
+
+  .upload-card input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .upload-icon {
+    width: 40px; height: 40px;
+    margin: 0 auto 12px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+  }
+  .upload-card:not(.has-file) .upload-icon { background: var(--blue-mid); }
+  .upload-card.has-file .upload-icon { background: var(--green-mid); }
+  .upload-label { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .upload-sub { font-size: 11px; color: var(--text-muted); }
+  .upload-filename {
+    margin-top: 10px;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--green-dark);
+    font-weight: 500;
+    background: var(--green-mid);
+    padding: 4px 10px;
+    border-radius: 20px;
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .compare-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--blue);
+    color: white;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    letter-spacing: 0.2px;
+  }
+  .compare-btn:hover:not(:disabled) { background: var(--blue-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+  .compare-btn:disabled { background: var(--text-light); cursor: not-allowed; transform: none; box-shadow: none; }
+
+  /* ── STATS BAR ── */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.2s;
+  }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+  .stat-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
+  .stat-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .stat-card.total .stat-value { color: var(--blue); }
+  .stat-card.matched .stat-value { color: var(--green); }
+  .stat-card.diff .stat-value { color: var(--red); }
+  .stat-card.pct .stat-value { color: var(--orange); }
+
+  /* ── CONTROLS ── */
+  .controls-bar {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    box-shadow: var(--shadow-sm);
+  }
+  .search-box {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+  }
+  .search-box input {
+    width: 100%;
+    padding: 8px 12px 8px 34px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-xs);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+    background: var(--off-white);
+  }
+  .search-box input:focus { border-color: var(--blue); background: white; }
+  .search-box::before {
+    content: '🔍';
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    pointer-events: none;
+  }
+
+  .filter-btns { display: flex; gap: 6px; }
+  .filter-btn {
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border-strong);
+    background: var(--off-white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .filter-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .filter-btn.active-all   { background: var(--blue); color: white; border-color: var(--blue); }
+  .filter-btn.active-match { background: var(--green); color: white; border-color: var(--green); }
+  .filter-btn.active-diff  { background: var(--red); color: white; border-color: var(--red); }
+
+  /* ── VEHICLE FILTER ── */
+  .veh-filter-wrap {
+    position: relative;
+  }
+  .veh-filter-btn {
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border-strong);
+    background: var(--off-white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text);
+  }
+  .veh-filter-btn:hover { border-color: var(--purple); color: var(--purple); background: var(--purple-light); }
+  .veh-filter-btn.active { border-color: var(--purple); color: var(--purple); background: var(--purple-light); }
+  .veh-badge {
+    background: var(--purple);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+  }
+
+  .veh-dropdown {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    min-width: 240px;
+    max-width: 300px;
+    background: var(--white);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    z-index: 999;
+    overflow: hidden;
+  }
+  .veh-dropdown.open { display: block; }
+
+  .veh-dropdown-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--off-white);
+  }
+  .veh-dropdown-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--text-muted);
+  }
+  .veh-dropdown-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .veh-act-btn {
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .veh-act-btn.sel-all { color: var(--blue); }
+  .veh-act-btn.sel-all:hover { background: var(--blue-light); }
+  .veh-act-btn.sel-none { color: var(--red); }
+  .veh-act-btn.sel-none:hover { background: var(--red-light); }
+
+  .veh-list {
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 6px 0;
+  }
+  .veh-list::-webkit-scrollbar { width: 4px; }
+  .veh-list::-webkit-scrollbar-track { background: transparent; }
+  .veh-list::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+
+  .veh-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: background 0.1s;
+    font-size: 12px;
+  }
+  .veh-item:hover { background: var(--off-white); }
+  .veh-item input[type="checkbox"] {
+    width: 14px; height: 14px;
+    accent-color: var(--purple);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .veh-item label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .veh-count-badge {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    background: var(--border);
+    padding: 1px 5px;
+    border-radius: 8px;
+  }
+
+  .veh-dropdown-footer {
+    padding: 8px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--off-white);
+  }
+  .veh-apply-btn {
+    width: 100%;
+    padding: 7px;
+    background: var(--purple);
+    color: white;
+    border: none;
+    border-radius: var(--radius-xs);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .veh-apply-btn:hover { background: #6d28d9; }
+
+  /* ── ACTION BUTTONS ── */
+  .action-btns {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+  }
+  .action-btn {
+    padding: 8px 14px;
+    background: var(--white);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-xs);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .action-btn.excel:hover  { background: var(--green-light); border-color: var(--green); color: var(--green-dark); }
+  .action-btn.pdf:hover    { background: var(--red-light); border-color: var(--red); color: var(--red); }
+  .action-btn.print:hover  { background: var(--blue-light); border-color: var(--blue); color: var(--blue-dark); }
+
+  /* ── TABLE ── */
+  .table-wrap {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .table-scroll { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    min-width: 1200px;
+  }
+
+  thead tr.group-row th {
+    padding: 8px 12px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: white;
+    text-align: center;
+    border-right: 2px solid rgba(255,255,255,0.3);
+  }
+  th.g-id     { background: #1e293b; }
+  th.g-safari { background: #1d4ed8; }
+  th.g-ktt    { background: #15803d; }
+  th.g-diff   { background: #c2410c; }
+  th.g-status { background: #1e293b; }
+
+  thead tr.col-row th {
+    padding: 10px 10px;
+    font-size: 10px;
+    font-weight: 600;
+    color: white;
+    text-align: center;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    border-right: 1px solid rgba(255,255,255,0.15);
+    border-bottom: 2px solid rgba(255,255,255,0.2);
+  }
+  th.ch-id     { background: #334155; }
+  th.ch-safari { background: #2563eb; }
+  th.ch-ktt    { background: #16a34a; }
+  th.ch-diff   { background: #ea580c; }
+  th.ch-status { background: #334155; }
+
+  tbody tr { transition: background 0.1s; }
+  tbody tr:hover td { filter: brightness(0.97); }
+
+  tbody tr.row-matched { background: #f0fdf4; }
+  tbody tr.row-matched:nth-child(even) { background: #dcfce7; }
+  tbody tr.row-diff    { background: #fff1f2; }
+  tbody tr.row-diff:nth-child(even)    { background: #ffe4e6; }
+  tbody tr.row-missing { background: #fffbeb; }
+
+  td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    border-right: 1px solid rgba(0,0,0,0.04);
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+  td.num    { text-align: right; font-family: 'DM Mono', monospace; font-size: 11px; }
+  td.center { text-align: center; }
+  td.sno    { color: var(--text-muted); font-size: 11px; text-align: center; }
+
+  td.diff-zero    { color: #15803d; font-family: 'DM Mono', monospace; font-size: 11px; text-align: right; }
+  td.diff-nonzero {
+    color: #dc2626;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    text-align: right;
+    background: #fee2e2 !important;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  .status-matched { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+  .status-diff    { background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; }
+  .status-missing { background: #fef9c3; color: #854d0e; border: 1px solid #fde68a; }
+
+  .sep-left { border-left: 2px solid var(--border-strong) !important; }
+
+  /* ── EMPTY / LOADING ── */
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--text-muted);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+  .empty-state h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; color: var(--text); }
+  .empty-state p { font-size: 13px; }
+
+  .loading {
+    text-align: center;
+    padding: 60px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .result-count {
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 8px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--off-white);
+    text-align: right;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    main { padding: 16px; }
+    .upload-grid { grid-template-columns: 1fr; }
+    .stats-bar { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ── PRINT STYLES ── */
+  @media print {
+    @page {
+      size: A3 landscape;
+      margin: 6mm 6mm 8mm 6mm;
+    }
+
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+    body { background: white; font-size: 8px; margin: 0; padding: 0; }
+
+    header, .upload-section, .stats-bar, .controls-bar, .result-count,
+    .action-btns, .veh-filter-wrap { display: none !important; }
+
+    main { max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
+
+    #printHeader { display: block !important; }
+
+    .table-wrap {
+      border: none !important;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+    }
+    .table-scroll { overflow: visible !important; }
+
+    table {
+      width: 100% !important;
+      min-width: unset !important;
+      font-size: 7px !important;
+      table-layout: fixed;
+    }
+
+    thead tr.group-row th { padding: 4px 3px; font-size: 6px; }
+    thead tr.col-row th   { padding: 4px 3px; font-size: 6.5px; position: static; }
+    td { padding: 3px 3px; white-space: normal; word-break: break-word; }
+
+    tbody tr.row-matched        { background: #f0fdf4 !important; }
+    tbody tr.row-matched:nth-child(even) { background: #dcfce7 !important; }
+    tbody tr.row-diff           { background: #fff1f2 !important; }
+    tbody tr.row-diff:nth-child(even)    { background: #ffe4e6 !important; }
+    tbody tr.row-missing        { background: #fffbeb !important; }
+    td.diff-nonzero             { background: #fee2e2 !important; }
+
+    th.g-id     { background: #1e293b !important; color: white !important; }
+    th.g-safari { background: #1d4ed8 !important; color: white !important; }
+    th.g-ktt    { background: #15803d !important; color: white !important; }
+    th.g-diff   { background: #c2410c !important; color: white !important; }
+    th.g-status { background: #1e293b !important; color: white !important; }
+    th.ch-id     { background: #334155 !important; color: white !important; }
+    th.ch-safari { background: #2563eb !important; color: white !important; }
+    th.ch-ktt    { background: #16a34a !important; color: white !important; }
+    th.ch-diff   { background: #ea580c !important; color: white !important; }
+    th.ch-status { background: #334155 !important; color: white !important; }
+
+    .status-badge { padding: 1px 4px; font-size: 6px; }
+  }
+
+  /* Print header (visible only when printing) */
+  #printHeader {
+    display: none;
+    padding: 6px 0 8px;
+    margin-bottom: 6px;
+    border-bottom: 2px solid #1e293b;
+  }
+  #printHeader h1 { font-size: 14px; font-weight: 700; color: #1e293b; }
+  #printHeader p  { font-size: 9px; color: #6b7280; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
+    </div>
+    Trip Sheet Comparator
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#dcfce7;border:1px solid #bbf7d0"></div>Matched</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#fee2e2;border:1px solid #fecaca"></div>Difference</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#fee2e2;outline:2px solid #dc2626"></div>Diff Cell</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#fef9c3;border:1px solid #fde68a"></div>Missing Row</div>
+  </div>
+  <span class="header-badge">v2.0</span>
+</header>
+
+<main>
+  <!-- Print-only header -->
+  <div id="printHeader">
+    <h1>Trip Sheet Comparison Report — Safari vs KTT</h1>
+    <p id="printMeta"></p>
+  </div>
+
+  <!-- Upload Section -->
+  <div class="upload-section">
+    <div class="section-title">Upload Files</div>
+    <div class="upload-grid">
+      <div class="upload-card" id="card1" ondragover="drag(event,'card1')" ondragleave="undrag('card1')" ondrop="drop(event,'card1','file1')">
+        <input type="file" id="file1" accept=".xls,.xlsx" onchange="onFile(1)">
+        <div class="upload-icon">📋</div>
+        <div class="upload-label" style="color:var(--blue)">Safari — Trip Sheet</div>
+        <div class="upload-sub">TRIP_SHEET_MARCH.xls</div>
+        <div id="name1" class="upload-filename" style="display:none"></div>
+      </div>
+      <div class="upload-card" id="card2" ondragover="drag(event,'card2')" ondragleave="undrag('card2')" ondrop="drop(event,'card2','file2')">
+        <input type="file" id="file2" accept=".xls,.xlsx" onchange="onFile(2)">
+        <div class="upload-icon">📊</div>
+        <div class="upload-label" style="color:var(--green)">KTT — Summary Report</div>
+        <div class="upload-sub">Tripsheet_Summary_Report.xlsx</div>
+        <div id="name2" class="upload-filename" style="display:none"></div>
+      </div>
+    </div>
+    <button class="compare-btn" id="compareBtn" onclick="compare()" disabled>
+      <span>⚡</span> Compare Files
+    </button>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar" id="statsBar" style="display:none">
+    <div class="stat-card total">
+      <div class="stat-label">Total Rows</div>
+      <div class="stat-value" id="statTotal">0</div>
+      <div class="stat-sub">Compared trips</div>
+    </div>
+    <div class="stat-card matched">
+      <div class="stat-label">✓ Matched</div>
+      <div class="stat-value" id="statMatched">0</div>
+      <div class="stat-sub">Exact match</div>
+    </div>
+    <div class="stat-card diff">
+      <div class="stat-label">✗ Difference</div>
+      <div class="stat-value" id="statDiff">0</div>
+      <div class="stat-sub">Has mismatch</div>
+    </div>
+    <div class="stat-card pct">
+      <div class="stat-label">Match Rate</div>
+      <div class="stat-value" id="statPct">0%</div>
+      <div class="stat-sub">Accuracy</div>
+    </div>
+  </div>
+
+  <!-- Controls Bar -->
+  <div class="controls-bar" id="controlsBar" style="display:none">
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Search vehicle, driver, trip no…" oninput="renderTable()">
+    </div>
+    <div class="filter-btns">
+      <button class="filter-btn active-all" id="fAll"   onclick="setFilter('all')">All</button>
+      <button class="filter-btn"            id="fMatch" onclick="setFilter('matched')">✓ Matched</button>
+      <button class="filter-btn"            id="fDiff"  onclick="setFilter('diff')">✗ Difference</button>
+    </div>
+
+    <!-- Vehicle Filter -->
+    <div class="veh-filter-wrap" id="vehFilterWrap">
+      <button class="veh-filter-btn" id="vehFilterBtn" onclick="toggleVehDropdown()">
+        🚗 Vehicle Filter
+        <span class="veh-badge" id="vehBadge">All</span>
+        ▾
+      </button>
+      <div class="veh-dropdown" id="vehDropdown">
+        <div class="veh-dropdown-header">
+          <span class="veh-dropdown-title">Filter by Vehicle</span>
+          <div class="veh-dropdown-actions">
+            <button class="veh-act-btn sel-all"  onclick="selectAllVeh()">Select All</button>
+            <button class="veh-act-btn sel-none" onclick="selectNoneVeh()">Clear</button>
+          </div>
+        </div>
+        <div class="veh-list" id="vehList"></div>
+        <div class="veh-dropdown-footer">
+          <button class="veh-apply-btn" onclick="applyVehFilter()">Apply Filter</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-btns">
+      <button class="action-btn excel" onclick="exportExcel()">⬇ Excel</button>
+      <button class="action-btn pdf"   onclick="exportPDF()">📄 PDF</button>
+      <button class="action-btn print" onclick="printReport()">🖨 Print</button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap" id="tableWrap">
+    <div class="empty-state">
+      <div class="icon">📁</div>
+      <h3>Upload Both Files to Compare</h3>
+      <p>Select Safari Trip Sheet (.xls) and KTT Summary Report (.xlsx) to start comparison</p>
+    </div>
+  </div>
+</main>
+
+<script>
+// ── STATE ──
+let file1Data = null, file2Data = null;
+let allRows = [];
+let currentFilter = 'all';
+let allVehicles = [];         // sorted list of unique vehicle names
+let selectedVehicles = new Set(); // currently selected vehicles
+
+// ── DRAG & DROP ──
+function drag(e, id)  { e.preventDefault(); document.getElementById(id).classList.add('dragging'); }
+function undrag(id)   { document.getElementById(id).classList.remove('dragging'); }
+function drop(e, cardId, fileInputId) {
+  e.preventDefault(); undrag(cardId);
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const input = document.getElementById(fileInputId);
+  const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files;
+  onFile(fileInputId === 'file1' ? 1 : 2);
+}
+
+function onFile(num) {
+  const input = document.getElementById(`file${num}`);
+  const file  = input.files[0];
+  if (!file) return;
+  document.getElementById(`card${num}`).classList.add('has-file');
+  const nameEl = document.getElementById(`name${num}`);
+  nameEl.textContent = file.name; nameEl.style.display = 'inline-block';
+  if (num === 1) file1Data = file; else file2Data = file;
+  document.getElementById('compareBtn').disabled = !(file1Data && file2Data);
+}
+
+// ── PARSE HELPERS ──
+function normVeh(v)  { return String(v||'').replace(/[\s\-]/g,'').toUpperCase(); }
+function toNum(v)    { return parseFloat(String(v||'').replace(/,/g,'')) || 0; }
+function fmt(n)      { return n === 0 ? '0' : Number(n).toLocaleString('en-IN', {maximumFractionDigits:2}); }
+function readXL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => { try { resolve(XLSX.read(e.target.result, {type:'array'})); } catch(err) { reject(err); } };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// ── MAIN COMPARE ──
+async function compare() {
+  document.getElementById('tableWrap').innerHTML = `<div class="loading"><div class="spinner"></div>Processing files…</div>`;
+  document.getElementById('statsBar').style.display = 'none';
+  document.getElementById('controlsBar').style.display = 'none';
+
+  try {
+    const [wb1, wb2] = await Promise.all([readXL(file1Data), readXL(file2Data)]);
+
+    // ── PARSE SAFARI ──
+    const tripRaw = XLSX.utils.sheet_to_json(wb1.Sheets[wb1.SheetNames[0]], {defval:''});
+    const safari = tripRaw.map(r => ({
+      tripNo: r['Trip No'] || r['TripNo'] || '',
+      vehicle: normVeh(r['Vehicle']),
+      vehicleOrig: String(r['Vehicle']||'').trim(),
+      driver: String(r['Driver']||'').replace(/^\d+,\s*/,'').replace(/\/\s*$/,'').trim(),
+      date:   String(r['Start - End Date']||'').trim(),
+      da:   toNum(r['Driver Advance']),
+      toll: toNum(r['Toll Card']),
+      fuel: toNum(r['Fuel Credit/Card Amt']),
+      te:   toNum(r['Trip Expenses']),
+      db:   toNum(r['Driver Balance']),
+    })).filter(r => r.vehicle && r.tripNo);
+
+    // ── PARSE KTT ──
+    const sumRaw = XLSX.utils.sheet_to_json(wb2.Sheets[wb2.SheetNames[0]], {defval:'', header:1});
+    let hdrIdx = 0;
+    for (let i = 0; i < Math.min(5, sumRaw.length); i++) {
+      if (sumRaw[i].some(c => String(c).trim() === 'Vehicle')) { hdrIdx = i; break; }
+    }
+    const headers = sumRaw[hdrIdx];
+    const ktt = sumRaw.slice(hdrIdx + 1)
+      .map(row => { const obj = {}; headers.forEach((h,i) => obj[String(h).trim()] = row[i]||''); return obj; })
+      .filter(r => r['Vehicle'])
+      .map(r => ({
+        tripSheetNo: r['Trip Sheet No'] || '',
+        vehicle: normVeh(r['Vehicle']),
+        vehicleOrig: String(r['Vehicle']||'').trim(),
+        driver:  String(r['Driver']||'').trim(),
+        startDate: String(r['Start Date']||'').trim(),
+        endDate:   String(r['End Date']||'').trim(),
+        da:   toNum(r['Driver Advance']),
+        toll: toNum(r['Toll Card']),
+        fuel: toNum(r['Fuel Credit/Card Amt']),
+        te:   toNum(r['Trip Expenses']),
+        db:   toNum(r['Driver Balance']),
+      })).filter(r => r.vehicle);
+
+    // ── GROUP BY VEHICLE ──
+    const safariMap = {}, kttMap = {};
+    safari.forEach(r => { if (!safariMap[r.vehicle]) safariMap[r.vehicle] = []; safariMap[r.vehicle].push(r); });
+    ktt.forEach(r    => { if (!kttMap[r.vehicle])    kttMap[r.vehicle]    = []; kttMap[r.vehicle].push(r);    });
+
+    const allVehs = [...new Set([...Object.keys(safariMap), ...Object.keys(kttMap)])].sort();
+    const numCols = ['da','toll','fuel','te','db'];
+    allRows = [];
+    let sno = 1;
+
+    allVehs.forEach(veh => {
+      const sRows = safariMap[veh] || [];
+      const kRows = kttMap[veh]    || [];
+      const maxLen = Math.max(sRows.length, kRows.length);
+      for (let i = 0; i < maxLen; i++) {
+        const sr = sRows[i] || null;
+        const kr = kRows[i] || null;
+        const diffs = {};
+        let allMatch = true;
+        numCols.forEach(col => {
+          const d = (sr ? sr[col] : 0) - (kr ? kr[col] : 0);
+          diffs[col] = d;
+          if (Math.abs(d) >= 1) allMatch = false;
+        });
+        const missing = !sr || !kr;
+        const status  = missing ? 'missing' : allMatch ? 'matched' : 'diff';
+        allRows.push({
+          sno: sno++, vehicle: sr ? sr.vehicleOrig : kr.vehicleOrig, vehNorm: veh,
+          s_tripNo: sr ? sr.tripNo : '', s_driver: sr ? sr.driver : '', s_date: sr ? sr.date : '',
+          s_da: sr ? sr.da : '', s_toll: sr ? sr.toll : '', s_fuel: sr ? sr.fuel : '',
+          s_te: sr ? sr.te : '', s_db: sr ? sr.db : '',
+          k_tsNo: kr ? kr.tripSheetNo : '', k_driver: kr ? kr.driver : '',
+          k_start: kr ? kr.startDate : '', k_end: kr ? kr.endDate : '',
+          k_da: kr ? kr.da : '', k_toll: kr ? kr.toll : '', k_fuel: kr ? kr.fuel : '',
+          k_te: kr ? kr.te : '', k_db: kr ? kr.db : '',
+          d_da: diffs.da, d_toll: diffs.toll, d_fuel: diffs.fuel, d_te: diffs.te, d_db: diffs.db,
+          status, missing
+        });
+      }
+    });
+
+    // Stats
+    const total   = allRows.length;
+    const matched = allRows.filter(r => r.status === 'matched').length;
+    const diff    = allRows.filter(r => r.status === 'diff').length;
+    const pct     = total ? Math.round((matched/total)*100) : 0;
+    document.getElementById('statTotal').textContent   = total.toLocaleString();
+    document.getElementById('statMatched').textContent = matched.toLocaleString();
+    document.getElementById('statDiff').textContent    = diff.toLocaleString();
+    document.getElementById('statPct').textContent     = pct + '%';
+    document.getElementById('statsBar').style.display    = 'grid';
+    document.getElementById('controlsBar').style.display = 'flex';
+
+    // Build vehicle list
+    allVehicles = [...new Set(allRows.map(r => r.vehNorm))].sort();
+    selectedVehicles = new Set(allVehicles);
+    buildVehList();
+    updateVehBadge();
+
+    currentFilter = 'all';
+    setFilter('all', false);
+    renderTable();
+
+  } catch(err) {
+    document.getElementById('tableWrap').innerHTML =
+      `<div class="empty-state"><div class="icon">⚠️</div><h3>Error Processing Files</h3><p>${err.message}</p></div>`;
+  }
+}
+
+// ── VEHICLE FILTER ──
+function buildVehList() {
+  const vehList = document.getElementById('vehList');
+  // Count rows per vehicle
+  const vehCounts = {};
+  allRows.forEach(r => { vehCounts[r.vehNorm] = (vehCounts[r.vehNorm]||0) + 1; });
+
+  vehList.innerHTML = allVehicles.map(v => {
+    const displayName = allRows.find(r => r.vehNorm === v)?.vehicle || v;
+    return `
+    <div class="veh-item" onclick="toggleVeh('${v}', event)">
+      <input type="checkbox" id="vc_${v}" ${selectedVehicles.has(v)?'checked':''} onclick="toggleVeh('${v}', event)">
+      <label for="vc_${v}">${displayName}</label>
+      <span class="veh-count-badge">${vehCounts[v]||0}</span>
+    </div>`;
+  }).join('');
+}
+
+function toggleVeh(vehNorm, e) {
+  e.stopPropagation();
+  const cb = document.getElementById(`vc_${vehNorm}`);
+  if (e.target !== cb) {
+    cb.checked = !cb.checked;
+  }
+  if (cb.checked) selectedVehicles.add(vehNorm);
+  else selectedVehicles.delete(vehNorm);
+  updateVehBadge();
+}
+
+function selectAllVeh() {
+  selectedVehicles = new Set(allVehicles);
+  buildVehList(); updateVehBadge();
+}
+function selectNoneVeh() {
+  selectedVehicles = new Set();
+  buildVehList(); updateVehBadge();
+}
+
+function updateVehBadge() {
+  const badge = document.getElementById('vehBadge');
+  const btn   = document.getElementById('vehFilterBtn');
+  if (selectedVehicles.size === allVehicles.length) {
+    badge.textContent = 'All';
+    btn.classList.remove('active');
+  } else {
+    badge.textContent = selectedVehicles.size;
+    btn.classList.add('active');
+  }
+}
+
+function applyVehFilter() {
+  closeVehDropdown();
+  renderTable();
+}
+
+function toggleVehDropdown() {
+  document.getElementById('vehDropdown').classList.toggle('open');
+}
+function closeVehDropdown() {
+  document.getElementById('vehDropdown').classList.remove('open');
+}
+
+// Close dropdown on outside click
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('vehFilterWrap');
+  if (wrap && !wrap.contains(e.target)) closeVehDropdown();
+});
+
+// ── FILTER ──
+function setFilter(f, render=true) {
+  currentFilter = f;
+  document.getElementById('fAll').className   = 'filter-btn' + (f==='all'     ? ' active-all'   : '');
+  document.getElementById('fMatch').className = 'filter-btn' + (f==='matched' ? ' active-match' : '');
+  document.getElementById('fDiff').className  = 'filter-btn' + (f==='diff'    ? ' active-diff'  : '');
+  if (render) renderTable();
+}
+
+// ── FILTERED ROWS ──
+function getFilteredRows() {
+  const search = document.getElementById('searchInput').value.toLowerCase().trim();
+  return allRows.filter(r => {
+    if (!selectedVehicles.has(r.vehNorm)) return false;
+    if (currentFilter === 'matched' && r.status !== 'matched') return false;
+    if (currentFilter === 'diff'    && r.status === 'matched') return false;
+    if (search) {
+      const hay = `${r.vehicle} ${r.s_tripNo} ${r.k_tsNo} ${r.s_driver} ${r.k_driver}`.toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+}
+
+// ── RENDER TABLE ──
+function renderTable() {
+  const rows = getFilteredRows();
+
+  if (rows.length === 0) {
+    document.getElementById('tableWrap').innerHTML =
+      `<div class="empty-state"><div class="icon">🔍</div><h3>No Results Found</h3><p>Try a different filter or vehicle selection</p></div>`;
+    return;
+  }
+
+  function dc(val, isDiff) {
+    if (val === '' || val === null || val === undefined) return `<td class="num">—</td>`;
+    if (isDiff) {
+      const n = parseFloat(val)||0;
+      if (Math.abs(n) < 1) return `<td class="diff-zero">0</td>`;
+      const sign = n > 0 ? '+' : '';
+      return `<td class="diff-nonzero">${sign}${fmt(n)}</td>`;
+    }
+    return `<td class="num">${fmt(val)}</td>`;
+  }
+
+  function badge(r) {
+    if (r.status === 'matched') return `<span class="status-badge status-matched">✓ Matched</span>`;
+    if (r.status === 'diff')    return `<span class="status-badge status-diff">✗ Difference</span>`;
+    return `<span class="status-badge status-missing">⚠ Missing</span>`;
+  }
+
+  const tbody = rows.map((r, idx) => `
+    <tr class="${r.status==='matched'?'row-matched':r.status==='diff'?'row-diff':'row-missing'}">
+      <td class="sno">${idx+1}</td>
+      <td style="font-weight:600;font-size:11px;font-family:'DM Mono',monospace">${r.vehicle}</td>
+      <td class="sep-left center" style="font-family:'DM Mono',monospace;font-size:11px">${r.s_tripNo||'—'}</td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis">${r.s_driver||'—'}</td>
+      <td style="font-size:11px;color:var(--text-muted)">${r.s_date||'—'}</td>
+      ${dc(r.s_da)} ${dc(r.s_toll)} ${dc(r.s_fuel)} ${dc(r.s_te)} ${dc(r.s_db)}
+      <td class="sep-left center" style="font-family:'DM Mono',monospace;font-size:11px">${r.k_tsNo||'—'}</td>
+      <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis">${r.k_driver||'—'}</td>
+      <td style="font-size:11px;color:var(--text-muted)">${r.k_start||'—'}</td>
+      <td style="font-size:11px;color:var(--text-muted)">${r.k_end||'—'}</td>
+      ${dc(r.k_da)} ${dc(r.k_toll)} ${dc(r.k_fuel)} ${dc(r.k_te)} ${dc(r.k_db)}
+      <td class="sep-left">${dc(r.d_da,  true).replace(/^<td[^>]*>/, '').replace(/<\/td>$/, '')}</td>
+      ${dc(r.d_toll,true)} ${dc(r.d_fuel,true)} ${dc(r.d_te,true)} ${dc(r.d_db,true)}
+      <td class="sep-left center">${badge(r)}</td>
+    </tr>`).join('');
+
+  document.getElementById('tableWrap').innerHTML = `
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr class="group-row">
+            <th class="g-id" colspan="2">Identifier</th>
+            <th class="g-safari sep-left" colspan="9">Safari — Trip Sheet Data</th>
+            <th class="g-ktt sep-left" colspan="9">KTT — Summary Report Data</th>
+            <th class="g-diff sep-left" colspan="5">Difference (Safari − KTT)</th>
+            <th class="g-status sep-left">Status</th>
+          </tr>
+          <tr class="col-row">
+            <th class="ch-id">S.No</th><th class="ch-id">Vehicle</th>
+            <th class="ch-safari sep-left">Trip No</th><th class="ch-safari">Driver</th>
+            <th class="ch-safari">Date Range</th><th class="ch-safari">Drv Advance</th>
+            <th class="ch-safari">Toll Card</th><th class="ch-safari">Fuel Amt</th>
+            <th class="ch-safari">Trip Exp</th><th class="ch-safari">Drv Balance</th>
+            <th class="ch-ktt sep-left">Trip Sheet No</th><th class="ch-ktt">Driver</th>
+            <th class="ch-ktt">Start Date</th><th class="ch-ktt">End Date</th>
+            <th class="ch-ktt">Drv Advance</th><th class="ch-ktt">Toll Card</th>
+            <th class="ch-ktt">Fuel Amt</th><th class="ch-ktt">Trip Exp</th>
+            <th class="ch-ktt">Drv Balance</th>
+            <th class="ch-diff sep-left">Drv Advance</th><th class="ch-diff">Toll Card</th>
+            <th class="ch-diff">Fuel Amt</th><th class="ch-diff">Trip Exp</th>
+            <th class="ch-diff">Drv Balance</th>
+            <th class="ch-status sep-left">Status</th>
+          </tr>
+        </thead>
+        <tbody>${tbody}</tbody>
+      </table>
+    </div>
+    <div class="result-count">Showing ${rows.length.toLocaleString()} of ${allRows.length.toLocaleString()} rows</div>
+  `;
+}
+
+// ── EXPORT EXCEL ──
+function exportExcel() {
+  const rows = getFilteredRows();
+  if (!rows.length) return;
+  const headers = [
+    'S.No','Vehicle',
+    'S_TripNo','S_Driver','S_Date','S_Drv Advance','S_Toll Card','S_Fuel Amt','S_Trip Exp','S_Drv Balance',
+    'K_TripSheetNo','K_Driver','K_StartDate','K_EndDate','K_Drv Advance','K_Toll Card','K_Fuel Amt','K_Trip Exp','K_Drv Balance',
+    'D_Drv Advance','D_Toll Card','D_Fuel Amt','D_Trip Exp','D_Drv Balance','Status'
+  ];
+  const data = rows.map((r,i) => [
+    i+1, r.vehicle,
+    r.s_tripNo, r.s_driver, r.s_date, r.s_da, r.s_toll, r.s_fuel, r.s_te, r.s_db,
+    r.k_tsNo, r.k_driver, r.k_start, r.k_end, r.k_da, r.k_toll, r.k_fuel, r.k_te, r.k_db,
+    r.d_da, r.d_toll, r.d_fuel, r.d_te, r.d_db,
+    r.status === 'matched' ? 'Matched' : r.status === 'diff' ? 'Difference' : 'Missing'
+  ]);
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Comparison');
+  XLSX.writeFile(wb, 'Safari_KTT_Comparison.xlsx');
+}
+
+// ── EXPORT PDF ──
+function exportPDF() {
+  const rows = getFilteredRows();
+  if (!rows.length) { alert('No data to export!'); return; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a3' });
+
+  // Title
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Trip Sheet Comparison Report — Safari vs KTT', 14, 14);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(100);
+  const filterInfo = selectedVehicles.size === allVehicles.length
+    ? 'All Vehicles'
+    : `Vehicles: ${[...selectedVehicles].join(', ')}`;
+  doc.text(`Generated: ${new Date().toLocaleString('en-IN')}   |   Filter: ${currentFilter.toUpperCase()}   |   ${filterInfo}   |   Rows: ${rows.length}`, 14, 20);
+  doc.setTextColor(0);
+
+  const head = [[
+    'S.No','Vehicle',
+    'Trip No','Driver (S)','Date','Drv Adv (S)','Toll (S)','Fuel (S)','Trip Exp (S)','Drv Bal (S)',
+    'TS No','Driver (K)','Start','End','Drv Adv (K)','Toll (K)','Fuel (K)','Trip Exp (K)','Drv Bal (K)',
+    'Δ Drv Adv','Δ Toll','Δ Fuel','Δ Trip Exp','Δ Drv Bal','Status'
+  ]];
+
+  const body = rows.map((r, i) => [
+    i+1, r.vehicle,
+    r.s_tripNo||'—', r.s_driver||'—', r.s_date||'—',
+    r.s_da !== '' ? fmt(r.s_da) : '—', r.s_toll !== '' ? fmt(r.s_toll) : '—',
+    r.s_fuel !== '' ? fmt(r.s_fuel) : '—', r.s_te !== '' ? fmt(r.s_te) : '—',
+    r.s_db !== '' ? fmt(r.s_db) : '—',
+    r.k_tsNo||'—', r.k_driver||'—', r.k_start||'—', r.k_end||'—',
+    r.k_da !== '' ? fmt(r.k_da) : '—', r.k_toll !== '' ? fmt(r.k_toll) : '—',
+    r.k_fuel !== '' ? fmt(r.k_fuel) : '—', r.k_te !== '' ? fmt(r.k_te) : '—',
+    r.k_db !== '' ? fmt(r.k_db) : '—',
+    fmtDiff(r.d_da), fmtDiff(r.d_toll), fmtDiff(r.d_fuel), fmtDiff(r.d_te), fmtDiff(r.d_db),
+    r.status === 'matched' ? 'Matched' : r.status === 'diff' ? 'Diff' : 'Missing'
+  ]);
+
+  doc.autoTable({
+    head, body,
+    startY: 24,
+    styles: { fontSize: 6, cellPadding: 1.5, overflow: 'linebreak', font: 'helvetica' },
+    headStyles: { fillColor: [30, 41, 59], textColor: 255, fontStyle: 'bold', fontSize: 6.5 },
+    columnStyles: {
+      0: { cellWidth: 8 },   // S.No
+      1: { cellWidth: 18 },  // Vehicle
+      2: { cellWidth: 14 },  // Trip No
+      3: { cellWidth: 22 },  // Driver S
+      4: { cellWidth: 20 },  // Date
+      5: { cellWidth: 14, halign:'right' },
+      6: { cellWidth: 12, halign:'right' },
+      7: { cellWidth: 12, halign:'right' },
+      8: { cellWidth: 12, halign:'right' },
+      9: { cellWidth: 14, halign:'right' },
+      10: { cellWidth: 14 }, // TS No
+      11: { cellWidth: 22 }, // Driver K
+      12: { cellWidth: 16 }, // Start
+      13: { cellWidth: 16 }, // End
+      14: { cellWidth: 14, halign:'right' },
+      15: { cellWidth: 12, halign:'right' },
+      16: { cellWidth: 12, halign:'right' },
+      17: { cellWidth: 12, halign:'right' },
+      18: { cellWidth: 14, halign:'right' },
+      19: { cellWidth: 14, halign:'right' },
+      20: { cellWidth: 12, halign:'right' },
+      21: { cellWidth: 12, halign:'right' },
+      22: { cellWidth: 12, halign:'right' },
+      23: { cellWidth: 14, halign:'right' },
+      24: { cellWidth: 15 }, // Status
+    },
+    didParseCell(data) {
+      if (data.section === 'body') {
+        const r = rows[data.row.index];
+        if (!r) return;
+        if (r.status === 'matched') { data.cell.styles.fillColor = [240, 253, 244]; }
+        else if (r.status === 'diff') { data.cell.styles.fillColor = [255, 241, 242]; }
+        else { data.cell.styles.fillColor = [255, 251, 235]; }
+        // Highlight diff cells with nonzero
+        const diffCols = [19,20,21,22,23];
+        if (diffCols.includes(data.column.index)) {
+          const val = parseFloat(String(data.cell.raw||'').replace('+',''));
+          if (!isNaN(val) && Math.abs(val) >= 1) {
+            data.cell.styles.fillColor = [254, 226, 226];
+            data.cell.styles.textColor = [220, 38, 38];
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+      }
+    },
+    margin: { top: 24, left: 8, right: 8 },
+  });
+
+  // Page numbers
+  const pageCount = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(7); doc.setTextColor(150);
+    doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.getWidth() - 20, doc.internal.pageSize.getHeight() - 5);
+  }
+
+  doc.save('Safari_KTT_Comparison.pdf');
+}
+
+function fmtDiff(val) {
+  if (val === undefined || val === null || val === '') return '—';
+  const n = parseFloat(val)||0;
+  if (Math.abs(n) < 1) return '0';
+  return (n > 0 ? '+' : '') + fmt(n);
+}
+
+// ── PRINT ──
+function printReport() {
+  const rows = getFilteredRows();
+  if (!rows.length) { alert('No data to print!'); return; }
+
+  const filterInfo = selectedVehicles.size === allVehicles.length
+    ? 'All Vehicles'
+    : `Vehicles: ${[...selectedVehicles].map(v => allRows.find(r=>r.vehNorm===v)?.vehicle||v).join(', ')}`;
+
+  document.getElementById('printMeta').textContent =
+    `Printed: ${new Date().toLocaleString('en-IN')}   |   Filter: ${currentFilter.toUpperCase()}   |   ${filterInfo}   |   Total Rows: ${rows.length}`;
+
+  window.print();
+}
+</script>
+</body>
+</html>
