@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Trip Sheet Comparator</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -685,7 +685,7 @@
     <div class="legend-item"><div class="legend-dot" style="background:#fee2e2;outline:2px solid #dc2626"></div>Diff Cell</div>
     <div class="legend-item"><div class="legend-dot" style="background:#fef9c3;border:1px solid #fde68a"></div>Missing Row</div>
   </div>
-  <span class="header-badge">v2.0</span>
+  <span class="header-badge">v3.0</span>
 </header>
 
 <main>
@@ -778,7 +778,7 @@
 
     <!-- Action Buttons -->
     <div class="action-btns">
-      <button class="action-btn excel" onclick="exportExcel()">⬇ Excel</button>
+      <button class="action-btn excel" onclick="exportExcel()">🎨 Excel (Colored)</button>
       <button class="action-btn pdf"   onclick="exportPDF()">📄 PDF</button>
       <button class="action-btn print" onclick="printReport()">🖨 Print</button>
     </div>
@@ -1126,27 +1126,213 @@ function renderTable() {
   `;
 }
 
-// ── EXPORT EXCEL ──
+// ── EXPORT EXCEL (with full color styling) ──
 function exportExcel() {
   const rows = getFilteredRows();
   if (!rows.length) return;
-  const headers = [
-    'S.No','Vehicle',
-    'S_TripNo','S_Driver','S_Date','S_Drv Advance','S_Toll Card','S_Fuel Amt','S_Trip Exp','S_Drv Balance',
-    'K_TripSheetNo','K_Driver','K_StartDate','K_EndDate','K_Drv Advance','K_Toll Card','K_Fuel Amt','K_Trip Exp','K_Drv Balance',
-    'D_Drv Advance','D_Toll Card','D_Fuel Amt','D_Trip Exp','D_Drv Balance','Status'
+
+  // ── Color palettes (Excel uses ARGB hex, no #) ──
+  const CLR = {
+    // Header group row
+    hdrId:     'FF1E293B', hdrSafari: 'FF1D4ED8', hdrKtt:    'FF15803D',
+    hdrDiff:   'FFC2410C', hdrStatus: 'FF1E293B',
+    // Sub-header row
+    subId:     'FF334155', subSafari: 'FF2563EB', subKtt:    'FF16A34A',
+    subDiff:   'FFEA580C', subStatus: 'FF334155',
+    white:     'FFFFFFFF',
+    // Row backgrounds
+    matchedBg1: 'FFF0FDF4', matchedBg2: 'FFDCFCE7',
+    diffBg1:    'FFFFF1F2', diffBg2:    'FFFFE4E6',
+    missingBg:  'FFFFFBEB',
+    // Diff cell highlight
+    diffCellBg: 'FFFEE2E2', diffCellFg: 'FFDC2626',
+    // Status badge text colors
+    matchedFg:  'FF15803D', diffFg: 'FFDC2626', missingFg: 'FF854D0E',
+    matchedBadgeBg: 'FFDCFCE7', diffBadgeBg: 'FFFEE2E2', missingBadgeBg: 'FFFEF9C3',
+    // Num text
+    numFg: 'FF1A1D2E', mutedFg: 'FF6B7280',
+  };
+
+  function cell(v, style) {
+    return { v: v === undefined || v === null ? '' : v, s: style };
+  }
+
+  function hdrCell(v, fgHex, bgHex) {
+    return cell(v, {
+      font:      { bold: true, color: { rgb: fgHex }, sz: 9 },
+      fill:      { fgColor: { rgb: bgHex } },
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      border: {
+        top:    { style: 'thin', color: { rgb: 'FFAAAAAA' } },
+        bottom: { style: 'thin', color: { rgb: 'FFAAAAAA' } },
+        left:   { style: 'thin', color: { rgb: 'FFAAAAAA' } },
+        right:  { style: 'thin', color: { rgb: 'FFAAAAAA' } },
+      }
+    });
+  }
+
+  function dataCell(v, bgHex, opts={}) {
+    return cell(v, {
+      font:      { bold: opts.bold||false, color: { rgb: opts.fg||CLR.numFg }, sz: 9 },
+      fill:      { fgColor: { rgb: bgHex } },
+      alignment: { horizontal: opts.align||'left', vertical: 'center' },
+      border: {
+        top:    { style: 'thin', color: { rgb: 'FFDDDDDD' } },
+        bottom: { style: 'thin', color: { rgb: 'FFDDDDDD' } },
+        left:   { style: 'thin', color: { rgb: 'FFDDDDDD' } },
+        right:  { style: 'thin', color: { rgb: 'FFDDDDDD' } },
+      }
+    });
+  }
+
+  // Column header labels (group + sub)
+  const GRP_HEADERS = [
+    ['Identifier',   2], ['Safari — Trip Sheet Data', 9], ['KTT — Summary Report Data', 9],
+    ['Difference (Safari − KTT)', 5], ['Status', 1]
   ];
-  const data = rows.map((r,i) => [
-    i+1, r.vehicle,
-    r.s_tripNo, r.s_driver, r.s_date, r.s_da, r.s_toll, r.s_fuel, r.s_te, r.s_db,
-    r.k_tsNo, r.k_driver, r.k_start, r.k_end, r.k_da, r.k_toll, r.k_fuel, r.k_te, r.k_db,
-    r.d_da, r.d_toll, r.d_fuel, r.d_te, r.d_db,
-    r.status === 'matched' ? 'Matched' : r.status === 'diff' ? 'Difference' : 'Missing'
-  ]);
-  const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+  const SUB_HEADERS = [
+    'S.No', 'Vehicle',
+    'Trip No', 'Driver (Safari)', 'Date Range',
+    'Drv Advance', 'Toll Card', 'Fuel Amt', 'Trip Exp', 'Drv Balance',
+    'Trip Sheet No', 'Driver (KTT)', 'Start Date', 'End Date',
+    'Drv Advance', 'Toll Card', 'Fuel Amt', 'Trip Exp', 'Drv Balance',
+    'Δ Drv Advance', 'Δ Toll Card', 'Δ Fuel Amt', 'Δ Trip Exp', 'Δ Drv Balance',
+    'Status'
+  ];
+  const GRP_COLORS = [CLR.hdrId, CLR.hdrSafari, CLR.hdrKtt, CLR.hdrDiff, CLR.hdrStatus];
+  const SUB_COLORS = [
+    CLR.subId, CLR.subId,
+    CLR.subSafari, CLR.subSafari, CLR.subSafari, CLR.subSafari, CLR.subSafari, CLR.subSafari, CLR.subSafari, CLR.subSafari, CLR.subSafari,
+    CLR.subKtt,    CLR.subKtt,    CLR.subKtt,    CLR.subKtt,    CLR.subKtt,    CLR.subKtt,    CLR.subKtt,    CLR.subKtt,    CLR.subKtt,
+    CLR.subDiff,   CLR.subDiff,   CLR.subDiff,   CLR.subDiff,   CLR.subDiff,
+    CLR.subStatus
+  ];
+  const NCOLS = SUB_HEADERS.length; // 26
+
+  // Build 2D array of styled cells
+  const aoa = [];
+
+  // Row 1: group headers (merged later)
+  const grpRow = [];
+  let col = 0;
+  GRP_HEADERS.forEach(([label, span], gi) => {
+    grpRow.push(hdrCell(label, CLR.white, GRP_COLORS[gi]));
+    for (let s = 1; s < span; s++) grpRow.push(hdrCell('', CLR.white, GRP_COLORS[gi]));
+    col += span;
+  });
+  aoa.push(grpRow);
+
+  // Row 2: sub-headers
+  const subRow = SUB_HEADERS.map((h, i) => hdrCell(h, CLR.white, SUB_COLORS[i]));
+  aoa.push(subRow);
+
+  // Data rows
+  const DIFF_COLS = [19, 20, 21, 22, 23]; // 0-indexed
+  rows.forEach((r, idx) => {
+    const isEven = idx % 2 === 1;
+    let rowBg;
+    if (r.status === 'matched') rowBg = isEven ? CLR.matchedBg2 : CLR.matchedBg1;
+    else if (r.status === 'diff')    rowBg = isEven ? CLR.diffBg2    : CLR.diffBg1;
+    else                             rowBg = CLR.missingBg;
+
+    const statusLabel = r.status === 'matched' ? '✓ Matched' : r.status === 'diff' ? '✗ Difference' : '⚠ Missing';
+    const statusFg    = r.status === 'matched' ? CLR.matchedFg : r.status === 'diff' ? CLR.diffFg : CLR.missingFg;
+    const statusBg    = r.status === 'matched' ? CLR.matchedBadgeBg : r.status === 'diff' ? CLR.diffBadgeBg : CLR.missingBadgeBg;
+
+    function numFmt(v) {
+      if (v === '' || v === null || v === undefined) return '—';
+      const n = parseFloat(v);
+      return isNaN(n) ? '—' : n;
+    }
+    function diffFmt(v) {
+      if (v === undefined || v === null || v === '') return 0;
+      return parseFloat(v) || 0;
+    }
+
+    const rowCells = [
+      dataCell(idx+1,         rowBg, { align:'center', fg: CLR.mutedFg }),
+      dataCell(r.vehicle,     rowBg, { bold: true }),
+      dataCell(r.s_tripNo||'—', rowBg, { align:'center' }),
+      dataCell(r.s_driver||'—', rowBg),
+      dataCell(r.s_date||'—',   rowBg, { fg: CLR.mutedFg }),
+      dataCell(numFmt(r.s_da),   rowBg, { align:'right' }),
+      dataCell(numFmt(r.s_toll), rowBg, { align:'right' }),
+      dataCell(numFmt(r.s_fuel), rowBg, { align:'right' }),
+      dataCell(numFmt(r.s_te),   rowBg, { align:'right' }),
+      dataCell(numFmt(r.s_db),   rowBg, { align:'right' }),
+      dataCell(r.k_tsNo||'—',   rowBg, { align:'center' }),
+      dataCell(r.k_driver||'—', rowBg),
+      dataCell(r.k_start||'—',  rowBg, { fg: CLR.mutedFg }),
+      dataCell(r.k_end||'—',    rowBg, { fg: CLR.mutedFg }),
+      dataCell(numFmt(r.k_da),   rowBg, { align:'right' }),
+      dataCell(numFmt(r.k_toll), rowBg, { align:'right' }),
+      dataCell(numFmt(r.k_fuel), rowBg, { align:'right' }),
+      dataCell(numFmt(r.k_te),   rowBg, { align:'right' }),
+      dataCell(numFmt(r.k_db),   rowBg, { align:'right' }),
+    ];
+
+    // Diff columns with special highlight if nonzero
+    ['d_da','d_toll','d_fuel','d_te','d_db'].forEach(key => {
+      const n = diffFmt(r[key]);
+      const isNonZero = Math.abs(n) >= 1;
+      const bg = isNonZero ? CLR.diffCellBg : rowBg;
+      const fg = isNonZero ? CLR.diffCellFg : CLR.numFg;
+      const displayVal = Math.abs(n) < 1 ? 0 : n;
+      rowCells.push(dataCell(displayVal, bg, { align:'right', bold: isNonZero, fg }));
+    });
+
+    // Status cell
+    rowCells.push(dataCell(statusLabel, statusBg, { bold: true, fg: statusFg, align:'center' }));
+
+    aoa.push(rowCells);
+  });
+
+  // Build worksheet from aoa
+  const ws = XLSX.utils.aoa_to_sheet(aoa.map(row => row.map(c => c.v)));
+
+  // Apply styles cell by cell
+  aoa.forEach((row, ri) => {
+    row.forEach((cellDef, ci) => {
+      const addr = XLSX.utils.encode_cell({ r: ri, c: ci });
+      if (!ws[addr]) ws[addr] = {};
+      ws[addr].s = cellDef.s;
+    });
+  });
+
+  // Merge group header cells
+  const merges = [];
+  let mc = 0;
+  GRP_HEADERS.forEach(([, span]) => {
+    if (span > 1) merges.push({ s:{r:0,c:mc}, e:{r:0,c:mc+span-1} });
+    mc += span;
+  });
+  ws['!merges'] = merges;
+
+  // Column widths
+  ws['!cols'] = [
+    {wch:5},  // S.No
+    {wch:18}, // Vehicle
+    {wch:14}, // Trip No
+    {wch:22}, // Driver S
+    {wch:22}, // Date Range
+    {wch:13},{wch:12},{wch:12},{wch:12},{wch:13}, // Safari nums
+    {wch:14}, // TS No
+    {wch:22}, // Driver K
+    {wch:14},{wch:14}, // Start/End
+    {wch:13},{wch:12},{wch:12},{wch:12},{wch:13}, // KTT nums
+    {wch:14},{wch:12},{wch:12},{wch:12},{wch:14}, // Diff
+    {wch:14}, // Status
+  ];
+
+  // Row heights
+  ws['!rows'] = [{ hpt: 30 }, { hpt: 28 }, ...rows.map(() => ({ hpt: 18 }))];
+
+  // Freeze top 2 rows
+  ws['!freeze'] = { xSplit: 2, ySplit: 2, topLeftCell: 'C3', activeCell: 'C3', sqref: 'C3' };
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Comparison');
-  XLSX.writeFile(wb, 'Safari_KTT_Comparison.xlsx');
+  XLSX.writeFile(wb, 'Safari_KTT_Comparison_Colored.xlsx');
 }
 
 // ── EXPORT PDF ──
