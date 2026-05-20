@@ -8,32 +8,18 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
-
-:root {
-  --bg:#f0f4f8; --surface:#fff; --surface2:#f7f9fc;
-  --border:#e2e8f0; --border2:#cbd5e1;
-  --accent:#2563eb; --accent-light:#eff6ff;
-  --accent2:#0891b2; --accent2-light:#ecfeff;
-  --success:#059669; --success-light:#ecfdf5;
-  --danger:#dc2626; --danger-light:#fef2f2;
-  --warning:#d97706; --warning-light:#fffbeb;
-  --text:#1e293b; --text2:#64748b; --text3:#94a3b8;
-  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
-}
+:root{--bg:#f0f4f8;--surface:#fff;--surface2:#f7f9fc;--border:#e2e8f0;--border2:#cbd5e1;--accent:#2563eb;--accent-light:#eff6ff;--accent2:#0891b2;--accent2-light:#ecfeff;--success:#059669;--success-light:#ecfdf5;--danger:#dc2626;--danger-light:#fef2f2;--warning:#d97706;--warning-light:#fffbeb;--text:#1e293b;--text2:#64748b;--text3:#94a3b8;--shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05)}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh;font-size:14px}
-
 header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;height:58px;display:flex;align-items:center;position:sticky;top:0;z-index:300;box-shadow:var(--shadow)}
 .logo{display:flex;align-items:center;gap:.6rem}
 .logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#2563eb,#0891b2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem}
-.logo-text{font-size:1.15rem;font-weight:800;color:var(--text)}
-.logo-text span{color:var(--accent)}
+.logo-text{font-size:1.15rem;font-weight:800;color:var(--text)}.logo-text span{color:var(--accent)}
 .logo-sub{font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
-
 .main{padding:1.5rem 2rem;max-width:1500px;margin:0 auto}
-
 .upload-section{background:var(--surface);border-radius:14px;padding:1.4rem;box-shadow:var(--shadow);margin-bottom:1.2rem;border:1px solid var(--border)}
 .upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
 .upload-card{border:2px dashed var(--border2);border-radius:10px;padding:1.1rem;background:var(--surface2);transition:all .2s}
@@ -54,11 +40,9 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .f1.loaded .file-status{color:var(--accent)}
 .f2.loaded .file-status{color:var(--accent2)}
 #file1Input,#file2Input{display:none}
-
 .compare-btn{width:100%;padding:.78rem;background:linear-gradient(135deg,#2563eb,#0891b2);color:#fff;border:none;border-radius:10px;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem}
 .compare-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,.3)}
 .compare-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
-
 .date-filter-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.9rem 1.2rem;box-shadow:var(--shadow);margin-bottom:1.2rem;display:none;align-items:center;gap:1rem;flex-wrap:wrap}
 .date-filter-bar.show{display:flex}
 .filter-lbl{font-weight:800;font-size:.8rem;color:var(--text2);white-space:nowrap}
@@ -72,29 +56,23 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .flt-reset:hover{border-color:var(--danger);color:var(--danger);background:var(--danger-light)}
 .filter-badge{background:var(--warning-light);color:var(--warning);border:1px solid #fde68a;border-radius:6px;padding:3px 10px;font-size:.72rem;font-weight:800;display:none}
 .filter-badge.show{display:inline-block}
-
 #dashboard{display:none}
 .sec-title{font-size:.78rem;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:.85rem;display:flex;align-items:center;gap:.5rem}
 .sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
-
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.85rem;margin-bottom:1.5rem}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.95rem 1.05rem;box-shadow:var(--shadow);position:relative;overflow:hidden}
 .stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 10px 10px}
-.sc-blue::after{background:var(--accent)} .sc-cyan::after{background:var(--accent2)}
-.sc-red::after{background:var(--danger)} .sc-green::after{background:var(--success)}
-.sc-amber::after{background:var(--warning)}
+.sc-blue::after{background:var(--accent)}.sc-cyan::after{background:var(--accent2)}
+.sc-red::after{background:var(--danger)}.sc-green::after{background:var(--success)}.sc-amber::after{background:var(--warning)}
 .stat-lbl{font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:.25rem}
 .stat-val{font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:500;color:var(--text);line-height:1.15}
 .stat-sub{font-size:.68rem;color:var(--text3);margin-top:.2rem}
-
 .chart-section{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.2rem 1.4rem;box-shadow:var(--shadow);margin-bottom:1.5rem;display:none}
 .chart-section.show{display:block}
 .chart-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
 .chart-legend{display:flex;gap:1rem;flex-wrap:wrap}
 .cleg{display:flex;align-items:center;gap:.35rem;font-size:.75rem;font-weight:700;color:var(--text2)}
 .cleg-dot{width:12px;height:12px;border-radius:3px}
-.chart-wrap{position:relative;height:320px}
-
 .day-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.4rem}
 .panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow)}
 .panel-head{padding:.65rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:.8rem}
@@ -105,24 +83,17 @@ header{background:var(--surface);border-bottom:1px solid var(--border);padding:0
 .tb1{background:rgba(37,99,235,.12);color:var(--accent)}
 .tb2{background:rgba(8,145,178,.12);color:var(--accent2)}
 .tbl-wrap{max-height:260px;overflow-y:auto}
-
 table{width:100%;border-collapse:collapse;font-size:.77rem}
 th{background:var(--surface2);padding:.48rem .8rem;text-align:left;font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--text2);position:sticky;top:0;z-index:2;border-bottom:1px solid var(--border)}
 td{padding:.42rem .8rem;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:#f8fafc}
-
 .raw-diff-row td{background:#fff7ed !important}
 .raw-diff-row td:first-child{border-left:3px solid var(--warning)}
-.raw-diff-row .diff-amount{color:var(--warning);font-weight:700}
-
 .raw-mismatch-row td{background:#fef2f2 !important}
 .raw-mismatch-row td:first-child{border-left:3px solid var(--danger)}
-.raw-mismatch-row .diff-amount{color:var(--danger);font-weight:700}
-
 .diff-flag{display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:var(--danger);border-radius:4px;padding:1px 6px;font-size:.65rem;font-weight:800;font-family:'Nunito',sans-serif;margin-left:4px;vertical-align:middle}
 .warn-flag{display:inline-flex;align-items:center;gap:3px;background:#ffedd5;color:#c2410c;border-radius:4px;padding:1px 6px;font-size:.65rem;font-weight:800;font-family:'Nunito',sans-serif;margin-left:4px;vertical-align:middle}
-
 .cmp-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:1.4rem}
 .cmp-head{padding:.85rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
 .row-match td{background:#f0fdf4}
@@ -134,8 +105,7 @@ tr:hover td{background:#f8fafc}
 .b-diff{background:#fee2e2;color:var(--danger)}
 .diff-ok{color:var(--success);font-weight:700}
 .diff-bad{color:var(--danger);font-weight:700}
-.c-blue{color:var(--accent)} .c-cyan{color:var(--accent2)}
-
+.c-blue{color:var(--accent)}.c-cyan{color:var(--accent2)}
 .tab-bar{display:flex;gap:.4rem;flex:1;flex-wrap:wrap;margin:0}
 .tab-btn{padding:.32rem .8rem;border-radius:6px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-size:.75rem;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Nunito',sans-serif}
 .tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
@@ -145,33 +115,28 @@ tr:hover td{background:#f8fafc}
 .chip-b{background:var(--accent-light);color:var(--accent)}
 .chip-g{background:#dcfce7;color:var(--success)}
 .chip-r{background:#fee2e2;color:var(--danger)}
-
 .dl-btn{padding:.35rem .9rem;border-radius:7px;background:var(--success-light);border:1.5px solid #6ee7b7;color:var(--success);font-size:.75rem;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;display:inline-flex;align-items:center;gap:.3rem;transition:all .15s;white-space:nowrap}
 .dl-btn:hover{background:var(--success);color:#fff;border-color:var(--success)}
-
 .img-dl-btn{padding:.35rem 1rem;border-radius:7px;background:#fdf4ff;border:1.5px solid #d8b4fe;color:#7c3aed;font-size:.75rem;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;display:inline-flex;align-items:center;gap:.3rem;transition:all .15s;white-space:nowrap}
 .img-dl-btn:hover{background:#7c3aed;color:#fff;border-color:#7c3aed}
 .img-dl-btn:disabled{opacity:.5;cursor:wait}
-
+.pdf-dl-btn{padding:.35rem 1rem;border-radius:7px;background:#fff1f2;border:1.5px solid #fda4af;color:#e11d48;font-size:.75rem;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;display:inline-flex;align-items:center;gap:.3rem;transition:all .15s;white-space:nowrap}
+.pdf-dl-btn:hover{background:#e11d48;color:#fff;border-color:#e11d48}
+.pdf-dl-btn:disabled{opacity:.5;cursor:wait}
 .chart-dl-btn{padding:.35rem 1rem;border-radius:7px;background:#eff6ff;border:1.5px solid #93c5fd;color:var(--accent);font-size:.75rem;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;display:inline-flex;align-items:center;gap:.3rem;transition:all .15s}
 .chart-dl-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
-
 .raw-legend{display:flex;gap:1rem;margin-bottom:.6rem;flex-wrap:wrap}
 .rl{display:flex;align-items:center;gap:.35rem;font-size:.72rem;font-weight:700;color:var(--text2)}
 .rl-box{width:12px;height:12px;border-radius:3px}
-
 .raw-section-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.6rem}
-
+.raw-section-btns{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
 .raw-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
 .empty{text-align:center;padding:1.8rem;color:var(--text3);font-size:.8rem}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--surface2)}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-
-/* Snapshot-specific styles (applied during image capture) */
+/* Snap styles for image export */
 .snap-wrap{background:#fff;padding:20px;font-family:'Nunito',sans-serif}
-.snap-title{font-size:16px;font-weight:800;color:#1e293b;margin-bottom:4px}
-.snap-sub{font-size:11px;color:#64748b;margin-bottom:14px}
 .snap-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .snap-panel{border:1px solid #e2e8f0;border-radius:10px;overflow:hidden}
 .snap-ph{padding:8px 12px;font-size:11px;font-weight:800;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center}
@@ -191,17 +156,10 @@ tr:hover td{background:#f8fafc}
 .snap-legend{display:flex;gap:14px;margin-bottom:12px;flex-wrap:wrap}
 .snap-rl{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:#64748b}
 .snap-rl-box{width:10px;height:10px;border-radius:2px}
-.snap-footer{margin-top:12px;font-size:9px;color:#94a3b8;text-align:right}
-
-@media(max-width:780px){
-  .upload-grid,.day-grid,.raw-grid{grid-template-columns:1fr}
-  .main{padding:1rem}
-  header{padding:0 1rem}
-}
+@media(max-width:780px){.upload-grid,.day-grid,.raw-grid{grid-template-columns:1fr}.main{padding:1rem}header{padding:0 1rem}}
 </style>
 </head>
 <body>
-
 <header>
   <div class="logo">
     <div class="logo-icon">⛽</div>
@@ -219,21 +177,21 @@ tr:hover td{background:#f8fafc}
   <div class="upload-section">
     <div class="upload-grid">
       <div class="upload-card f1" id="card1">
-        <div class="card-head"><div class="card-num">1</div><div class="card-title">Internal Records (File 1)</div></div>
+        <div class="card-head"><div class="card-num">1</div><div class="card-title">Asset (File 1)</div></div>
         <div class="col-tags">
           <span class="col-tag">Vehicle No</span><span class="col-tag">Payment Date</span>
           <span class="col-tag">Fuel Ltr</span><span class="col-tag">Cost Per Ltr</span><span class="col-tag">Fuel Amount</span>
         </div>
-        <button class="pick-btn" id="btn1">📂 Choose File 1</button>
+        <button class="pick-btn" id="btn1">📂 Choose Asset File</button>
         <div class="file-status" id="status1"></div>
       </div>
       <div class="upload-card f2" id="card2">
-        <div class="card-head"><div class="card-num">2</div><div class="card-title">Bank / Raw Transactions (File 2)</div></div>
+        <div class="card-head"><div class="card-num">2</div><div class="card-title">IOCL OTP (File 2)</div></div>
         <div class="col-tags">
           <span class="col-tag">Txn Date</span><span class="col-tag">Merchant Name</span>
           <span class="col-tag">RSP</span><span class="col-tag">Quantity</span><span class="col-tag">Amount</span>
         </div>
-        <button class="pick-btn" id="btn2">📂 Choose File 2</button>
+        <button class="pick-btn" id="btn2">📂 Choose IOCL OTP File</button>
         <div class="file-status" id="status2"></div>
       </div>
     </div>
@@ -253,7 +211,6 @@ tr:hover td{background:#f8fafc}
   </div>
 
   <div id="dashboard">
-
     <div class="sec-title">📊 Overview</div>
     <div class="stats-grid" id="statsGrid"></div>
 
@@ -261,25 +218,25 @@ tr:hover td{background:#f8fafc}
       <div class="chart-title-row">
         <div class="sec-title" style="margin:0;flex:1">📈 Date-wise Amount Comparison (Bar Chart)</div>
         <div class="chart-legend">
-          <div class="cleg"><div class="cleg-dot" style="background:#3b82f6"></div>File 1 Amount</div>
-          <div class="cleg"><div class="cleg-dot" style="background:#06b6d4"></div>File 2 Amount</div>
+          <div class="cleg"><div class="cleg-dot" style="background:#3b82f6"></div>Asset Amount</div>
+          <div class="cleg"><div class="cleg-dot" style="background:#06b6d4"></div>IOCL OTP Amount</div>
           <div class="cleg"><div class="cleg-dot" style="background:#f97316"></div>Difference</div>
         </div>
         <button class="chart-dl-btn" id="dlChartBtn">⬇ Download Chart (PNG)</button>
       </div>
-      <div class="chart-wrap" style="position:relative;height:420px"><canvas id="barChart"></canvas></div>
+      <div style="position:relative;height:420px"><canvas id="barChart"></canvas></div>
     </div>
 
     <div class="sec-title">📅 Per Day Summary</div>
     <div class="day-grid">
       <div class="panel">
-        <div class="panel-head ph1"><span>File 1 — Per Day</span><span class="total-badge tb1" id="badge1">₹0</span></div>
+        <div class="panel-head ph1"><span>Asset — Per Day</span><span class="total-badge tb1" id="badge1">₹0</span></div>
         <div class="tbl-wrap">
           <table id="dt1"><thead><tr><th>Date</th><th>Entries</th><th>Fuel (L)</th><th>Amount</th></tr></thead><tbody></tbody></table>
         </div>
       </div>
       <div class="panel">
-        <div class="panel-head ph2"><span>File 2 — Per Day</span><span class="total-badge tb2" id="badge2">₹0</span></div>
+        <div class="panel-head ph2"><span>IOCL OTP — Per Day</span><span class="total-badge tb2" id="badge2">₹0</span></div>
         <div class="tbl-wrap">
           <table id="dt2"><thead><tr><th>Date</th><th>Txns</th><th>Qty</th><th>Amount</th></tr></thead><tbody></tbody></table>
         </div>
@@ -298,7 +255,7 @@ tr:hover td{background:#f8fafc}
       </div>
       <div class="tbl-wrap" style="max-height:360px">
         <table>
-          <thead><tr><th>Date</th><th>F1 Entries</th><th>F1 Amount (₹)</th><th>F2 Txns</th><th>F2 Amount (₹)</th><th>Difference</th><th>Status</th></tr></thead>
+          <thead><tr><th>Date</th><th>Asset Entries</th><th>Asset Amount (₹)</th><th>IOCL OTP Txns</th><th>IOCL OTP Amount (₹)</th><th>Difference</th><th>Status</th></tr></thead>
           <tbody id="cmpBody"></tbody>
         </table>
       </div>
@@ -307,17 +264,20 @@ tr:hover td{background:#f8fafc}
     <!-- RAW DATA SECTION -->
     <div class="raw-section-header">
       <div class="sec-title" style="margin:0;flex:1">📋 All Records (Differences Highlighted)</div>
-      <button class="img-dl-btn" id="dlRawImageBtn">🖼 Download Combined Image (PNG)</button>
+      <div class="raw-section-btns">
+        <button class="img-dl-btn" id="dlRawImageBtn">🖼 Download Image (PNG)</button>
+        <button class="pdf-dl-btn" id="dlRawPdfBtn">📄 Download PDF</button>
+      </div>
     </div>
     <div class="raw-legend">
-      <div class="rl"><div class="rl-box" style="background:#fef2f2;border:2px solid #dc2626"></div> Amount Mismatch on this date</div>
-      <div class="rl"><div class="rl-box" style="background:#fff7ed;border:2px solid #f97316"></div> Date exists only in one file</div>
-      <div class="rl"><div class="rl-box" style="background:#f0fdf4;border:2px solid #059669"></div> Matching date</div>
+      <div class="rl"><div class="rl-box" style="background:#fef2f2;border:2px solid #dc2626"></div> Amount Mismatch</div>
+      <div class="rl"><div class="rl-box" style="background:#fff7ed;border:2px solid #f97316"></div> Date only in one file</div>
+      <div class="rl"><div class="rl-box" style="background:#f0fdf4;border:2px solid #059669"></div> Matching</div>
     </div>
     <div class="raw-grid">
       <div class="panel">
         <div class="panel-head ph-plain">
-          <span>File 1 — All Records</span>
+          <span>Asset — All Records</span>
           <button class="dl-btn" id="dlRaw1">⬇ Excel</button>
         </div>
         <div class="tbl-wrap" style="max-height:420px">
@@ -326,7 +286,7 @@ tr:hover td{background:#f8fafc}
       </div>
       <div class="panel">
         <div class="panel-head ph-plain">
-          <span>File 2 — All Records</span>
+          <span>IOCL OTP — All Records</span>
           <button class="dl-btn" id="dlRaw2">⬇ Excel</button>
         </div>
         <div class="tbl-wrap" style="max-height:420px">
@@ -334,25 +294,22 @@ tr:hover td{background:#f8fafc}
         </div>
       </div>
     </div>
-
   </div>
 </div>
 
-<!-- Hidden snapshot container for image generation -->
+<!-- Hidden snapshot container -->
 <div id="snapContainer" style="position:fixed;left:-9999px;top:0;width:1400px;background:#fff;z-index:-1"></div>
 
 <script>
+/* ── STATE ── */
 var data1=[],data2=[];
 var cmpRows=[];
 var activeFilter='all';
 var filterFrom=null,filterTo=null,isFiltered=false;
 var barChartInst=null;
-/* Store per-record statuses for image export */
-var lastRow1Status=[];
-var lastRow2Status=[];
-var lastD1=[];
-var lastD2=[];
+var lastRow1Status=[],lastRow2Status=[],lastD1=[],lastD2=[];
 
+/* ── WIRE-UP ── */
 document.getElementById('btn1').addEventListener('click',function(e){e.preventDefault();document.getElementById('file1Input').click();});
 document.getElementById('btn2').addEventListener('click',function(e){e.preventDefault();document.getElementById('file2Input').click();});
 document.getElementById('file1Input').addEventListener('change',function(){if(this.files[0])loadFile(this.files[0],1);});
@@ -364,44 +321,37 @@ document.getElementById('dlDiffBtn').addEventListener('click',function(){downloa
 document.getElementById('dlRaw1').addEventListener('click',function(){downloadRawExcel(1);});
 document.getElementById('dlRaw2').addEventListener('click',function(){downloadRawExcel(2);});
 document.getElementById('dlRawImageBtn').addEventListener('click',function(){downloadCombinedImage();});
-
+document.getElementById('dlRawPdfBtn').addEventListener('click',function(){downloadCombinedPDF();});
 document.querySelectorAll('.tab-btn').forEach(function(btn){
   btn.addEventListener('click',function(){
     document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
-    this.classList.add('active');
-    activeFilter=this.getAttribute('data-f');
-    renderCmpTable();
+    this.classList.add('active');activeFilter=this.getAttribute('data-f');renderCmpTable();
   });
 });
 
+/* ── HELPERS ── */
 function parseDate(v){
   if(v===null||v===undefined||v==='') return null;
   if(typeof v==='number'){var d=new Date(Math.round((v-25569)*86400000));return isoDate(d);}
   var s=String(v).trim(),m;
-  m=s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
-  if(m) return m[3]+'-'+z(m[2])+'-'+z(m[1]);
-  m=s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
-  if(m) return m[1]+'-'+z(m[2])+'-'+z(m[3]);
-  var d=new Date(s);if(!isNaN(d)) return isoDate(d);
-  return null;
+  m=s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);if(m) return m[3]+'-'+z(m[2])+'-'+z(m[1]);
+  m=s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);if(m) return m[1]+'-'+z(m[2])+'-'+z(m[3]);
+  var d=new Date(s);if(!isNaN(d)) return isoDate(d);return null;
 }
 function isoDate(d){return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());}
 function z(n){return String(n).padStart(2,'0');}
 function dd(iso){if(!iso) return '';var p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
 function toN(v){if(v===undefined||v===null||v==='') return 0;return parseFloat(String(v).replace(/[^0-9.\-]/g,''))||0;}
-function fmt(n){return '₹'+Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmt(n){return 'Rs.'+Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtN(n){return Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
-
 function findCol(row,cands){
   var keys=Object.keys(row);
   for(var i=0;i<cands.length;i++){
     var c=cands[i].toLowerCase().replace(/[\s_\-]/g,'').replace(/[^a-z0-9]/g,'');
     var f=keys.find(function(k){var kn=k.toLowerCase().replace(/[\s_\-]/g,'').replace(/[^a-z0-9]/g,'');return kn===c||kn.includes(c)||c.includes(kn);});
     if(f) return f;
-  }
-  return null;
+  }return null;
 }
-
 function processFile1(raw){
   return raw.map(function(row){
     var dc=findCol(row,['Payment Date','PaymentDate','Date']);
@@ -412,7 +362,6 @@ function processFile1(raw){
     return{vehicleNo:vc?String(row[vc]).trim():'',date:parseDate(dc?row[dc]:''),fuelLtr:toN(fc?row[fc]:0),costPerLtr:toN(rc?row[rc]:0),amount:toN(ac?row[ac]:0)};
   }).filter(function(r){return r.date;});
 }
-
 function processFile2(raw){
   return raw.map(function(row){
     var dc=findCol(row,['Txn Date','TxnDate','Date','Transaction Date']);
@@ -423,7 +372,6 @@ function processFile2(raw){
     return{date:parseDate(dc?row[dc]:''),merchant:mc?String(row[mc]).trim():'',rsp:toN(rc?row[rc]:0),quantity:toN(qc?row[qc]:0),amount:toN(ac?row[ac]:0)};
   }).filter(function(r){return r.date;});
 }
-
 function loadFile(file,num){
   var reader=new FileReader();
   reader.onload=function(e){
@@ -436,23 +384,17 @@ function loadFile(file,num){
   };
   reader.readAsBinaryString(file);
 }
-
 function applyDateFilter(){
-  var from=document.getElementById('dateFrom').value;
-  var to=document.getElementById('dateTo').value;
+  var from=document.getElementById('dateFrom').value,to=document.getElementById('dateTo').value;
   if(!from&&!to){resetDateFilter();return;}
   filterFrom=from||null;filterTo=to||null;isFiltered=true;
-  var badge=document.getElementById('filterBadge');
-  badge.classList.add('show');
-  badge.textContent=(from?dd(from):'...')+' → '+(to?dd(to):'...');
-  rebuildAll();
+  var badge=document.getElementById('filterBadge');badge.classList.add('show');
+  badge.textContent=(from?dd(from):'...')+' -> '+(to?dd(to):'...');rebuildAll();
 }
 function resetDateFilter(){
   filterFrom=null;filterTo=null;isFiltered=false;
-  document.getElementById('dateFrom').value='';
-  document.getElementById('dateTo').value='';
-  document.getElementById('filterBadge').classList.remove('show');
-  rebuildAll();
+  document.getElementById('dateFrom').value='';document.getElementById('dateTo').value='';
+  document.getElementById('filterBadge').classList.remove('show');rebuildAll();
 }
 function filteredData(){
   if(!isFiltered) return{d1:data1,d2:data2};
@@ -461,36 +403,25 @@ function filteredData(){
     d2:data2.filter(function(r){return(!filterFrom||r.date>=filterFrom)&&(!filterTo||r.date<=filterTo);})
   };
 }
-
 function runCompare(){
   document.getElementById('dashboard').style.display='block';
   document.getElementById('filterBar').classList.add('show');
   rebuildAll();
   document.getElementById('dashboard').scrollIntoView({behavior:'smooth',block:'start'});
 }
-
 function rebuildAll(){
   var fd=filteredData();
-  buildStats(fd.d1,fd.d2);
-  buildDayTables(fd.d1,fd.d2);
-  buildCmpRows(fd.d1,fd.d2);
-  renderCmpTable();
-  buildRawTables(fd.d1,fd.d2);
-  buildBarChart(fd.d1,fd.d2);
+  buildStats(fd.d1,fd.d2);buildDayTables(fd.d1,fd.d2);buildCmpRows(fd.d1,fd.d2);
+  renderCmpTable();buildRawTables(fd.d1,fd.d2);buildBarChart(fd.d1,fd.d2);
 }
-
 function groupByDate(data){
   var map={};
   data.forEach(function(r){
     if(!r.date) return;
     if(!map[r.date]) map[r.date]={entries:[],total:0,qty:0};
-    map[r.date].entries.push(r);
-    map[r.date].total+=r.amount||0;
-    map[r.date].qty+=(r.fuelLtr||r.quantity||0);
-  });
-  return map;
+    map[r.date].entries.push(r);map[r.date].total+=r.amount||0;map[r.date].qty+=(r.fuelLtr||r.quantity||0);
+  });return map;
 }
-
 function buildStats(d1,d2){
   var t1=d1.reduce(function(s,r){return s+r.amount;},0);
   var t2=d2.reduce(function(s,r){return s+r.amount;},0);
@@ -498,75 +429,47 @@ function buildStats(d1,d2){
   var g1=groupByDate(d1);var g2=groupByDate(d2);
   var days1=Math.max(Object.keys(g1).length,1);var days2=Math.max(Object.keys(g2).length,1);
   var h='';
-  h+=sc('sc-blue','File 1 Total Amount',fmt(t1),d1.length+' transactions');
-  h+=sc('sc-cyan','File 2 Total Amount',fmt(t2),d2.length+' transactions');
-  h+=sc(Math.abs(diff)<0.01?'sc-green':'sc-red','Overall Difference',(diff>=0?'+':'')+fmt(diff),Math.abs(diff)<0.01?'Files balance ✓':'Discrepancy found');
-  h+=sc('sc-blue','Avg Daily — File 1',fmt(t1/days1),'per active day');
-  h+=sc('sc-cyan','Avg Daily — File 2',fmt(t2/days2),'per active day');
-  h+=sc('sc-amber','Total Fuel (Ltr)',d1.reduce(function(s,r){return s+r.fuelLtr;},0).toFixed(1)+' L','from File 1');
+  h+=sc('sc-blue','Asset Total Amount',fmt(t1),d1.length+' transactions');
+  h+=sc('sc-cyan','IOCL OTP Total Amount',fmt(t2),d2.length+' transactions');
+  h+=sc(Math.abs(diff)<0.01?'sc-green':'sc-red','Overall Difference',(diff>=0?'+':'')+fmt(diff),Math.abs(diff)<0.01?'Files balance':'Discrepancy found');
+  h+=sc('sc-blue','Avg Daily — Asset',fmt(t1/days1),'per active day');
+  h+=sc('sc-cyan','Avg Daily — IOCL OTP',fmt(t2/days2),'per active day');
+  h+=sc('sc-amber','Total Fuel (Ltr)',d1.reduce(function(s,r){return s+r.fuelLtr;},0).toFixed(1)+' L','from Asset');
   document.getElementById('statsGrid').innerHTML=h;
 }
 function sc(cls,lbl,val,sub){return '<div class="stat-card '+cls+'"><div class="stat-lbl">'+lbl+'</div><div class="stat-val">'+val+'</div><div class="stat-sub">'+sub+'</div></div>';}
-
 function buildBarChart(d1,d2){
   var g1=groupByDate(d1);var g2=groupByDate(d2);
   var allDates={};
-  Object.keys(g1).forEach(function(d){allDates[d]=1;});
-  Object.keys(g2).forEach(function(d){allDates[d]=1;});
+  Object.keys(g1).forEach(function(d){allDates[d]=1;});Object.keys(g2).forEach(function(d){allDates[d]=1;});
   var dates=Object.keys(allDates).sort();
   var section=document.getElementById('chartSection');
-  if(!dates.length){section.classList.remove('show');return;}
-  section.classList.add('show');
+  if(!dates.length){section.classList.remove('show');return;}section.classList.add('show');
   var labels=dates.map(function(d){return dd(d);});
   var f1Vals=dates.map(function(d){return g1[d]?parseFloat(g1[d].total.toFixed(2)):0;});
   var f2Vals=dates.map(function(d){return g2[d]?parseFloat(g2[d].total.toFixed(2)):0;});
   var diffVals=dates.map(function(d,i){return parseFloat(Math.abs(f1Vals[i]-f2Vals[i]).toFixed(2));});
   if(barChartInst){barChartInst.destroy();barChartInst=null;}
   if(window.ChartDataLabels) Chart.register(ChartDataLabels);
-  function shortAmt(v){
-    if(v===0) return '';
-    if(v>=100000) return '₹'+(v/100000).toFixed(1)+'L';
-    if(v>=1000)   return '₹'+(v/1000).toFixed(1)+'K';
-    return '₹'+v.toFixed(0);
-  }
+  function shortAmt(v){if(v===0) return '';if(v>=100000) return 'Rs.'+(v/100000).toFixed(1)+'L';if(v>=1000) return 'Rs.'+(v/1000).toFixed(1)+'K';return 'Rs.'+v.toFixed(0);}
   var ctx=document.getElementById('barChart').getContext('2d');
-  barChartInst=new Chart(ctx,{
-    type:'bar',
-    data:{
-      labels:labels,
-      datasets:[
-        {label:'File 1 Amount (₹)',data:f1Vals,backgroundColor:'rgba(59,130,246,0.78)',borderColor:'rgba(37,99,235,1)',borderWidth:1.5,borderRadius:5,borderSkipped:false},
-        {label:'File 2 Amount (₹)',data:f2Vals,backgroundColor:'rgba(6,182,212,0.78)',borderColor:'rgba(8,145,178,1)',borderWidth:1.5,borderRadius:5,borderSkipped:false},
-        {label:'Difference (₹)',data:diffVals,backgroundColor:'rgba(249,115,22,0.82)',borderColor:'rgba(234,88,12,1)',borderWidth:1.5,borderRadius:5,borderSkipped:false}
-      ]
-    },
-    options:{
-      responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      layout:{padding:{top:32}},
-      plugins:{
-        legend:{display:true,position:'top',labels:{color:'#475569',font:{size:12,weight:'700',family:'Nunito'},padding:18,usePointStyle:true,pointStyleWidth:12}},
-        tooltip:{backgroundColor:'rgba(15,23,42,0.93)',titleColor:'#f1f5f9',bodyColor:'#cbd5e1',padding:14,cornerRadius:10,callbacks:{label:function(c){if(c.raw===0) return null;return '  '+c.dataset.label+': ₹'+Number(c.raw).toLocaleString('en-IN',{minimumFractionDigits:2});}}},
-        datalabels:window.ChartDataLabels?{display:function(ctx){return ctx.dataset.data[ctx.dataIndex]>0;},anchor:'end',align:'end',offset:2,formatter:function(value){return shortAmt(value);},font:{size:10,weight:'700',family:'JetBrains Mono'},color:function(ctx){var colors=['#1d4ed8','#0e7490','#c2410c'];return colors[ctx.datasetIndex]||'#334155';},rotation:dates.length>8?-60:0}:false
-      },
-      scales:{
-        x:{grid:{color:'rgba(226,232,240,0.5)',drawBorder:false},ticks:{color:'#64748b',font:{size:11,family:'JetBrains Mono'},maxRotation:dates.length>6?45:0,minRotation:0}},
-        y:{grid:{color:'rgba(226,232,240,0.5)',drawBorder:false},ticks:{color:'#64748b',font:{size:11,family:'Nunito'},callback:function(v){if(v>=100000) return '₹'+(v/100000).toFixed(0)+'L';if(v>=1000) return '₹'+(v/1000).toFixed(0)+'K';return '₹'+v;}}}
-      }
-    }
-  });
-  var dlBtn=document.getElementById('dlChartBtn');
-  dlBtn.onclick=function(){
-    var orig=document.getElementById('barChart');
-    var tempCanvas=document.createElement('canvas');
+  barChartInst=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[
+    {label:'Asset Amount (Rs.)',data:f1Vals,backgroundColor:'rgba(59,130,246,0.78)',borderColor:'rgba(37,99,235,1)',borderWidth:1.5,borderRadius:5,borderSkipped:false},
+    {label:'IOCL OTP Amount (Rs.)',data:f2Vals,backgroundColor:'rgba(6,182,212,0.78)',borderColor:'rgba(8,145,178,1)',borderWidth:1.5,borderRadius:5,borderSkipped:false},
+    {label:'Difference (Rs.)',data:diffVals,backgroundColor:'rgba(249,115,22,0.82)',borderColor:'rgba(234,88,12,1)',borderWidth:1.5,borderRadius:5,borderSkipped:false}
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},layout:{padding:{top:32}},
+    plugins:{legend:{display:true,position:'top',labels:{color:'#475569',font:{size:12,weight:'700',family:'Nunito'},padding:18,usePointStyle:true,pointStyleWidth:12}},
+      tooltip:{backgroundColor:'rgba(15,23,42,0.93)',titleColor:'#f1f5f9',bodyColor:'#cbd5e1',padding:14,cornerRadius:10,callbacks:{label:function(c){if(c.raw===0) return null;return '  '+c.dataset.label+': Rs.'+Number(c.raw).toLocaleString('en-IN',{minimumFractionDigits:2});}}},
+      datalabels:window.ChartDataLabels?{display:function(ctx){return ctx.dataset.data[ctx.dataIndex]>0;},anchor:'end',align:'end',offset:2,formatter:function(value){return shortAmt(value);},font:{size:10,weight:'700',family:'JetBrains Mono'},color:function(ctx){var colors=['#1d4ed8','#0e7490','#c2410c'];return colors[ctx.datasetIndex]||'#334155';},rotation:dates.length>8?-60:0}:false},
+    scales:{x:{grid:{color:'rgba(226,232,240,0.5)'},ticks:{color:'#64748b',font:{size:11,family:'JetBrains Mono'},maxRotation:dates.length>6?45:0}},
+      y:{grid:{color:'rgba(226,232,240,0.5)'},ticks:{color:'#64748b',font:{size:11,family:'Nunito'},callback:function(v){if(v>=100000) return 'Rs.'+(v/100000).toFixed(0)+'L';if(v>=1000) return 'Rs.'+(v/1000).toFixed(0)+'K';return 'Rs.'+v;}}}}}});
+  document.getElementById('dlChartBtn').onclick=function(){
+    var orig=document.getElementById('barChart');var tempCanvas=document.createElement('canvas');
     tempCanvas.width=orig.width;tempCanvas.height=orig.height;
-    var tctx=tempCanvas.getContext('2d');
-    tctx.fillStyle='#ffffff';tctx.fillRect(0,0,tempCanvas.width,tempCanvas.height);
-    tctx.drawImage(orig,0,0);
-    var link=document.createElement('a');
-    link.download='FuelCheck_Chart.png';link.href=tempCanvas.toDataURL('image/png');link.click();
+    var tctx=tempCanvas.getContext('2d');tctx.fillStyle='#ffffff';tctx.fillRect(0,0,tempCanvas.width,tempCanvas.height);tctx.drawImage(orig,0,0);
+    var link=document.createElement('a');link.download='FuelCheck_Chart.png';link.href=tempCanvas.toDataURL('image/png');link.click();
   };
 }
-
 function buildDayTables(d1,d2){
   var g1=groupByDate(d1);var tb1=document.querySelector('#dt1 tbody');tb1.innerHTML='';var t1=0;
   Object.keys(g1).sort().forEach(function(d){var g=g1[d];t1+=g.total;tb1.innerHTML+='<tr><td>'+dd(d)+'</td><td>'+g.entries.length+'</td><td>'+g.qty.toFixed(2)+'</td><td class="c-blue">'+fmt(g.total)+'</td></tr>';});
@@ -577,26 +480,18 @@ function buildDayTables(d1,d2){
   if(!Object.keys(g2).length) tb2.innerHTML='<tr><td colspan="4" class="empty">No data</td></tr>';
   document.getElementById('badge2').textContent=fmt(t2);
 }
-
 function buildCmpRows(d1,d2){
-  var g1=groupByDate(d1);var g2=groupByDate(d2);
-  var allDates={};
-  Object.keys(g1).forEach(function(d){allDates[d]=1;});
-  Object.keys(g2).forEach(function(d){allDates[d]=1;});
+  var g1=groupByDate(d1);var g2=groupByDate(d2);var allDates={};
+  Object.keys(g1).forEach(function(d){allDates[d]=1;});Object.keys(g2).forEach(function(d){allDates[d]=1;});
   cmpRows=[];
   Object.keys(allDates).sort().forEach(function(d){
-    var f1=g1[d]||{entries:[],total:0,qty:0};
-    var f2=g2[d]||{entries:[],total:0,qty:0};
+    var f1=g1[d]||{entries:[],total:0,qty:0};var f2=g2[d]||{entries:[],total:0,qty:0};
     var diff=f1.total-f2.total;
     cmpRows.push({date:d,f1Count:f1.entries.length,f1Amt:f1.total,f2Count:f2.entries.length,f2Amt:f2.total,diff:diff,status:Math.abs(diff)<0.01?'match':'diff'});
   });
-  var all=cmpRows.length;
-  var match=cmpRows.filter(function(r){return r.status==='match';}).length;
-  document.getElementById('cntAll').textContent=all;
-  document.getElementById('cntMatch').textContent=match;
-  document.getElementById('cntDiff').textContent=all-match;
+  var all=cmpRows.length;var match=cmpRows.filter(function(r){return r.status==='match';}).length;
+  document.getElementById('cntAll').textContent=all;document.getElementById('cntMatch').textContent=match;document.getElementById('cntDiff').textContent=all-match;
 }
-
 function renderCmpTable(){
   var rows=cmpRows;
   if(activeFilter==='match') rows=rows.filter(function(r){return r.status==='match';});
@@ -610,89 +505,53 @@ function renderCmpTable(){
     return '<tr class="'+cls+'"><td>'+dd(r.date)+'</td><td>'+r.f1Count+'</td><td class="c-blue">'+fmtN(r.f1Amt)+'</td><td>'+r.f2Count+'</td><td class="c-cyan">'+fmtN(r.f2Amt)+'</td><td>'+dh+'</td><td>'+badge+'</td></tr>';
   }).join('');
 }
-
-/* ── compute per-record statuses and return them ── */
 function computeStatuses(d1,d2){
-  var g1=groupByDate(d1);
-  var g2=groupByDate(d2);
-  function makeFreq(grp){
-    var map={};
-    Object.keys(grp).forEach(function(dt){
-      var freq={};
-      grp[dt].entries.forEach(function(r){var key=Math.round(r.amount*100);freq[key]=(freq[key]||0)+1;});
-      map[dt]=freq;
-    });
-    return map;
-  }
+  var g1=groupByDate(d1);var g2=groupByDate(d2);
+  function makeFreq(grp){var map={};Object.keys(grp).forEach(function(dt){var freq={};grp[dt].entries.forEach(function(r){var key=Math.round(r.amount*100);freq[key]=(freq[key]||0)+1;});map[dt]=freq;});return map;}
   var f2Used=JSON.parse(JSON.stringify(makeFreq(g2)));
   var row1Status=d1.map(function(r){
-    if(!g2[r.date]) return 'only1';
-    var key=Math.round(r.amount*100);
-    if(f2Used[r.date]&&f2Used[r.date][key]>0){f2Used[r.date][key]--;return 'match';}
-    return 'diff';
+    if(!g2[r.date]) return 'only1';var key=Math.round(r.amount*100);
+    if(f2Used[r.date]&&f2Used[r.date][key]>0){f2Used[r.date][key]--;return 'match';}return 'diff';
   });
   var f1Used=JSON.parse(JSON.stringify(makeFreq(g1)));
   var row2Status=d2.map(function(r){
-    if(!g1[r.date]) return 'only2';
-    var key=Math.round(r.amount*100);
-    if(f1Used[r.date]&&f1Used[r.date][key]>0){f1Used[r.date][key]--;return 'match';}
-    return 'diff';
+    if(!g1[r.date]) return 'only2';var key=Math.round(r.amount*100);
+    if(f1Used[r.date]&&f1Used[r.date][key]>0){f1Used[r.date][key]--;return 'match';}return 'diff';
   });
   return{row1Status:row1Status,row2Status:row2Status};
 }
-
 function buildRawTables(d1,d2){
   var statuses=computeStatuses(d1,d2);
-  lastRow1Status=statuses.row1Status;
-  lastRow2Status=statuses.row2Status;
-  lastD1=d1;
-  lastD2=d2;
-
+  lastRow1Status=statuses.row1Status;lastRow2Status=statuses.row2Status;lastD1=d1;lastD2=d2;
   var tb1=document.querySelector('#raw1 tbody');tb1.innerHTML='';
   d1.forEach(function(r,i){
-    var st=lastRow1Status[i];
-    var rowCls='',amtCls='c-blue',flag='';
+    var st=lastRow1Status[i];var rowCls='',amtCls='c-blue',flag='';
     if(st==='diff'){rowCls='raw-mismatch-row';amtCls='diff-amount';flag='<span class="diff-flag">✗ DIFF</span>';}
-    else if(st==='only1'){rowCls='raw-diff-row';amtCls='warn-amount';flag='<span class="warn-flag">⚠ Only F1</span>';}
-    tb1.innerHTML+='<tr class="'+rowCls+'"><td>'+r.vehicleNo+'</td><td>'+dd(r.date)+'</td><td>'+r.fuelLtr.toFixed(2)+'</td><td>'+fmtN(r.costPerLtr)+'</td><td class="'+amtCls+'">'+fmtN(r.amount)+flag+'</td><td>'+statusBadgeRaw(st,'1')+'</td></tr>';
+    else if(st==='only1'){rowCls='raw-diff-row';flag='<span class="warn-flag">Only Asset</span>';}
+    tb1.innerHTML+='<tr class="'+rowCls+'"><td>'+r.vehicleNo+'</td><td>'+dd(r.date)+'</td><td>'+r.fuelLtr.toFixed(2)+'</td><td>'+fmtN(r.costPerLtr)+'</td><td class="'+amtCls+'">'+fmtN(r.amount)+flag+'</td><td>'+statusBadgeRaw(st,'Asset')+'</td></tr>';
   });
   if(!d1.length) tb1.innerHTML='<tr><td colspan="6" class="empty">No data</td></tr>';
-
   var tb2=document.querySelector('#raw2 tbody');tb2.innerHTML='';
   d2.forEach(function(r,i){
-    var st=lastRow2Status[i];
-    var rowCls='',amtCls='c-cyan',flag='';
+    var st=lastRow2Status[i];var rowCls='',amtCls='c-cyan',flag='';
     if(st==='diff'){rowCls='raw-mismatch-row';amtCls='diff-amount';flag='<span class="diff-flag">✗ DIFF</span>';}
-    else if(st==='only2'){rowCls='raw-diff-row';amtCls='warn-amount';flag='<span class="warn-flag">⚠ Only F2</span>';}
-    tb2.innerHTML+='<tr class="'+rowCls+'"><td>'+dd(r.date)+'</td><td>'+r.merchant+'</td><td>'+r.rsp.toFixed(2)+'</td><td>'+r.quantity.toFixed(2)+'</td><td class="'+amtCls+'">'+fmtN(r.amount)+flag+'</td><td>'+statusBadgeRaw(st,'2')+'</td></tr>';
+    else if(st==='only2'){rowCls='raw-diff-row';flag='<span class="warn-flag">Only IOCL</span>';}
+    tb2.innerHTML+='<tr class="'+rowCls+'"><td>'+dd(r.date)+'</td><td>'+r.merchant+'</td><td>'+r.rsp.toFixed(2)+'</td><td>'+r.quantity.toFixed(2)+'</td><td class="'+amtCls+'">'+fmtN(r.amount)+flag+'</td><td>'+statusBadgeRaw(st,'IOCL')+'</td></tr>';
   });
   if(!d2.length) tb2.innerHTML='<tr><td colspan="6" class="empty">No data</td></tr>';
 }
-
-function statusBadgeRaw(st,fileNum){
+function statusBadgeRaw(st,name){
   if(st==='match') return '<span class="badge b-match">✓</span>';
   if(st==='diff')  return '<span class="badge b-diff">✗ DIFF</span>';
-  if(st==='only1'||st==='only2') return '<span style="display:inline-flex;align-items:center;padding:2px 6px;border-radius:5px;font-size:.65rem;font-weight:800;background:#ffedd5;color:#c2410c;">⚠ Only F'+fileNum+'</span>';
-  return '';
+  return '<span style="display:inline-flex;align-items:center;padding:2px 6px;border-radius:5px;font-size:.65rem;font-weight:800;background:#ffedd5;color:#c2410c;">Only '+name+'</span>';
 }
 
 /* ================================================================
-   COMBINED IMAGE DOWNLOAD
-   Builds a styled snapshot of both raw tables side-by-side
-   and captures using html2canvas
+   BUILD SNAP HTML (shared by Image and PDF)
 ================================================================ */
-function downloadCombinedImage(){
-  var btn=document.getElementById('dlRawImageBtn');
-  if(!lastD1.length&&!lastD2.length){alert('No data to export. Please compare files first.');return;}
-  btn.disabled=true;
-  btn.textContent='⏳ Generating...';
-
-  var d1=lastD1;
-  var d2=lastD2;
-  var now=new Date();
-  var dateStr=dd(isoDate(now));
-
-  /* Build summary counts */
+function buildSnapHTML(){
+  var d1=lastD1,d2=lastD2;
+  var now=new Date();var dateStr=dd(isoDate(now));
   var d1match=lastRow1Status.filter(function(s){return s==='match';}).length;
   var d1diff=lastRow1Status.filter(function(s){return s==='diff';}).length;
   var d1only=lastRow1Status.filter(function(s){return s==='only1';}).length;
@@ -703,118 +562,270 @@ function downloadCombinedImage(){
   function snapBadge(st,fn){
     if(st==='match') return '<span class="snap-badge-ok">✓ Match</span>';
     if(st==='diff')  return '<span class="snap-badge-diff">✗ Diff</span>';
-    return '<span class="snap-badge-warn">⚠ Only F'+fn+'</span>';
+    return '<span class="snap-badge-warn">Only '+fn+'</span>';
   }
-  function rowCls(st){
-    if(st==='match') return 'snap-match';
-    if(st==='diff')  return 'snap-mismatch';
-    return 'snap-warn';
-  }
+  function rowCls(st){if(st==='match') return 'snap-match';if(st==='diff') return 'snap-mismatch';return 'snap-warn';}
 
-  /* Build File 1 rows */
   var rows1='';
   d1.forEach(function(r,i){
     var st=lastRow1Status[i];
     var amtStyle=st==='diff'?'color:#dc2626;font-weight:700':st==='only1'?'color:#d97706;font-weight:700':'color:#2563eb';
-    rows1+='<tr class="'+rowCls(st)+'"><td>'+r.vehicleNo+'</td><td>'+dd(r.date)+'</td><td>'+r.fuelLtr.toFixed(2)+'</td><td>'+fmtN(r.costPerLtr)+'</td><td style="'+amtStyle+'">'+fmtN(r.amount)+'</td><td>'+snapBadge(st,'1')+'</td></tr>';
+    rows1+='<tr class="'+rowCls(st)+'"><td>'+r.vehicleNo+'</td><td>'+dd(r.date)+'</td><td>'+r.fuelLtr.toFixed(2)+'</td><td>'+fmtN(r.costPerLtr)+'</td><td style="'+amtStyle+'">'+fmtN(r.amount)+'</td><td>'+snapBadge(st,'Asset')+'</td></tr>';
   });
   if(!d1.length) rows1='<tr><td colspan="6" style="text-align:center;padding:12px;color:#94a3b8">No data</td></tr>';
 
-  /* Build File 2 rows */
   var rows2='';
   d2.forEach(function(r,i){
     var st=lastRow2Status[i];
     var amtStyle=st==='diff'?'color:#dc2626;font-weight:700':st==='only2'?'color:#d97706;font-weight:700':'color:#0891b2';
-    rows2+='<tr class="'+rowCls(st)+'"><td>'+dd(r.date)+'</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.merchant+'</td><td>'+r.rsp.toFixed(2)+'</td><td>'+r.quantity.toFixed(2)+'</td><td style="'+amtStyle+'">'+fmtN(r.amount)+'</td><td>'+snapBadge(st,'2')+'</td></tr>';
+    rows2+='<tr class="'+rowCls(st)+'"><td>'+dd(r.date)+'</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.merchant+'</td><td>'+r.rsp.toFixed(2)+'</td><td>'+r.quantity.toFixed(2)+'</td><td style="'+amtStyle+'">'+fmtN(r.amount)+'</td><td>'+snapBadge(st,'IOCL')+'</td></tr>';
   });
   if(!d2.length) rows2='<tr><td colspan="6" style="text-align:center;padding:12px;color:#94a3b8">No data</td></tr>';
 
-  var html='<div class="snap-wrap">'
+  return {html:
+    '<div class="snap-wrap">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid #e2e8f0">'
     +'<div style="display:flex;align-items:center;gap:8px">'
     +'<div style="width:28px;height:28px;background:linear-gradient(135deg,#2563eb,#0891b2);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px">⛽</div>'
-    +'<div><div style="font-size:14px;font-weight:800;color:#1e293b">FuelCheck — All Records</div>'
-    +'<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px">Transaction Comparison Report</div></div>'
+    +'<div><div style="font-size:14px;font-weight:800;color:#1e293b">FuelCheck — All Records Comparison</div>'
+    +'<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px">Asset vs IOCL OTP Transaction Report</div></div>'
     +'</div>'
-    +'<div style="font-size:10px;color:#64748b;text-align:right">Generated: '+dateStr+'<br>'
-    +'F1: '+d1.length+' records &nbsp;|&nbsp; F2: '+d2.length+' records</div>'
+    +'<div style="font-size:10px;color:#64748b;text-align:right">Generated - Vignesh: '+dateStr+'<br>Asset: '+d1.length+' records | IOCL OTP: '+d2.length+' records</div>'
     +'</div>'
-
-    /* Legend */
     +'<div class="snap-legend">'
     +'<div class="snap-rl"><div class="snap-rl-box" style="background:#f0fdf4;border:1.5px solid #059669"></div>Match</div>'
     +'<div class="snap-rl"><div class="snap-rl-box" style="background:#fef2f2;border:1.5px solid #dc2626"></div>Amount Mismatch</div>'
     +'<div class="snap-rl"><div class="snap-rl-box" style="background:#fff7ed;border:1.5px solid #f97316"></div>Only in one file</div>'
     +'</div>'
-
-    /* Summary chips */
     +'<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">'
-    +'<span style="background:#dcfce7;color:#059669;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">F1 ✓ '+d1match+' Match</span>'
-    +'<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">F1 ✗ '+d1diff+' Diff</span>'
-    +(d1only>0?'<span style="background:#ffedd5;color:#c2410c;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">F1 ⚠ '+d1only+' Only</span>':'')
-    +'<span style="background:#cffafe;color:#0891b2;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">F2 ✓ '+d2match+' Match</span>'
-    +'<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">F2 ✗ '+d2diff+' Diff</span>'
-    +(d2only>0?'<span style="background:#ffedd5;color:#c2410c;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">F2 ⚠ '+d2only+' Only</span>':'')
+    +'<span style="background:#dcfce7;color:#059669;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">Asset ✓ '+d1match+' Match</span>'
+    +'<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">Asset ✗ '+d1diff+' Diff</span>'
+    +(d1only>0?'<span style="background:#ffedd5;color:#c2410c;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">Asset Only '+d1only+'</span>':'')
+    +'<span style="background:#cffafe;color:#0891b2;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">IOCL ✓ '+d2match+' Match</span>'
+    +'<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">IOCL ✗ '+d2diff+' Diff</span>'
+    +(d2only>0?'<span style="background:#ffedd5;color:#c2410c;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">IOCL Only '+d2only+'</span>':'')
     +'</div>'
-
-    /* Side-by-side tables */
     +'<div class="snap-grid">'
-
-    /* File 1 table */
-    +'<div class="snap-panel">'
-    +'<div class="snap-ph snap-ph1">'
-    +'<span>📄 File 1 — Internal Records</span>'
-    +'<span style="font-family:monospace;font-size:9px;background:rgba(37,99,235,.12);padding:2px 7px;border-radius:10px">'+d1.length+' records</span>'
+    +'<div class="snap-panel"><div class="snap-ph snap-ph1"><span>Asset — Internal Records</span><span style="font-family:monospace;font-size:9px;background:rgba(37,99,235,.12);padding:2px 7px;border-radius:10px">'+d1.length+' records</span></div>'
+    +'<table class="snap-tbl"><thead><tr><th>Vehicle No</th><th>Date</th><th>Fuel (L)</th><th>Rate/L</th><th>Amount (Rs.)</th><th>Status</th></tr></thead><tbody>'+rows1+'</tbody></table></div>'
+    +'<div class="snap-panel"><div class="snap-ph snap-ph2"><span>IOCL OTP — Transactions</span><span style="font-family:monospace;font-size:9px;background:rgba(8,145,178,.12);padding:2px 7px;border-radius:10px">'+d2.length+' records</span></div>'
+    +'<table class="snap-tbl"><thead><tr><th>Date</th><th>Merchant</th><th>RSP</th><th>Qty</th><th>Amount (Rs.)</th><th>Status</th></tr></thead><tbody>'+rows2+'</tbody></table></div>'
     +'</div>'
-    +'<table class="snap-tbl"><thead><tr><th>Vehicle No</th><th>Date</th><th>Fuel (L)</th><th>Rate/L</th><th>Amount (₹)</th><th>Status</th></tr></thead>'
-    +'<tbody>'+rows1+'</tbody></table></div>'
+    +'<div style="margin-top:12px;font-size:9px;color:#94a3b8;text-align:right">FuelCheck Transaction Comparator — Asset vs IOCL OTP | '+dateStr+'</div>'
+    +'</div>',
+    dateStr:dateStr
+  };
+}
 
-    /* File 2 table */
-    +'<div class="snap-panel">'
-    +'<div class="snap-ph snap-ph2">'
-    +'<span>🏦 File 2 — Bank Transactions</span>'
-    +'<span style="font-family:monospace;font-size:9px;background:rgba(8,145,178,.12);padding:2px 7px;border-radius:10px">'+d2.length+' records</span>'
-    +'</div>'
-    +'<table class="snap-tbl"><thead><tr><th>Date</th><th>Merchant</th><th>RSP</th><th>Qty</th><th>Amount (₹)</th><th>Status</th></tr></thead>'
-    +'<tbody>'+rows2+'</tbody></table></div>'
+/* ================================================================
+   DOWNLOAD COMBINED IMAGE (PNG)
+================================================================ */
+function downloadCombinedImage(){
+  var btn=document.getElementById('dlRawImageBtn');
+  if(!lastD1.length&&!lastD2.length){alert('No data to export. Please compare files first.');return;}
+  btn.disabled=true;btn.textContent='⏳ Generating...';
+  var snap=document.getElementById('snapContainer');
+  var built=buildSnapHTML();
+  snap.innerHTML=built.html;snap.style.left='-9999px';snap.style.position='fixed';snap.style.top='0';snap.style.width='1400px';snap.style.background='#fff';
+  setTimeout(function(){
+    html2canvas(snap,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,width:1400,windowWidth:1400}).then(function(canvas){
+      var link=document.createElement('a');
+      var now=new Date();
+      link.download='FuelCheck_AllRecords_'+now.getFullYear()+z(now.getMonth()+1)+z(now.getDate())+'.png';
+      link.href=canvas.toDataURL('image/png');link.click();
+      snap.innerHTML='';btn.disabled=false;btn.textContent='🖼 Download Image (PNG)';
+    }).catch(function(err){alert('Image failed: '+err.message);btn.disabled=false;btn.textContent='🖼 Download Image (PNG)';});
+  },300);
+}
 
-    +'</div>'/* /snap-grid */
+/* ================================================================
+   DOWNLOAD COMBINED PDF
+   Uses jsPDF + html2canvas:
+   - Cover/summary page drawn with jsPDF directly (vector text)
+   - Data tables rendered via html2canvas page-by-page and added as images
+================================================================ */
+function downloadCombinedPDF(){
+  var btn=document.getElementById('dlRawPdfBtn');
+  if(!lastD1.length&&!lastD2.length){alert('No data to export. Please compare files first.');return;}
+  btn.disabled=true;btn.textContent='⏳ Generating PDF...';
 
-    +'<div class="snap-footer">FuelCheck Transaction Comparator &nbsp;•&nbsp; '+dateStr+'</div>'
-    +'</div>';/* /snap-wrap */
+  var d1=lastD1,d2=lastD2;
+  var now=new Date();
+  var dateStr=dd(isoDate(now));
+  var d1match=lastRow1Status.filter(function(s){return s==='match';}).length;
+  var d1diff=lastRow1Status.filter(function(s){return s==='diff';}).length;
+  var d1only=lastRow1Status.filter(function(s){return s==='only1';}).length;
+  var d2match=lastRow2Status.filter(function(s){return s==='match';}).length;
+  var d2diff=lastRow2Status.filter(function(s){return s==='diff';}).length;
+  var d2only=lastRow2Status.filter(function(s){return s==='only2';}).length;
+
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  var PW=297,PH=210,M=14;
+
+  /* ── PAGE 1: Cover / Summary ── */
+  /* Header bar */
+  doc.setFillColor(37,99,235);doc.rect(0,0,PW,18,'F');
+  doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont('helvetica','bold');
+  doc.text('FuelCheck — MM ROADWAYS',M,11.5);
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+  doc.text('Asset vs IOCL OTP Transaction Comparison',M,16);
+  doc.text('Generated - Vignesh: '+dateStr,PW-M,16,{align:'right'});
+
+  /* Sub header */
+  doc.setTextColor(30,41,59);doc.setFontSize(9);doc.setFont('helvetica','bold');
+  doc.text('MMR Report Summary',M,27);
+  doc.setDrawColor(226,232,240);doc.setLineWidth(0.3);doc.line(M,29,PW-M,29);
+
+  /* Summary stat boxes */
+  function statBox(x,y,w,h,bg,label,val,sub){
+    doc.setFillColor(bg[0],bg[1],bg[2]);doc.roundedRect(x,y,w,h,2,2,'F');
+    doc.setTextColor(100,116,139);doc.setFontSize(6.5);doc.setFont('helvetica','bold');
+    doc.text(label.toUpperCase(),x+4,y+6);
+    doc.setTextColor(30,41,59);doc.setFontSize(10);doc.setFont('helvetica','bold');
+    doc.text(val,x+4,y+13);
+    doc.setTextColor(148,163,184);doc.setFontSize(6);doc.setFont('helvetica','normal');
+    doc.text(sub,x+4,y+18);
+  }
+  var t1=d1.reduce(function(s,r){return s+r.amount;},0);
+  var t2=d2.reduce(function(s,r){return s+r.amount;},0);
+  var diff=t1-t2;
+  var bw=60,bh=22,bx=M,by=32,bgap=4;
+  statBox(bx,by,bw,bh,[239,246,255],'Asset Total','Rs.'+fmtN(t1),d1.length+' transactions');
+  statBox(bx+bw+bgap,by,bw,bh,[236,254,255],'IOCL OTP Total','Rs.'+fmtN(t2),d2.length+' transactions');
+  var diffBg=Math.abs(diff)<0.01?[236,253,245]:[254,242,242];
+  statBox(bx+(bw+bgap)*2,by,bw,bh,diffBg,'Difference',(diff>=0?'+':'')+fmtN(diff),Math.abs(diff)<0.01?'Balanced':'Discrepancy');
+  statBox(bx+(bw+bgap)*3,by,bw,bh,[255,251,235],'Total Fuel',d1.reduce(function(s,r){return s+r.fuelLtr;},0).toFixed(1)+' L','from Asset');
+
+  /* Status summary table */
+  var sy=by+bh+8;
+  doc.setFontSize(8.5);doc.setFont('helvetica','bold');doc.setTextColor(30,41,59);
+  doc.text('Record Status Summary',M,sy);sy+=5;
+  var cols=['Source','Total Records','✓ Match','✗ Difference','Only in this file'];
+  var rows=[
+    ['Asset (File 1)',d1.length,d1match,d1diff,d1only],
+    ['IOCL OTP (File 2)',d2.length,d2match,d2diff,d2only]
+  ];
+  var cws=[60,35,35,35,50];
+  var cx=M;
+  /* Header */
+  doc.setFillColor(30,58,138);
+  var rowH=7;
+  cols.forEach(function(c,i){doc.rect(cx,sy,cws[i],rowH,'F');cx+=cws[i];});
+  cx=M;
+  doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont('helvetica','bold');
+  cols.forEach(function(c,i){doc.text(c,cx+2,sy+4.5);cx+=cws[i];});
+  sy+=rowH;
+  /* Data rows */
+  var rowBgs=[[239,246,255],[236,254,255]];
+  rows.forEach(function(row,ri){
+    cx=M;
+    doc.setFillColor(rowBgs[ri][0],rowBgs[ri][1],rowBgs[ri][2]);
+    cws.forEach(function(cw){doc.rect(cx,sy,cw,rowH,'F');cx+=cw;});
+    cx=M;
+    doc.setTextColor(30,41,59);doc.setFontSize(7);doc.setFont('helvetica','normal');
+    row.forEach(function(cell,ci){doc.text(String(cell),cx+2,sy+4.5);cx+=cws[ci];});
+    sy+=rowH;
+  });
+
+  /* Legend */
+  sy+=6;
+  doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(30,41,59);
+  doc.text('Color Legend:',M,sy);sy+=5;
+  var legends=[
+    {col:[240,253,244],bd:[5,150,105],lbl:'Match — amount found in both files'},
+    {col:[254,242,242],bd:[220,38,38],lbl:'Difference — amount mismatch between files'},
+    {col:[255,247,237],bd:[249,115,22],lbl:'Only in one file — date not present in other file'}
+  ];
+  var lx=M;
+  legends.forEach(function(lg){
+    doc.setFillColor(lg.col[0],lg.col[1],lg.col[2]);doc.rect(lx,sy-3.5,4,4,'F');
+    doc.setDrawColor(lg.bd[0],lg.bd[1],lg.bd[2]);doc.setLineWidth(0.4);doc.rect(lx,sy-3.5,4,4);
+    doc.setDrawColor(226,232,240);doc.setLineWidth(0.1);
+    doc.setTextColor(100,116,139);doc.setFontSize(7);doc.setFont('helvetica','normal');
+    doc.text(lg.lbl,lx+5.5,sy);lx+=80;
+  });
+
+  /* Footer */
+  doc.setFillColor(248,250,252);doc.rect(0,PH-8,PW,8,'F');
+  doc.setTextColor(148,163,184);doc.setFontSize(6.5);doc.setFont('helvetica','normal');
+  doc.text('FuelCheck Transaction Comparator | Asset vs IOCL OTP | Page 1',M,PH-3);
+  doc.text(dateStr,PW-M,PH-3,{align:'right'});
+
+  /* ── PAGE 2+: Data tables via html2canvas ── */
+  /* Build both tables separately for cleaner PDF pages */
+  function buildTableHTML(title,headerColor,headers,rowsData,rowStatuses,fileNum){
+    var badgeMap={'match':'<span style="background:#dcfce7;color:#059669;padding:1px 5px;border-radius:4px;font-size:8px;font-weight:800">Match</span>',
+      'diff':'<span style="background:#fee2e2;color:#dc2626;padding:1px 5px;border-radius:4px;font-size:8px;font-weight:800">Diff</span>',
+      'only':'<span style="background:#ffedd5;color:#c2410c;padding:1px 5px;border-radius:4px;font-size:8px;font-weight:800">Only</span>'};
+    var bgMap={'match':'#f0fdf4','diff':'#fef2f2','only':'#fff7ed'};
+    var leftMap={'match':'#059669','diff':'#dc2626','only':'#f97316'};
+    var trs='';
+    rowsData.forEach(function(cells,i){
+      var st=rowStatuses[i]==='match'?'match':rowStatuses[i]==='diff'?'diff':'only';
+      var badge=badgeMap[st];
+      var bg=bgMap[st];var lft=leftMap[st];
+      trs+='<tr style="background:'+bg+'"><td style="border-left:3px solid '+lft+';padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9">'+cells[0]+'</td>';
+      for(var ci=1;ci<cells.length;ci++){
+        var amtStyle=(ci===cells.length-2&&st==='diff')?'color:#dc2626;font-weight:700':(ci===cells.length-2&&st==='only')?'color:#d97706;font-weight:700':'';
+        trs+='<td style="padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9;'+amtStyle+'">'+cells[ci]+'</td>';
+      }
+      trs+='<td style="padding:4px 7px;border-bottom:1px solid #f1f5f9">'+badge+'</td></tr>';
+    });
+    var ths=headers.map(function(h){return '<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">'+h+'</th>';}).join('');
+    return '<div style="background:#fff;padding:16px;font-family:Nunito,sans-serif;width:1400px">'
+      +'<div style="background:'+headerColor+';color:#fff;padding:8px 12px;border-radius:8px 8px 0 0;font-size:12px;font-weight:800;margin-bottom:0">'+title+'</div>'
+      +'<table style="width:100%;border-collapse:collapse"><thead><tr>'+ths+'</tr></thead><tbody>'+trs+'</tbody></table>'
+      +'</div>';
+  }
+
+  /* Asset rows */
+  var asset_rows=d1.map(function(r){return [r.vehicleNo,dd(r.date),r.fuelLtr.toFixed(2),fmtN(r.costPerLtr),fmtN(r.amount)];});
+  var asset_st=lastRow1Status.map(function(s){return s==='only1'?'only1':s;});
+  /* IOCL rows */
+  var iocl_rows=d2.map(function(r){return [dd(r.date),r.merchant.substring(0,22),r.rsp.toFixed(2),r.quantity.toFixed(2),fmtN(r.amount)];});
+  var iocl_st=lastRow2Status.map(function(s){return s==='only2'?'only2':s;});
 
   var snap=document.getElementById('snapContainer');
-  snap.innerHTML=html;
-  snap.style.left='-9999px';
-  snap.style.position='fixed';
-  snap.style.top='0';
-  snap.style.width='1400px';
-  snap.style.background='#fff';
 
-  /* Give browser a tick to render before capturing */
-  setTimeout(function(){
-    html2canvas(snap,{
-      scale:2,
-      backgroundColor:'#ffffff',
-      useCORS:true,
-      logging:false,
-      width:1400,
-      windowWidth:1400
-    }).then(function(canvas){
-      var link=document.createElement('a');
-      link.download='FuelCheck_AllRecords_'+new Date().getFullYear()+z(new Date().getMonth()+1)+z(new Date().getDate())+'.png';
-      link.href=canvas.toDataURL('image/png');
-      link.click();
-      snap.innerHTML='';
-      btn.disabled=false;
-      btn.textContent='🖼 Download Combined Image (PNG)';
-    }).catch(function(err){
-      console.error(err);
-      alert('Image generation failed: '+err.message);
-      btn.disabled=false;
-      btn.textContent='🖼 Download Combined Image (PNG)';
+  function capturePage(htmlContent,pageLabel,cb){
+    snap.innerHTML=htmlContent;snap.style.left='-9999px';snap.style.position='fixed';snap.style.top='0';snap.style.width='1400px';snap.style.background='#fff';
+    setTimeout(function(){
+      html2canvas(snap,{scale:1.8,backgroundColor:'#ffffff',useCORS:true,logging:false,width:1400,windowWidth:1400}).then(function(canvas){
+        doc.addPage();
+        var imgData=canvas.toDataURL('image/jpeg',0.88);
+        var imgW=PW-2*M;var imgH=canvas.height*(imgW/canvas.width);
+        var maxH=PH-M-12;
+        if(imgH>maxH){imgH=maxH;}
+        doc.addImage(imgData,'JPEG',M,M,imgW,imgH);
+        /* page footer */
+        doc.setFillColor(248,250,252);doc.rect(0,PH-8,PW,8,'F');
+        doc.setTextColor(148,163,184);doc.setFontSize(6.5);doc.setFont('helvetica','normal');
+        doc.text('FuelCheck | '+pageLabel,M,PH-3);doc.text(dateStr,PW-M,PH-3,{align:'right'});
+        snap.innerHTML='';cb();
+      });
+    },350);
+  }
+
+  var assetHTML=buildTableHTML(
+    'Asset — Internal Records ('+d1.length+' records)',
+    '#1e40af',
+    ['Vehicle No','Date','Fuel (L)','Rate/L','Amount (Rs.)','Status'],
+    asset_rows,asset_st,'Asset');
+
+  var ioclHTML=buildTableHTML(
+    'IOCL OTP — Transactions ('+d2.length+' records)',
+    '#0c4a6e',
+    ['Date','Merchant','RSP','Qty','Amount (Rs.)','Status'],
+    iocl_rows,iocl_st,'IOCL');
+
+  capturePage(assetHTML,'Asset Records — Page 2',function(){
+    capturePage(ioclHTML,'IOCL OTP Records — Page 3',function(){
+      var fname='FuelCheck_AllRecords_'+now.getFullYear()+z(now.getMonth()+1)+z(now.getDate())+'.pdf';
+      doc.save(fname);
+      btn.disabled=false;btn.textContent='📄 Download PDF';
     });
-  },300);
+  });
 }
 
 /* ================================================================
@@ -825,77 +836,60 @@ function applyStyles(ws,rows,cols,headerBg,evenBg,oddBg){
   for(var c=0;c<cols;c++){var cell=XLSX.utils.encode_cell({r:0,c:c});if(!ws[cell]) continue;ws[cell].s={fill:xlsColor(headerBg),font:{bold:true,color:{rgb:'FFFFFF'},sz:11},alignment:{horizontal:'center',wrapText:true}};}
   for(var r=1;r<rows;r++){for(var c=0;c<cols;c++){var cell=XLSX.utils.encode_cell({r:r,c:c});if(!ws[cell]) continue;ws[cell].s={fill:xlsColor(r%2===0?evenBg:oddBg),border:{bottom:{style:'thin',color:{rgb:'E2E8F0'}}}};}}
 }
-
 function downloadDiffExcel(){
   var diffRows=cmpRows.filter(function(r){return r.status==='diff';});
-  if(!diffRows.length){alert('No differences found! All dates match.');return;}
+  if(!diffRows.length){alert('No differences found!');return;}
   var wb=XLSX.utils.book_new();
-  var s1=[['Date','File 1 Entries','File 1 Amount (₹)','File 2 Txns','File 2 Amount (₹)','Difference (₹)','Status']];
+  var s1=[['Date','Asset Entries','Asset Amount (Rs.)','IOCL OTP Txns','IOCL OTP Amount (Rs.)','Difference (Rs.)','Status']];
   diffRows.forEach(function(r){s1.push([dd(r.date),r.f1Count,parseFloat(r.f1Amt.toFixed(2)),r.f2Count,parseFloat(r.f2Amt.toFixed(2)),parseFloat(r.diff.toFixed(2)),'DIFFERENCE']);});
-  var ws1=XLSX.utils.aoa_to_sheet(s1);ws1['!cols']=[{wch:14},{wch:13},{wch:20},{wch:12},{wch:20},{wch:18},{wch:14}];
+  var ws1=XLSX.utils.aoa_to_sheet(s1);ws1['!cols']=[{wch:14},{wch:13},{wch:22},{wch:14},{wch:22},{wch:18},{wch:14}];
   applyStyles(ws1,s1.length,7,'1E3A8A','FFF1F2','FEE2E2');
-  for(var i=1;i<s1.length;i++){var c=XLSX.utils.encode_cell({r:i,c:5});if(ws1[c])ws1[c].s={fill:xlsColor('FEE2E2'),font:{color:{rgb:'DC2626'},bold:true}};}
   XLSX.utils.book_append_sheet(wb,ws1,'Differences Summary');
   var diffDates=diffRows.map(function(r){return r.date;});
   var f1d=data1.filter(function(r){return diffDates.indexOf(r.date)!==-1;});
-  var s2=[['Vehicle No','Date','Fuel (Ltr)','Cost Per Ltr (₹)','Fuel Amount (₹)']];
+  var s2=[['Vehicle No','Date','Fuel (Ltr)','Cost Per Ltr (Rs.)','Fuel Amount (Rs.)']];
   f1d.forEach(function(r){s2.push([r.vehicleNo,dd(r.date),parseFloat(r.fuelLtr.toFixed(2)),parseFloat(r.costPerLtr.toFixed(2)),parseFloat(r.amount.toFixed(2))]);});
   var ws2=XLSX.utils.aoa_to_sheet(s2);ws2['!cols']=[{wch:14},{wch:14},{wch:12},{wch:16},{wch:18}];
   applyStyles(ws2,s2.length,5,'1E40AF','EFF6FF','DBEAFE');
-  XLSX.utils.book_append_sheet(wb,ws2,'File1 - Diff Records');
+  XLSX.utils.book_append_sheet(wb,ws2,'Asset - Diff Records');
   var f2d=data2.filter(function(r){return diffDates.indexOf(r.date)!==-1;});
-  var s3=[['Date','Merchant Name','RSP','Quantity','Amount (₹)']];
+  var s3=[['Date','Merchant Name','RSP','Quantity','Amount (Rs.)']];
   f2d.forEach(function(r){s3.push([dd(r.date),r.merchant,parseFloat(r.rsp.toFixed(2)),parseFloat(r.quantity.toFixed(2)),parseFloat(r.amount.toFixed(2))]);});
   var ws3=XLSX.utils.aoa_to_sheet(s3);ws3['!cols']=[{wch:14},{wch:26},{wch:10},{wch:12},{wch:18}];
   applyStyles(ws3,s3.length,5,'0C4A6E','ECFEFF','CFFAFE');
-  XLSX.utils.book_append_sheet(wb,ws3,'File2 - Diff Records');
+  XLSX.utils.book_append_sheet(wb,ws3,'IOCL OTP - Diff Records');
   XLSX.writeFile(wb,'FuelCheck_Differences.xlsx');
 }
-
 function downloadRawExcel(num){
   var wb=XLSX.utils.book_new();
   var g1=groupByDate(data1);var g2=groupByDate(data2);
   function makeFreq(grp){var map={};Object.keys(grp).forEach(function(dt){var freq={};grp[dt].entries.forEach(function(r){var k=Math.round(r.amount*100);freq[k]=(freq[k]||0)+1;});map[dt]=freq;});return map;}
   if(num===1){
     var f2freq=JSON.parse(JSON.stringify(makeFreq(g2)));
-    var rows=[['Vehicle No','Date','Fuel (Ltr)','Cost Per Ltr (₹)','Fuel Amount (₹)','Status']];
-    var rowStatus=[];
+    var rows=[['Vehicle No','Date','Fuel (Ltr)','Cost Per Ltr (Rs.)','Fuel Amount (Rs.)','Status']];var rowStatus=[];
     data1.forEach(function(r){
-      var st;
-      if(!g2[r.date]) st='only1';
+      var st;if(!g2[r.date]) st='only1';
       else{var k=Math.round(r.amount*100);if(f2freq[r.date]&&f2freq[r.date][k]>0){f2freq[r.date][k]--;st='match';}else st='diff';}
-      var lbl=st==='match'?'MATCH':st==='diff'?'DIFFERENCE':'ONLY IN FILE 1';
-      rows.push([r.vehicleNo,dd(r.date),parseFloat(r.fuelLtr.toFixed(2)),parseFloat(r.costPerLtr.toFixed(2)),parseFloat(r.amount.toFixed(2)),lbl]);
-      rowStatus.push(st);
+      var lbl=st==='match'?'MATCH':st==='diff'?'DIFFERENCE':'ONLY IN ASSET';
+      rows.push([r.vehicleNo,dd(r.date),parseFloat(r.fuelLtr.toFixed(2)),parseFloat(r.costPerLtr.toFixed(2)),parseFloat(r.amount.toFixed(2)),lbl]);rowStatus.push(st);
     });
-    var ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:14},{wch:14},{wch:12},{wch:16},{wch:18},{wch:16}];
+    var ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:14},{wch:14},{wch:12},{wch:16},{wch:18},{wch:18}];
     ['A','B','C','D','E','F'].forEach(function(col){var cell=col+'1';if(ws[cell])ws[cell].s={fill:xlsColor('1E40AF'),font:{bold:true,color:{rgb:'FFFFFF'},sz:11},alignment:{horizontal:'center'}};});
-    rowStatus.forEach(function(st,i){
-      var bg=st==='match'?'F0FDF4':st==='diff'?'FEF2F2':'FFF7ED';
-      ['A','B','C','D','E','F'].forEach(function(col){var cell=col+(i+2);if(ws[cell])ws[cell].s={fill:xlsColor(bg),border:{bottom:{style:'thin',color:{rgb:'E2E8F0'}}}};});
-      if(st==='diff'){var c='E'+(i+2);if(ws[c])ws[c].s={fill:xlsColor('FEE2E2'),font:{color:{rgb:'DC2626'},bold:true}};}
-    });
-    XLSX.utils.book_append_sheet(wb,ws,'File1 Records');XLSX.writeFile(wb,'File1_Records.xlsx');
+    rowStatus.forEach(function(st,i){var bg=st==='match'?'F0FDF4':st==='diff'?'FEF2F2':'FFF7ED';['A','B','C','D','E','F'].forEach(function(col){var cell=col+(i+2);if(ws[cell])ws[cell].s={fill:xlsColor(bg),border:{bottom:{style:'thin',color:{rgb:'E2E8F0'}}}};});});
+    XLSX.utils.book_append_sheet(wb,ws,'Asset Records');XLSX.writeFile(wb,'Asset_Records.xlsx');
   } else {
     var f1freq=JSON.parse(JSON.stringify(makeFreq(g1)));
-    var rows=[['Date','Merchant Name','RSP','Quantity','Amount (₹)','Status']];
-    var rowStatus=[];
+    var rows=[['Date','Merchant Name','RSP','Quantity','Amount (Rs.)','Status']];var rowStatus=[];
     data2.forEach(function(r){
-      var st;
-      if(!g1[r.date]) st='only2';
+      var st;if(!g1[r.date]) st='only2';
       else{var k=Math.round(r.amount*100);if(f1freq[r.date]&&f1freq[r.date][k]>0){f1freq[r.date][k]--;st='match';}else st='diff';}
-      var lbl=st==='match'?'MATCH':st==='diff'?'DIFFERENCE':'ONLY IN FILE 2';
-      rows.push([dd(r.date),r.merchant,parseFloat(r.rsp.toFixed(2)),parseFloat(r.quantity.toFixed(2)),parseFloat(r.amount.toFixed(2)),lbl]);
-      rowStatus.push(st);
+      var lbl=st==='match'?'MATCH':st==='diff'?'DIFFERENCE':'ONLY IN IOCL OTP';
+      rows.push([dd(r.date),r.merchant,parseFloat(r.rsp.toFixed(2)),parseFloat(r.quantity.toFixed(2)),parseFloat(r.amount.toFixed(2)),lbl]);rowStatus.push(st);
     });
-    var ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:14},{wch:26},{wch:10},{wch:12},{wch:18},{wch:16}];
+    var ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:14},{wch:26},{wch:10},{wch:12},{wch:18},{wch:18}];
     ['A','B','C','D','E','F'].forEach(function(col){var cell=col+'1';if(ws[cell])ws[cell].s={fill:xlsColor('0C4A6E'),font:{bold:true,color:{rgb:'FFFFFF'},sz:11},alignment:{horizontal:'center'}};});
-    rowStatus.forEach(function(st,i){
-      var bg=st==='match'?'ECFEFF':st==='diff'?'FEF2F2':'FFF7ED';
-      ['A','B','C','D','E','F'].forEach(function(col){var cell=col+(i+2);if(ws[cell])ws[cell].s={fill:xlsColor(bg),border:{bottom:{style:'thin',color:{rgb:'E2E8F0'}}}};});
-      if(st==='diff'){var c='E'+(i+2);if(ws[c])ws[c].s={fill:xlsColor('FEE2E2'),font:{color:{rgb:'DC2626'},bold:true}};}
-    });
-    XLSX.utils.book_append_sheet(wb,ws,'File2 Records');XLSX.writeFile(wb,'File2_Records.xlsx');
+    rowStatus.forEach(function(st,i){var bg=st==='match'?'ECFEFF':st==='diff'?'FEF2F2':'FFF7ED';['A','B','C','D','E','F'].forEach(function(col){var cell=col+(i+2);if(ws[cell])ws[cell].s={fill:xlsColor(bg),border:{bottom:{style:'thin',color:{rgb:'E2E8F0'}}}};});});
+    XLSX.utils.book_append_sheet(wb,ws,'IOCL OTP Records');XLSX.writeFile(wb,'IOCL_OTP_Records.xlsx');
   }
 }
 </script>
