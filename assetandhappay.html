@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MM Roadways — Tally Checker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #f4f6f9;
+  --surface: #ffffff;
+  --surface2: #f8fafc;
+  --border: #e2e8f0;
+  --border2: #cbd5e1;
+  --navy: #1a237e;
+  --navy2: #283593;
+  --navy-light: #e8eaf6;
+  --navy-mid: #3949ab;
+  --success: #1b5e20;
+  --success-bg: #e8f5e9;
+  --success-mid: #2e7d32;
+  --danger: #b71c1c;
+  --danger-bg: #fce4ec;
+  --danger-mid: #c62828;
+  --warning: #e65100;
+  --warning-bg: #fff3e0;
+  --warning-mid: #ef6c00;
+  --text: #0f172a;
+  --text2: #475569;
+  --text3: #94a3b8;
+  --shadow: 0 1px 4px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md: 0 4px 16px rgba(26,35,126,.1);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;font-size:14px}
+
+header{
+  background:var(--surface);
+  border-bottom:2px solid var(--navy);
+  padding:0 2rem;
+  height:62px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:sticky;
+  top:0;
+  z-index:300;
+  box-shadow:var(--shadow-md);
+}
+.logo-wrap{display:flex;align-items:center;gap:12px}
+.logo-box{width:38px;height:38px;background:var(--navy);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;letter-spacing:.5px;}
+.logo-name{font-size:1.15rem;font-weight:800;color:var(--navy);letter-spacing:-.3px}
+.logo-sub{font-size:.62rem;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;margin-top:1px}
+.header-tag{background:var(--navy-light);color:var(--navy);font-size:.68rem;font-weight:700;padding:4px 10px;border-radius:20px;border:1px solid #c5cae9;letter-spacing:.5px;text-transform:uppercase;}
+
+.main{padding:1.5rem 2rem;max-width:1480px;margin:0 auto}
+
+.upload-section{background:var(--surface);border-radius:14px;padding:1.5rem;box-shadow:var(--shadow);margin-bottom:1.2rem;border:1px solid var(--border);}
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.1rem}
+.upload-card{border:2px dashed var(--border2);border-radius:10px;padding:1.2rem;background:var(--surface2);transition:all .2s;position:relative;}
+.upload-card.loaded-asset{border:2px solid var(--navy);background:var(--navy-light);}
+.upload-card.loaded-happay{border:2px solid #0288d1;background:#e1f5fe;}
+.card-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.card-num{width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;}
+.asset-num{background:var(--navy-light);color:var(--navy)}
+.happay-num{background:#e1f5fe;color:#0277bd}
+.card-title{font-weight:700;font-size:.9rem;color:var(--text)}
+.col-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}
+.col-tag{font-family:'JetBrains Mono',monospace;font-size:.6rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--text2);}
+.pick-btn{padding:.44rem .95rem;border-radius:7px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text2);font-size:.78rem;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:5px;}
+.upload-card.loaded-asset .pick-btn{border-color:var(--navy);color:var(--navy);background:#fff}
+.upload-card.loaded-happay .pick-btn{border-color:#0277bd;color:#0277bd;background:#fff}
+.file-status{margin-top:8px;font-size:.75rem;font-weight:700;min-height:1em;color:var(--text3)}
+.loaded-asset .file-status{color:var(--navy)}
+.loaded-happay .file-status{color:#0277bd}
+#assetInput,#happayInput{display:none}
+.compare-btn{width:100%;padding:.82rem;background:var(--navy);color:#fff;border:none;border-radius:10px;font-family:'Inter',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.3px;}
+.compare-btn:hover:not(:disabled){background:var(--navy2);box-shadow:0 6px 20px rgba(26,35,126,.3);transform:translateY(-1px)}
+.compare-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+.date-filter-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.9rem 1.3rem;box-shadow:var(--shadow);margin-bottom:1.2rem;display:none;align-items:center;gap:1rem;flex-wrap:wrap;}
+.date-filter-bar.show{display:flex}
+.filter-lbl{font-weight:800;font-size:.78rem;color:var(--text2);white-space:nowrap}
+.date-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.date-inp{padding:.38rem .7rem;border:1.5px solid var(--border2);border-radius:7px;font-family:'Inter',sans-serif;font-size:.78rem;color:var(--text);background:var(--surface2);transition:border-color .15s;}
+.date-inp:focus{outline:none;border-color:var(--navy);background:var(--navy-light)}
+.sep-txt{color:var(--text3);font-size:.76rem;font-weight:700}
+.flt-apply{padding:.38rem 1rem;background:var(--navy);color:#fff;border:none;border-radius:7px;font-family:'Inter',sans-serif;font-size:.76rem;font-weight:800;cursor:pointer;transition:all .15s;}
+.flt-apply:hover{background:var(--navy2)}
+.flt-reset{padding:.38rem .9rem;background:var(--surface2);color:var(--text2);border:1.5px solid var(--border2);border-radius:7px;font-family:'Inter',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;transition:all .15s;}
+.flt-reset:hover{border-color:var(--danger-mid);color:var(--danger-mid);background:var(--danger-bg)}
+.filter-badge{background:#fff3e0;color:var(--warning);border:1px solid #ffcc80;border-radius:6px;padding:3px 10px;font-size:.7rem;font-weight:800;display:none;}
+.filter-badge.show{display:inline-block}
+
+#dashboard{display:none}
+.sec-title{font-size:.72rem;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:.9rem;display:flex;align-items:center;gap:8px;}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:.85rem;margin-bottom:1.5rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem 1.1rem;box-shadow:var(--shadow);border-bottom:3px solid var(--navy);}
+.stat-card.sc-navy{border-bottom-color:var(--navy)} .stat-card.sc-blue{border-bottom-color:#0288d1}
+.stat-card.sc-green{border-bottom-color:var(--success-mid)} .stat-card.sc-red{border-bottom-color:var(--danger-mid)}
+.stat-card.sc-amber{border-bottom-color:var(--warning-mid)}
+.stat-lbl{font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:5px}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:1.2rem;font-weight:600;color:var(--text);line-height:1.2}
+.stat-sub{font-size:.66rem;color:var(--text3);margin-top:4px}
+
+.chart-section{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.3rem 1.5rem;box-shadow:var(--shadow);margin-bottom:1.5rem;display:none;}
+.chart-section.show{display:block}
+.chart-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
+.chart-legend{display:flex;gap:1rem;flex-wrap:wrap}
+.cleg{display:flex;align-items:center;gap:5px;font-size:.74rem;font-weight:700;color:var(--text2)}
+.cleg-dot{width:12px;height:12px;border-radius:3px}
+.chart-wrap{position:relative;height:360px}
+
+.day-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.4rem}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow)}
+.panel-head{padding:.65rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:.8rem;}
+.ph-asset{background:var(--navy-light);color:var(--navy)}
+.ph-happay{background:#e1f5fe;color:#0277bd}
+.ph-plain{background:var(--surface2);color:var(--text2)}
+.total-badge{font-family:'JetBrains Mono',monospace;font-size:.76rem;padding:2px 9px;border-radius:20px}
+.tb-asset{background:rgba(26,35,126,.1);color:var(--navy)}
+.tb-happay{background:rgba(2,119,189,.12);color:#0277bd}
+
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.76rem}
+th{background:var(--surface2);padding:.48rem .85rem;text-align:left;font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--text2);position:sticky;top:0;z-index:2;border-bottom:1px solid var(--border);}
+td{padding:.44rem .85rem;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace;}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8fafc}
+.row-match td{background:#f0fdf4} .row-match td:first-child{border-left:3px solid var(--success-mid)}
+.row-diff td{background:#fce4ec} .row-diff td:first-child{border-left:3px solid var(--danger-mid)}
+.row-only td{background:#fff8e1} .row-only td:first-child{border-left:3px solid var(--warning-mid)}
+
+.cmp-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:1.4rem;}
+.cmp-head{padding:.9rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;}
+
+.badge{display:inline-flex;align-items:center;gap:2px;padding:2px 8px;border-radius:5px;font-size:.63rem;font-weight:800;font-family:'Inter',sans-serif;}
+.b-match{background:var(--success-bg);color:var(--success-mid)}
+.b-diff{background:var(--danger-bg);color:var(--danger-mid)}
+.b-only{background:#fff3e0;color:var(--warning)}
+.diff-ok{color:var(--success-mid);font-weight:700}
+.diff-bad{color:var(--danger-mid);font-weight:700}
+.diff-warn{color:var(--warning);font-weight:700}
+
+.tab-bar{display:flex;gap:5px;flex:1;flex-wrap:wrap}
+.tab-btn{padding:.3rem .82rem;border-radius:6px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-size:.74rem;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;}
+.tab-btn.active-all{background:var(--navy);color:#fff;border-color:var(--navy)}
+.tab-btn.active-match{background:var(--success-mid);color:#fff;border-color:var(--success-mid)}
+.tab-btn.active-diff{background:var(--danger-mid);color:#fff;border-color:var(--danger-mid)}
+.tab-btn.active-only{background:var(--warning-mid);color:#fff;border-color:var(--warning-mid)}
+.count-chip{display:inline-block;padding:0 6px;border-radius:9px;font-size:.64rem;font-weight:800;margin-left:2px;}
+.chip-b{background:var(--navy-light);color:var(--navy)}
+.chip-g{background:var(--success-bg);color:var(--success-mid)}
+.chip-r{background:var(--danger-bg);color:var(--danger-mid)}
+.chip-o{background:#fff3e0;color:var(--warning)}
+
+.btn-group{display:inline-flex;gap:4px;align-items:center;flex-wrap:wrap}
+.dl-btn{padding:.35rem .9rem;border-radius:7px;background:var(--success-bg);border:1.5px solid #a5d6a7;color:var(--success-mid);font-size:.74rem;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:4px;transition:all .15s;white-space:nowrap;}
+.dl-btn:hover{background:var(--success-mid);color:#fff;border-color:var(--success-mid)}
+.img-btn{padding:.35rem .78rem;border-radius:7px;background:#e3f2fd;border:1.5px solid #90caf9;color:#1565c0;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:4px;transition:all .15s;white-space:nowrap;}
+.img-btn:hover{background:#1565c0;color:#fff;border-color:#1565c0}
+.chart-dl-btn{padding:.35rem 1rem;border-radius:7px;background:var(--navy-light);border:1.5px solid #9fa8da;color:var(--navy);font-size:.74rem;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:4px;transition:all .15s;}
+.chart-dl-btn:hover{background:var(--navy);color:#fff;border-color:var(--navy)}
+.dash-img-btn{padding:.35rem 1rem;border-radius:7px;background:#fce4ec;border:1.5px solid #f48fb1;color:#c2185b;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:4px;transition:all .15s;}
+.dash-img-btn:hover{background:#c2185b;color:#fff;border-color:#c2185b}
+.combo-img-btn{padding:.38rem 1rem;border-radius:7px;background:#ede7f6;border:1.5px solid #b39ddb;color:#512da8;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:4px;transition:all .15s;white-space:nowrap;}
+.combo-img-btn:hover{background:#512da8;color:#fff;border-color:#512da8}
+.word-btn{padding:.38rem 1rem;border-radius:7px;background:#e3f2fd;border:1.5px solid #64b5f6;color:#1565c0;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap;}
+.word-btn:hover{background:#1565c0;color:#fff;border-color:#1565c0}
+.pdf-btn{padding:.38rem 1rem;border-radius:7px;background:#fbe9e7;border:1.5px solid #ff8a65;color:#bf360c;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap;}
+.pdf-btn:hover{background:#bf360c;color:#fff;border-color:#bf360c}
+
+.raw-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;flex-wrap:wrap;gap:.5rem;}
+.raw-legend{display:flex;gap:1rem;flex-wrap:wrap}
+.rl{display:flex;align-items:center;gap:5px;font-size:.7rem;font-weight:700;color:var(--text2)}
+.rl-box{width:12px;height:12px;border-radius:3px}
+
+.raw-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.empty{text-align:center;padding:1.8rem;color:var(--text3);font-size:.8rem}
+.c-navy{color:var(--navy)} .c-blue{color:#0277bd}
+.diff-flag{display:inline-flex;align-items:center;gap:2px;background:var(--danger-bg);color:var(--danger-mid);border-radius:4px;padding:1px 5px;font-size:.62rem;font-weight:800;font-family:'Inter',sans-serif;margin-left:4px;vertical-align:middle;}
+.warn-flag{display:inline-flex;align-items:center;gap:2px;background:#fff3e0;color:var(--warning);border-radius:4px;padding:1px 5px;font-size:.62rem;font-weight:800;font-family:'Inter',sans-serif;margin-left:4px;vertical-align:middle;}
+
+.toast{position:fixed;bottom:24px;right:24px;background:#1a237e;color:#fff;padding:10px 20px;border-radius:8px;font-size:.8rem;font-weight:700;z-index:9999;display:none;box-shadow:0 4px 16px rgba(0,0,0,.2);}
+.toast.show{display:block}
+
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--surface2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+@media(max-width:780px){
+  .upload-grid,.day-grid,.raw-grid{grid-template-columns:1fr}
+  .main{padding:1rem}
+  header{padding:0 1rem}
+  .cmp-head{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast">📸 Downloading image...</div>
+
+<header>
+  <div class="logo-wrap">
+    <div class="logo-box">MM</div>
+    <div>
+      <div class="logo-name">MM Roadways</div>
+      <div class="logo-sub">Tally Checker — Asset vs Happay</div>
+    </div>
+  </div>
+  <div class="header-tag">Debit Reconciliation System</div>
+</header>
+
+<div class="main">
+  <input type="file" id="assetInput" accept=".xlsx,.xls,.csv">
+  <input type="file" id="happayInput" accept=".xlsx,.xls,.csv">
+
+  <!-- UPLOAD -->
+  <div class="upload-section">
+    <div class="upload-grid">
+      <div class="upload-card" id="assetCard">
+        <div class="card-head"><div class="card-num asset-num">A</div><div class="card-title">Asset Data</div></div>
+        <div class="col-tags">
+          <span class="col-tag">Vehicle No</span><span class="col-tag">Driver Name</span>
+          <span class="col-tag">Payment Date</span><span class="col-tag">Payment Source</span><span class="col-tag">Debit</span><span class="col-tag">Note No</span>
+        </div>
+        <button class="pick-btn" id="assetBtn">📂 Choose Asset File</button>
+        <div class="file-status" id="assetStatus">No file chosen</div>
+      </div>
+      <div class="upload-card" id="happayCard">
+        <div class="card-head"><div class="card-num happay-num">H</div><div class="card-title">Happay Data</div></div>
+        <div class="col-tags">
+          <span class="col-tag">TransactionDate</span><span class="col-tag">Debit</span><span class="col-tag">Remarks</span>
+        </div>
+        <button class="pick-btn" id="happayBtn">📂 Choose Happay File</button>
+        <div class="file-status" id="happayStatus">No file chosen</div>
+      </div>
+    </div>
+    <button class="compare-btn" id="compareBtn" disabled>⚡ Compare Asset vs Happay</button>
+  </div>
+
+  <!-- DATE FILTER -->
+  <div class="date-filter-bar" id="filterBar">
+    <span class="filter-lbl">🗓 Date Filter:</span>
+    <div class="date-row">
+      <input type="date" class="date-inp" id="dateFrom">
+      <span class="sep-txt">→ To</span>
+      <input type="date" class="date-inp" id="dateTo">
+    </div>
+    <button class="flt-apply" id="applyBtn">Apply</button>
+    <button class="flt-reset" id="resetBtn">✕ Reset</button>
+    <span class="filter-badge" id="filterBadge">Filtered</span>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard">
+    <div class="sec-title">📊 Overview</div>
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <div class="chart-section" id="chartSection">
+      <div class="chart-title-row">
+        <div class="sec-title" style="margin:0;flex:1">📈 Date-wise Debit Comparison</div>
+        <div class="chart-legend">
+          <div class="cleg"><div class="cleg-dot" style="background:#1a237e"></div>Asset Debit</div>
+          <div class="cleg"><div class="cleg-dot" style="background:#0288d1"></div>Happay Debit</div>
+          <div class="cleg"><div class="cleg-dot" style="background:#e53935"></div>Difference</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="chart-dl-btn" id="dlChartBtn">⬇ Excel (Chart Data)</button>
+          <button class="img-btn" id="dlChartImg">📸 Image</button>
+          <button class="dash-img-btn" id="dlDashImg">📷 Full Dashboard</button>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+    </div>
+
+    <div class="sec-title">📅 Per Day Summary</div>
+    <div class="day-grid">
+      <div class="panel" id="panelAssetDay">
+        <div class="panel-head ph-asset">
+          <span>Asset Data — Per Day</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="total-badge tb-asset" id="badgeAsset">₹0</span>
+            <button class="img-btn" onclick="capturePanel('panelAssetDay','MMROADWAYS_Asset_PerDay')">📸</button>
+          </div>
+        </div>
+        <div class="tbl-wrap" style="max-height:260px;overflow-y:auto">
+          <table id="dtAsset">
+            <thead><tr><th>Date</th><th>Entries</th><th>Total Debit (₹)</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel" id="panelHappayDay">
+        <div class="panel-head ph-happay">
+          <span>Happay Data — Per Day</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <span class="total-badge tb-happay" id="badgeHappay">₹0</span>
+            <button class="img-btn" onclick="capturePanel('panelHappayDay','MMROADWAYS_Happay_PerDay')">📸</button>
+          </div>
+        </div>
+        <div class="tbl-wrap" style="max-height:260px;overflow-y:auto">
+          <table id="dtHappay">
+            <thead><tr><th>Date</th><th>Txns</th><th>Total Debit (₹)</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec-title">🔍 Date-wise Comparison</div>
+    <div class="cmp-section" id="cmpSection">
+      <div class="cmp-head">
+        <div class="tab-bar">
+          <button class="tab-btn active-all" data-f="all">All <span class="count-chip chip-b" id="cntAll">0</span></button>
+          <button class="tab-btn" data-f="match">✓ Match <span class="count-chip chip-g" id="cntMatch">0</span></button>
+          <button class="tab-btn" data-f="diff">✗ Diff <span class="count-chip chip-r" id="cntDiff">0</span></button>
+          <button class="tab-btn" data-f="only">⚠ Only One <span class="count-chip chip-o" id="cntOnly">0</span></button>
+        </div>
+        <div class="btn-group">
+          <button class="dl-btn" id="dlDiffBtn">⬇ Excel Report</button>
+          <button class="img-btn" onclick="capturePanel('cmpSection','MMROADWAYS_DateComparison')">📸 Image</button>
+        </div>
+      </div>
+      <div class="tbl-wrap" style="max-height:360px;overflow-y:auto">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th><th>Asset Entries</th><th>Asset Debit (₹)</th>
+              <th>Happay Txns</th><th>Happay Debit (₹)</th><th>Difference (₹)</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="cmpBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="raw-section-head">
+      <div class="sec-title" style="flex:1;margin-bottom:0">📋 All Records (Differences Highlighted)</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button class="pdf-btn" id="dlCombinedPDF">📄 PDF (Combined)</button>
+        <button class="combo-img-btn" id="dlCombinedImg">📸 Combined Image (Asset + Happay)</button>
+        <button class="word-btn" id="dlCombinedWord">📝 Word (Combined)</button>
+      </div>
+    </div>
+    <div class="raw-legend" style="margin-bottom:.7rem">
+      <div class="rl"><div class="rl-box" style="background:#fce4ec;border:2px solid #c62828"></div>Amount Mismatch</div>
+      <div class="rl"><div class="rl-box" style="background:#fff8e1;border:2px solid #ef6c00"></div>Only in One File</div>
+      <div class="rl"><div class="rl-box" style="background:#f0fdf4;border:2px solid #2e7d32"></div>Matched</div>
+    </div>
+    <div class="raw-grid" id="rawGrid">
+      <div class="panel" id="rawAssetPanel">
+        <div class="panel-head ph-plain">
+          <span>Asset DATA — All Records</span>
+          <div class="btn-group">
+            <button class="dl-btn" id="dlRawAsset">⬇ Excel</button>
+            <button class="img-btn" onclick="capturePanel('rawAssetPanel','MMROADWAYS_Asset_Records')">📸</button>
+          </div>
+        </div>
+        <div class="tbl-wrap" style="max-height:420px;overflow-y:auto">
+          <table id="rawAsset">
+            <thead><tr><th>Vehicle No</th><th>Driver Name</th><th>Date</th><th>Payment Source</th><th>Debit (₹)</th><th>Note No</th><th>Status</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel" id="rawHappayPanel">
+        <div class="panel-head ph-plain">
+          <span>Happay DATA — All Records</span>
+          <div class="btn-group">
+            <button class="dl-btn" id="dlRawHappay">⬇ Excel</button>
+            <button class="img-btn" onclick="capturePanel('rawHappayPanel','MMROADWAYS_Happay_Records')">📸</button>
+          </div>
+        </div>
+        <div class="tbl-wrap" style="max-height:420px;overflow-y:auto">
+          <table id="rawHappay">
+            <thead><tr><th>Date</th><th>Debit (₹)</th><th>Remarks</th><th>Status</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function() {
+'use strict';
+
+var assetData=[], happayData=[], cmpRows=[], activeTab='all';
+var filterFrom=null, filterTo=null, isFiltered=false, barChartInst=null;
+
+document.getElementById('assetBtn').addEventListener('click',function(e){e.preventDefault();document.getElementById('assetInput').click();});
+document.getElementById('happayBtn').addEventListener('click',function(e){e.preventDefault();document.getElementById('happayInput').click();});
+document.getElementById('assetInput').addEventListener('change',function(){if(this.files[0])loadFile(this.files[0],'asset');});
+document.getElementById('happayInput').addEventListener('change',function(){if(this.files[0])loadFile(this.files[0],'happay');});
+document.getElementById('compareBtn').addEventListener('click',function(){runCompare();});
+document.getElementById('applyBtn').addEventListener('click',function(){applyDateFilter();});
+document.getElementById('resetBtn').addEventListener('click',function(){resetDateFilter();});
+document.getElementById('dlDiffBtn').addEventListener('click',function(){downloadExcelReport();});
+document.getElementById('dlRawAsset').addEventListener('click',function(){downloadRawExcel('asset');});
+document.getElementById('dlRawHappay').addEventListener('click',function(){downloadRawExcel('happay');});
+document.getElementById('dlDashImg').addEventListener('click',function(){captureDashboard();});
+document.getElementById('dlCombinedImg').addEventListener('click',function(){captureCombinedRaw();});
+document.getElementById('dlCombinedWord').addEventListener('click',function(){downloadCombinedWord();});
+document.getElementById('dlCombinedPDF').addEventListener('click',function(){downloadCombinedPDF();});
+
+document.querySelectorAll('.tab-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.tab-btn').forEach(function(b){b.className='tab-btn';});
+    activeTab=this.getAttribute('data-f');
+    this.classList.add('active-'+activeTab);
+    renderCmpTable();
+  });
+});
+
+function showToast(msg){
+  var t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(function(){t.classList.remove('show');},2800);
+}
+
+function parseDate(v){
+  if(v===null||v===undefined||v==='') return null;
+  if(typeof v==='number'){var d=new Date(Math.round((v-25569)*86400000));return isoDate(d);}
+  var s=String(v).trim(),m;
+  m=s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+  if(m) return m[3]+'-'+z2(m[2])+'-'+z2(m[1]);
+  m=s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
+  if(m) return m[1]+'-'+z2(m[2])+'-'+z2(m[3]);
+  var d=new Date(s);if(!isNaN(d)) return isoDate(d);
+  return null;
+}
+function isoDate(d){return d.getFullYear()+'-'+z2(d.getMonth()+1)+'-'+z2(d.getDate());}
+function z2(n){return String(n).padStart(2,'0');}
+function dispDate(iso){if(!iso) return '';var p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+function toN(v){if(v===undefined||v===null||v==='') return 0;return parseFloat(String(v).replace(/[^0-9.\-]/g,''))||0;}
+function fmtAmt(n){return Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtRs(n){return '\u20b9'+fmtAmt(n);}
+
+function escHtml(s){
+  if(!s) return '';
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+function findCol(row,cands){
+  var keys=Object.keys(row);
+  for(var i=0;i<cands.length;i++){
+    var c=cands[i].toLowerCase().replace(/[\s_\-\.]/g,'');
+    var found=keys.find(function(k){var kn=k.toLowerCase().replace(/[\s_\-\.]/g,'');return kn===c||kn.includes(c)||c.includes(kn);});
+    if(found) return found;
+  }
+  return null;
+}
+
+function processAsset(raw){
+  return raw.map(function(row){
+    var dateCol=findCol(row,['Payment Date','PaymentDate','Date','date']);
+    var vehicleCol=findCol(row,['Vehicle No','VehicleNo','Vehicle','vehicle']);
+    var driverCol=findCol(row,['Driver Name','DriverName','Driver','driver']);
+    var sourceCol=findCol(row,['Payment Source','PaymentSource','Source','source']);
+    var debitCol=findCol(row,['Debit','debit','Amount','amount']);
+    var noteNoCol=findCol(row,['Note No','NoteNo','Note Number','NoteNumber','Note','note no','noteno']);
+    return{vehicleNo:vehicleCol?String(row[vehicleCol]).trim():'',driverName:driverCol?String(row[driverCol]).trim():'',date:parseDate(dateCol?row[dateCol]:''),paymentSource:sourceCol?String(row[sourceCol]).trim():'',debit:toN(debitCol?row[debitCol]:0),noteNo:noteNoCol?String(row[noteNoCol]).trim():''};
+  }).filter(function(r){return r.date;});
+}
+function processHappay(raw){
+  return raw.map(function(row){
+    var dateCol=findCol(row,['TransactionDate','Transaction Date','Txn Date','TxnDate','Date','date']);
+    var debitCol=findCol(row,['Debit','debit','Amount','amount']);
+    var remarksCol=findCol(row,['Remarks','remarks','Description','Narration','narration']);
+    return{date:parseDate(dateCol?row[dateCol]:''),debit:toN(debitCol?row[debitCol]:0),remarks:remarksCol?String(row[remarksCol]).trim():''};
+  }).filter(function(r){return r.date;});
+}
+
+function loadFile(file,type){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var wb=XLSX.read(e.target.result,{type:'binary'});
+    var ws=wb.Sheets[wb.SheetNames[0]];
+    var raw=XLSX.utils.sheet_to_json(ws,{defval:''});
+    if(type==='asset'){
+      assetData=processAsset(raw);
+      document.getElementById('assetCard').classList.add('loaded-asset');
+      document.getElementById('assetStatus').textContent='\u2713 '+file.name+' ('+assetData.length+' records)';
+    } else {
+      happayData=processHappay(raw);
+      document.getElementById('happayCard').classList.add('loaded-happay');
+      document.getElementById('happayStatus').textContent='\u2713 '+file.name+' ('+happayData.length+' records)';
+    }
+    if(assetData.length&&happayData.length) document.getElementById('compareBtn').disabled=false;
+  };
+  reader.readAsBinaryString(file);
+}
+
+function applyDateFilter(){
+  var from=document.getElementById('dateFrom').value, to=document.getElementById('dateTo').value;
+  if(!from&&!to){resetDateFilter();return;}
+  filterFrom=from||null; filterTo=to||null; isFiltered=true;
+  var badge=document.getElementById('filterBadge');
+  badge.classList.add('show');
+  badge.textContent=(from?dispDate(from):'...')+' \u2192 '+(to?dispDate(to):'...');
+  rebuildAll();
+}
+function resetDateFilter(){
+  filterFrom=null; filterTo=null; isFiltered=false;
+  document.getElementById('dateFrom').value=''; document.getElementById('dateTo').value='';
+  document.getElementById('filterBadge').classList.remove('show');
+  rebuildAll();
+}
+function filteredData(){
+  if(!isFiltered) return{asset:assetData,happay:happayData};
+  return{
+    asset:assetData.filter(function(r){return(!filterFrom||r.date>=filterFrom)&&(!filterTo||r.date<=filterTo);}),
+    happay:happayData.filter(function(r){return(!filterFrom||r.date>=filterFrom)&&(!filterTo||r.date<=filterTo);})
+  };
+}
+
+function runCompare(){
+  document.getElementById('dashboard').style.display='block';
+  document.getElementById('filterBar').classList.add('show');
+  rebuildAll();
+  document.getElementById('dashboard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function rebuildAll(){
+  var fd=filteredData();
+  buildStats(fd.asset,fd.happay);
+  buildDayTables(fd.asset,fd.happay);
+  buildCmpRows(fd.asset,fd.happay);
+  renderCmpTable();
+  buildRawTables(fd.asset,fd.happay);
+  buildBarChart(fd.asset,fd.happay);
+}
+function groupByDate(data){
+  var map={};
+  data.forEach(function(r){
+    if(!r.date) return;
+    if(!map[r.date]) map[r.date]={entries:[],total:0};
+    map[r.date].entries.push(r);
+    map[r.date].total+=r.debit||0;
+  });
+  return map;
+}
+
+function buildStats(d1,d2){
+  var t1=d1.reduce(function(s,r){return s+r.debit;},0);
+  var t2=d2.reduce(function(s,r){return s+r.debit;},0);
+  var diff=t1-t2;
+  var g1=groupByDate(d1), g2=groupByDate(d2);
+  var days1=Math.max(Object.keys(g1).length,1), days2=Math.max(Object.keys(g2).length,1);
+  var h='';
+  h+=sc('sc-navy','Asset Total Debit',fmtRs(t1),d1.length+' entries');
+  h+=sc('sc-blue','Happay Total Debit',fmtRs(t2),d2.length+' transactions');
+  h+=sc(Math.abs(diff)<0.01?'sc-green':'sc-red','Net Difference',(diff>=0?'+':'')+fmtRs(diff),Math.abs(diff)<0.01?'Balanced \u2713':'Discrepancy found');
+  h+=sc('sc-navy','Avg Daily Asset',fmtRs(t1/days1),'per active day');
+  h+=sc('sc-blue','Avg Daily Happay',fmtRs(t2/days2),'per active day');
+  var diffDates=Object.keys(g1).filter(function(d){return !g2[d]||Math.abs((g1[d].total||0)-(g2[d].total||0))>0.01;}).length;
+  h+=sc(diffDates>0?'sc-amber':'sc-green','Diff Dates',diffDates,diffDates>0?'dates with mismatch':'all dates match');
+  document.getElementById('statsGrid').innerHTML=h;
+}
+function sc(cls,lbl,val,sub){
+  return '<div class="stat-card '+cls+'"><div class="stat-lbl">'+lbl+'</div><div class="stat-val">'+val+'</div><div class="stat-sub">'+sub+'</div></div>';
+}
+
+function buildBarChart(d1,d2){
+  var g1=groupByDate(d1), g2=groupByDate(d2);
+  var allDates={};
+  Object.keys(g1).forEach(function(d){allDates[d]=1;}); Object.keys(g2).forEach(function(d){allDates[d]=1;});
+  var dates=Object.keys(allDates).sort();
+  var section=document.getElementById('chartSection');
+  if(!dates.length){section.classList.remove('show');return;}
+  section.classList.add('show');
+  var labels=dates.map(function(d){return dispDate(d);});
+  var aVals=dates.map(function(d){return g1[d]?parseFloat(g1[d].total.toFixed(2)):0;});
+  var oVals=dates.map(function(d){return g2[d]?parseFloat(g2[d].total.toFixed(2)):0;});
+  var diffVals=dates.map(function(d,i){return parseFloat(Math.abs(aVals[i]-oVals[i]).toFixed(2));});
+  if(barChartInst){barChartInst.destroy();barChartInst=null;}
+  var ctx=document.getElementById('barChart').getContext('2d');
+  barChartInst=new Chart(ctx,{
+    type:'bar',
+    data:{labels:labels,datasets:[
+      {label:'Asset Debit (\u20b9)',data:aVals,backgroundColor:'rgba(26,35,126,0.78)',borderColor:'#1a237e',borderWidth:1.5,borderRadius:5,borderSkipped:false},
+      {label:'Happay Debit (\u20b9)',data:oVals,backgroundColor:'rgba(2,136,209,0.78)',borderColor:'#0288d1',borderWidth:1.5,borderRadius:5,borderSkipped:false},
+      {label:'Difference (\u20b9)',data:diffVals,backgroundColor:'rgba(229,57,53,0.8)',borderColor:'#e53935',borderWidth:1.5,borderRadius:5,borderSkipped:false}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},layout:{padding:{top:24}},
+      plugins:{
+        legend:{display:true,position:'top',labels:{color:'#475569',font:{size:12,weight:'700',family:'Inter'},padding:16,usePointStyle:true,pointStyleWidth:10}},
+        tooltip:{backgroundColor:'rgba(15,23,42,0.93)',titleColor:'#f1f5f9',bodyColor:'#cbd5e1',padding:12,cornerRadius:8,
+          callbacks:{label:function(c){if(c.raw===0) return null;return '  '+c.dataset.label+': \u20b9'+Number(c.raw).toLocaleString('en-IN',{minimumFractionDigits:2});}}}
+      },
+      scales:{
+        x:{grid:{color:'rgba(226,232,240,0.5)'},ticks:{color:'#64748b',font:{size:11,family:'JetBrains Mono'},maxRotation:dates.length>6?45:0,minRotation:0}},
+        y:{grid:{color:'rgba(226,232,240,0.5)'},ticks:{color:'#64748b',font:{size:11,family:'Inter'},callback:function(v){if(v>=100000) return '\u20b9'+(v/100000).toFixed(0)+'L';if(v>=1000) return '\u20b9'+(v/1000).toFixed(0)+'K';return '\u20b9'+v;}}}
+      }
+    }
+  });
+  document.getElementById('dlChartBtn').onclick=function(){
+    var wb2=XLSX.utils.book_new();
+    var chartRows=[['Date','Asset Debit (\u20b9)','Happay Debit (\u20b9)','Difference (\u20b9)']];
+    dates.forEach(function(d,i){chartRows.push([dispDate(d),aVals[i],oVals[i],diffVals[i]]);});
+    var wsC=XLSX.utils.aoa_to_sheet(chartRows);
+    wsC['!cols']=[{wch:14},{wch:18},{wch:18},{wch:16}];
+    XLSX.utils.book_append_sheet(wb2,wsC,'Chart Data');
+    XLSX.writeFile(wb2,'MMROADWAYS_ChartData.xlsx');
+  };
+  document.getElementById('dlChartImg').onclick=function(){
+    showToast('📸 Downloading chart image...');
+    var section2=document.getElementById('chartSection');
+    html2canvas(section2,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false}).then(function(canvas){
+      downloadCanvasWithHeader(canvas,'MMROADWAYS_Chart.png','Date-wise Debit Chart');
+    });
+  };
+}
+
+function buildDayTables(d1,d2){
+  var g1=groupByDate(d1), tbA=document.querySelector('#dtAsset tbody');
+  tbA.innerHTML=''; var t1=0;
+  Object.keys(g1).sort().forEach(function(d){var g=g1[d];t1+=g.total;tbA.innerHTML+='<tr><td>'+dispDate(d)+'</td><td>'+g.entries.length+'</td><td class="c-navy">'+fmtAmt(g.total)+'</td></tr>';});
+  if(!Object.keys(g1).length) tbA.innerHTML='<tr><td colspan="3" class="empty">No data</td></tr>';
+  document.getElementById('badgeAsset').textContent=fmtRs(t1);
+  var g2=groupByDate(d2), tbO=document.querySelector('#dtHappay tbody');
+  tbO.innerHTML=''; var t2=0;
+  Object.keys(g2).sort().forEach(function(d){var g=g2[d];t2+=g.total;tbO.innerHTML+='<tr><td>'+dispDate(d)+'</td><td>'+g.entries.length+'</td><td class="c-blue">'+fmtAmt(g.total)+'</td></tr>';});
+  if(!Object.keys(g2).length) tbO.innerHTML='<tr><td colspan="3" class="empty">No data</td></tr>';
+  document.getElementById('badgeHappay').textContent=fmtRs(t2);
+}
+
+function buildCmpRows(d1,d2){
+  var g1=groupByDate(d1), g2=groupByDate(d2), allDates={};
+  Object.keys(g1).forEach(function(d){allDates[d]=1;}); Object.keys(g2).forEach(function(d){allDates[d]=1;});
+  cmpRows=[];
+  Object.keys(allDates).sort().forEach(function(d){
+    var f1=g1[d]||{entries:[],total:0}, f2=g2[d]||{entries:[],total:0};
+    var diff=f1.total-f2.total;
+    var status=!g1[d]?'only_happay':!g2[d]?'only_asset':Math.abs(diff)<0.01?'match':'diff';
+    cmpRows.push({date:d,aCount:f1.entries.length,aAmt:f1.total,oCount:f2.entries.length,oAmt:f2.total,diff:diff,status:status});
+  });
+  var all=cmpRows.length, match=cmpRows.filter(function(r){return r.status==='match';}).length;
+  var diff2=cmpRows.filter(function(r){return r.status==='diff';}).length;
+  var only=cmpRows.filter(function(r){return r.status==='only_asset'||r.status==='only_happay';}).length;
+  document.getElementById('cntAll').textContent=all;
+  document.getElementById('cntMatch').textContent=match;
+  document.getElementById('cntDiff').textContent=diff2;
+  document.getElementById('cntOnly').textContent=only;
+}
+function renderCmpTable(){
+  var rows=cmpRows;
+  if(activeTab==='match') rows=rows.filter(function(r){return r.status==='match';});
+  if(activeTab==='diff')  rows=rows.filter(function(r){return r.status==='diff';});
+  if(activeTab==='only')  rows=rows.filter(function(r){return r.status==='only_asset'||r.status==='only_happay';});
+  var tb=document.getElementById('cmpBody');
+  if(!rows.length){tb.innerHTML='<tr><td colspan="7" class="empty">No records found</td></tr>';return;}
+  tb.innerHTML=rows.map(function(r){
+    var cls=r.status==='match'?'row-match':r.status==='diff'?'row-diff':'row-only';
+    var badge=r.status==='match'?'<span class="badge b-match">\u2713 MATCH</span>':r.status==='diff'?'<span class="badge b-diff">\u2717 DIFF</span>':r.status==='only_asset'?'<span class="badge b-only">\u26a0 Asset Only</span>':'<span class="badge b-only">\u26a0 Happay Only</span>';
+    var dh=Math.abs(r.diff)<0.01?'<span class="diff-ok">0.00</span>':(r.status==='only_asset'||r.status==='only_happay')?'<span class="diff-warn">\u2014</span>':'<span class="diff-bad">'+(r.diff>0?'+':'')+fmtAmt(r.diff)+'</span>';
+    return '<tr class="'+cls+'"><td>'+dispDate(r.date)+'</td><td>'+(r.aCount||'\u2014')+'</td><td class="c-navy">'+(r.aAmt?fmtAmt(r.aAmt):'\u2014')+'</td><td>'+(r.oCount||'\u2014')+'</td><td class="c-blue">'+(r.oAmt?fmtAmt(r.oAmt):'\u2014')+'</td><td>'+dh+'</td><td>'+badge+'</td></tr>';
+  }).join('');
+}
+
+function buildRawTables(d1,d2){
+  var g1=groupByDate(d1), g2=groupByDate(d2);
+  function makeFreq(grp){
+    var map={};
+    Object.keys(grp).forEach(function(dt){
+      var freq={};
+      grp[dt].entries.forEach(function(r){var k=Math.round(r.debit*100);freq[k]=(freq[k]||0)+1;});
+      map[dt]=freq;
+    });
+    return map;
+  }
+  var f2Used=JSON.parse(JSON.stringify(makeFreq(g2)));
+  var assetStatus=d1.map(function(r){
+    if(!g2[r.date]) return 'only_asset';
+    var k=Math.round(r.debit*100);
+    if(f2Used[r.date]&&f2Used[r.date][k]>0){f2Used[r.date][k]--;return 'match';}
+    return 'diff';
+  });
+  var f1Used=JSON.parse(JSON.stringify(makeFreq(g1)));
+  var happayStatus=d2.map(function(r){
+    if(!g1[r.date]) return 'only_happay';
+    var k=Math.round(r.debit*100);
+    if(f1Used[r.date]&&f1Used[r.date][k]>0){f1Used[r.date][k]--;return 'match';}
+    return 'diff';
+  });
+  var tbA=document.querySelector('#rawAsset tbody');tbA.innerHTML='';
+  d1.forEach(function(r,i){
+    var st=assetStatus[i],rowCls=st==='match'?'row-match':st==='diff'?'row-diff':'row-only';
+    var flag=st==='diff'?'<span class="diff-flag">\u2717 DIFF</span>':st==='only_asset'?'<span class="warn-flag">\u26a0 Only Asset</span>':'';
+    var stBadge=st==='match'?'<span class="badge b-match">\u2713</span>':st==='diff'?'<span class="badge b-diff">\u2717 DIFF</span>':'<span class="badge b-only">\u26a0 Only</span>';
+    tbA.innerHTML+='<tr class="'+rowCls+'"><td>'+escHtml(r.vehicleNo)+'</td><td>'+escHtml(r.driverName)+'</td><td>'+dispDate(r.date)+'</td><td>'+escHtml(r.paymentSource)+'</td><td class="c-navy">'+fmtAmt(r.debit)+flag+'</td><td>'+escHtml(r.noteNo)+'</td><td>'+stBadge+'</td></tr>';
+  });
+  if(!d1.length) tbA.innerHTML='<tr><td colspan="7" class="empty">No data</td></tr>';
+  var tbO=document.querySelector('#rawHappay tbody');tbO.innerHTML='';
+  d2.forEach(function(r,i){
+    var st=happayStatus[i],rowCls=st==='match'?'row-match':st==='diff'?'row-diff':'row-only';
+    var flag=st==='diff'?'<span class="diff-flag">\u2717 DIFF</span>':st==='only_happay'?'<span class="warn-flag">\u26a0 Only Happay</span>':'';
+    var stBadge=st==='match'?'<span class="badge b-match">\u2713</span>':st==='diff'?'<span class="badge b-diff">\u2717 DIFF</span>':'<span class="badge b-only">\u26a0 Only</span>';
+    tbO.innerHTML+='<tr class="'+rowCls+'"><td>'+dispDate(r.date)+'</td><td class="c-blue">'+fmtAmt(r.debit)+flag+'</td><td>'+escHtml(r.remarks)+'</td><td>'+stBadge+'</td></tr>';
+  });
+  if(!d2.length) tbO.innerHTML='<tr><td colspan="4" class="empty">No data</td></tr>';
+}
+
+/* ============================================================
+   EXPAND / RESTORE TABLE WRAPPERS
+============================================================ */
+function expandTableWrappers(container){
+  var wraps=container.querySelectorAll('.tbl-wrap');
+  var saved=[];
+  wraps.forEach(function(w){
+    saved.push({el:w,maxHeight:w.style.maxHeight,overflow:w.style.overflow,overflowY:w.style.overflowY});
+    w.style.maxHeight='none';
+    w.style.overflow='visible';
+    w.style.overflowY='visible';
+  });
+  return saved;
+}
+function restoreTableWrappers(saved){
+  saved.forEach(function(s){
+    s.el.style.maxHeight=s.maxHeight;
+    s.el.style.overflow=s.overflow;
+    s.el.style.overflowY=s.overflowY;
+  });
+}
+
+/* ============================================================
+   IMAGE CAPTURE UTILITIES
+============================================================ */
+function downloadCanvasWithHeader(canvas,filename,subtitle){
+  var hdrH=58;
+  var final2=document.createElement('canvas');
+  final2.width=canvas.width;
+  final2.height=canvas.height+hdrH;
+  var ctx=final2.getContext('2d');
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(0,0,final2.width,final2.height);
+  var grad=ctx.createLinearGradient(0,0,final2.width,0);
+  grad.addColorStop(0,'#1a237e');
+  grad.addColorStop(0.6,'#283593');
+  grad.addColorStop(1,'#3949ab');
+  ctx.fillStyle=grad;
+  ctx.fillRect(0,0,final2.width,hdrH);
+  ctx.fillStyle='#ffffff';
+  ctx.font='bold 20px Inter, Arial, sans-serif';
+  ctx.fillText('MM ROADWAYS',16,32);
+  ctx.fillStyle='#64b5f6';
+  ctx.font='bold 20px Inter, Arial';
+  ctx.fillText('  \u25cf  ',190,32);
+  ctx.fillStyle='#c5cae9';
+  ctx.font='14px Inter, Arial, sans-serif';
+  ctx.fillText(subtitle||'Tally Checker Report',265,32);
+  ctx.fillStyle='#9fa8da';
+  ctx.font='11px Inter, Arial';
+  var dtStr=new Date().toLocaleString('en-IN');
+  var tw=ctx.measureText(dtStr).width;
+  ctx.fillText(dtStr, final2.width-tw-14, 32);
+  var lineGrad=ctx.createLinearGradient(0,0,final2.width,0);
+  lineGrad.addColorStop(0,'#e53935');
+  lineGrad.addColorStop(0.5,'#ff9800');
+  lineGrad.addColorStop(1,'#1a237e');
+  ctx.fillStyle=lineGrad;
+  ctx.fillRect(0,hdrH-3,final2.width,3);
+  ctx.drawImage(canvas, 0, hdrH);
+  var a=document.createElement('a');
+  a.download=filename;
+  a.href=final2.toDataURL('image/png');
+  a.click();
+}
+
+function capturePanel(elemId,filename){
+  showToast('📸 Capturing image...');
+  var el=document.getElementById(elemId);
+  var saved=expandTableWrappers(el);
+  setTimeout(function(){
+    html2canvas(el,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,scrollY:-window.scrollY,windowHeight:el.scrollHeight+50}).then(function(canvas){
+      restoreTableWrappers(saved);
+      downloadCanvasWithHeader(canvas,'MMROADWAYS_'+filename.replace('MMROADWAYS_','')+'.png',filename.replace('MMROADWAYS_','').replace(/_/g,' '));
+    }).catch(function(){restoreTableWrappers(saved);});
+  },350);
+}
+
+function captureDashboard(){
+  showToast('📸 Capturing full dashboard...');
+  var el=document.getElementById('dashboard');
+  var saved=expandTableWrappers(el);
+  setTimeout(function(){
+    html2canvas(el,{scale:1.5,backgroundColor:'#f4f6f9',useCORS:true,logging:false,windowHeight:el.scrollHeight+100}).then(function(canvas){
+      restoreTableWrappers(saved);
+      downloadCanvasWithHeader(canvas,'MMROADWAYS_Full_Dashboard.png','Full Dashboard Report');
+    }).catch(function(){restoreTableWrappers(saved);});
+  },350);
+}
+
+/* ============================================================
+   COMBINED IMAGE
+============================================================ */
+function captureCombinedRaw(){
+  showToast('📸 Building combined image with ALL data...');
+  var elA=document.getElementById('rawAssetPanel');
+  var elO=document.getElementById('rawHappayPanel');
+  var savedA=expandTableWrappers(elA);
+  var savedO=expandTableWrappers(elO);
+  setTimeout(function(){
+    var scale=2;
+    Promise.all([
+      html2canvas(elA,{scale:scale,backgroundColor:'#ffffff',useCORS:true,logging:false,scrollY:-window.scrollY,windowHeight:elA.scrollHeight+50}),
+      html2canvas(elO,{scale:scale,backgroundColor:'#ffffff',useCORS:true,logging:false,scrollY:-window.scrollY,windowHeight:elO.scrollHeight+50})
+    ]).then(function(canvases){
+      restoreTableWrappers(savedA);
+      restoreTableWrappers(savedO);
+      var cA=canvases[0], cO=canvases[1];
+      var gap=28, pad=24, hdrH=80, labelH=52, statH=70, footH=40;
+      var totalW=cA.width+cO.width+gap+pad*2;
+      var totalH=hdrH+labelH+Math.max(cA.height,cO.height)+statH+footH+pad;
+      var final2=document.createElement('canvas');
+      final2.width=totalW; final2.height=totalH;
+      var ctx=final2.getContext('2d');
+      ctx.fillStyle='#f4f6f9'; ctx.fillRect(0,0,totalW,totalH);
+      var hGrad=ctx.createLinearGradient(0,0,totalW,0);
+      hGrad.addColorStop(0,'#1a237e'); hGrad.addColorStop(0.5,'#283593'); hGrad.addColorStop(1,'#0d47a1');
+      ctx.fillStyle=hGrad; ctx.fillRect(0,0,totalW,hdrH);
+      ctx.fillStyle='#ffffff'; ctx.font='bold 24px Inter, Arial, sans-serif'; ctx.fillText('MM ROADWAYS',pad,36);
+      ctx.fillStyle='#64b5f6'; ctx.beginPath(); ctx.arc(250,30,5,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#bbdefb'; ctx.font='bold 14px Inter, Arial, sans-serif'; ctx.fillText('Asset DATA  +  Happay DATA \u2014 Combined Report',270,36);
+      ctx.fillStyle='#90caf9'; ctx.font='12px Inter, Arial';
+      var dtStr=new Date().toLocaleString('en-IN'); var dtw=ctx.measureText(dtStr).width;
+      ctx.fillText(dtStr,totalW-dtw-pad,36);
+      var sGrad=ctx.createLinearGradient(0,0,totalW,0);
+      sGrad.addColorStop(0,'#e53935'); sGrad.addColorStop(0.25,'#ff9800'); sGrad.addColorStop(0.5,'#ffeb3b'); sGrad.addColorStop(0.75,'#4caf50'); sGrad.addColorStop(1,'#1a237e');
+      ctx.fillStyle=sGrad; ctx.fillRect(0,hdrH-4,totalW,4);
+      var stY=hdrH+8; var fd=filteredData();
+      var tA=fd.asset.reduce(function(s,r){return s+r.debit;},0);
+      var tO=fd.happay.reduce(function(s,r){return s+r.debit;},0);
+      var netDiff=tA-tO;
+      var matchCnt=cmpRows.filter(function(r){return r.status==='match';}).length;
+      var diffCnt=cmpRows.filter(function(r){return r.status==='diff';}).length;
+      var onlyCnt=cmpRows.filter(function(r){return r.status==='only_asset'||r.status==='only_happay';}).length;
+      var stats=[
+        {lbl:'ASSET TOTAL',val:'\u20b9'+fmtAmt(tA),bg:'#e8eaf6',fg:'#1a237e',border:'#3949ab'},
+        {lbl:'HAPPAY TOTAL',val:'\u20b9'+fmtAmt(tO),bg:'#e1f5fe',fg:'#0277bd',border:'#0288d1'},
+        {lbl:'DIFFERENCE',val:(netDiff>=0?'+':'')+'\u20b9'+fmtAmt(Math.abs(netDiff)),bg:Math.abs(netDiff)<0.01?'#e8f5e9':'#fce4ec',fg:Math.abs(netDiff)<0.01?'#2e7d32':'#c62828',border:Math.abs(netDiff)<0.01?'#4caf50':'#e53935'},
+        {lbl:'MATCHED',val:matchCnt+' dates',bg:'#e8f5e9',fg:'#2e7d32',border:'#4caf50'},
+        {lbl:'MISMATCH',val:diffCnt+' dates',bg:diffCnt?'#fce4ec':'#e8f5e9',fg:diffCnt?'#c62828':'#2e7d32',border:diffCnt?'#e53935':'#4caf50'},
+        {lbl:'ONLY ONE',val:onlyCnt+' dates',bg:onlyCnt?'#fff3e0':'#e8f5e9',fg:onlyCnt?'#e65100':'#2e7d32',border:onlyCnt?'#ff9800':'#4caf50'}
+      ];
+      var cardW=150,cardH=46,cardGap=12;
+      stats.forEach(function(s,i){
+        var cx=pad+i*(cardW+cardGap);
+        ctx.fillStyle=s.bg;
+        if(ctx.roundRect){ctx.beginPath();ctx.roundRect(cx,stY,cardW,cardH,8);ctx.fill();}
+        else{ctx.fillRect(cx,stY,cardW,cardH);}
+        ctx.fillStyle=s.border;
+        ctx.fillRect(cx,stY,5,cardH);
+        ctx.fillStyle=s.fg; ctx.font='bold 9px Inter, Arial'; ctx.fillText(s.lbl,cx+10,stY+16);
+        ctx.font='bold 14px monospace'; ctx.fillText(s.val,cx+10,stY+36);
+      });
+      var lbY=stY+statH;
+      ctx.fillStyle='#1a237e';
+      if(ctx.roundRect){ctx.beginPath();ctx.roundRect(pad,lbY,cA.width,labelH,10);ctx.fill();}
+      else{ctx.fillRect(pad,lbY,cA.width,labelH);}
+      ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.beginPath(); ctx.arc(pad+30,lbY+labelH/2,18,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#ffffff'; ctx.font='bold 20px Inter, Arial'; ctx.fillText('A',pad+22,lbY+labelH/2+7);
+      ctx.font='bold 20px Inter, Arial, sans-serif'; ctx.fillText('ASSET',pad+58,lbY+labelH/2+6);
+      ctx.fillStyle='#c5cae9'; ctx.font='12px Inter, Arial'; ctx.fillText(fd.asset.length+' Records',pad+cA.width-100,lbY+labelH/2+4);
+      var oX=pad+cA.width+gap;
+      ctx.fillStyle='#01579b';
+      if(ctx.roundRect){ctx.beginPath();ctx.roundRect(oX,lbY,cO.width,labelH,10);ctx.fill();}
+      else{ctx.fillRect(oX,lbY,cO.width,labelH);}
+      ctx.fillStyle='rgba(255,255,255,0.2)'; ctx.beginPath(); ctx.arc(oX+30,lbY+labelH/2,18,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#ffffff'; ctx.font='bold 20px Inter, Arial'; ctx.fillText('H',oX+22,lbY+labelH/2+7);
+      ctx.font='bold 20px Inter, Arial, sans-serif'; ctx.fillText('HAPPAY',oX+58,lbY+labelH/2+6);
+      ctx.fillStyle='#b3e5fc'; ctx.font='12px Inter, Arial'; ctx.fillText(fd.happay.length+' Records',oX+cO.width-100,lbY+labelH/2+4);
+      var tblY=lbY+labelH+8;
+      ctx.save(); ctx.shadowColor='rgba(26,35,126,0.12)'; ctx.shadowBlur=16; ctx.shadowOffsetY=4;
+      ctx.fillStyle='#ffffff';
+      if(ctx.roundRect){ctx.beginPath();ctx.roundRect(pad,tblY,cA.width,cA.height,10);ctx.fill();}
+      else{ctx.fillRect(pad,tblY,cA.width,cA.height);}
+      ctx.restore();
+      ctx.drawImage(cA, pad, tblY);
+      ctx.save(); ctx.shadowColor='rgba(2,136,209,0.12)'; ctx.shadowBlur=16; ctx.shadowOffsetY=4;
+      ctx.fillStyle='#ffffff';
+      if(ctx.roundRect){ctx.beginPath();ctx.roundRect(oX,tblY,cO.width,cO.height,10);ctx.fill();}
+      else{ctx.fillRect(oX,tblY,cO.width,cO.height);}
+      ctx.restore();
+      ctx.drawImage(cO, oX, tblY);
+      ctx.save(); ctx.strokeStyle='#cbd5e1'; ctx.lineWidth=2; ctx.setLineDash([8,4]);
+      ctx.beginPath(); ctx.moveTo(pad+cA.width+gap/2, lbY); ctx.lineTo(pad+cA.width+gap/2, tblY+Math.max(cA.height,cO.height)); ctx.stroke(); ctx.restore();
+      var legY=tblY+Math.max(cA.height,cO.height)+14;
+      var legItems=[{bg:'#e8f5e9',border:'#2e7d32',label:'\u2713 Matched'},{bg:'#fce4ec',border:'#c62828',label:'\u2717 Amount Mismatch'},{bg:'#fff8e1',border:'#ef6c00',label:'\u26a0 Only in One File'}];
+      var legX=pad;
+      legItems.forEach(function(item){
+        ctx.fillStyle=item.bg; ctx.strokeStyle=item.border; ctx.lineWidth=2;
+        if(ctx.roundRect){ctx.beginPath();ctx.roundRect(legX,legY,16,16,3);ctx.fill();ctx.stroke();}
+        else{ctx.fillRect(legX,legY,16,16);ctx.strokeRect(legX,legY,16,16);}
+        ctx.fillStyle='#475569'; ctx.font='bold 12px Inter, Arial'; ctx.fillText(item.label,legX+22,legY+13);
+        legX+=160;
+      });
+      var ftY=legY+30;
+      ctx.fillStyle='#94a3b8'; ctx.font='11px Inter, Arial';
+      ctx.fillText('Generated by MM Roadways Tally Checker  |  Asset Records: '+fd.asset.length+'  |  Happay Records: '+fd.happay.length,pad,ftY);
+      var rTxt='Page 1 of 1'; ctx.fillText(rTxt,totalW-ctx.measureText(rTxt).width-pad,ftY);
+      var a=document.createElement('a');
+      a.download='MMROADWAYS_Combined_Asset_Happay_DATA.png';
+      a.href=final2.toDataURL('image/png'); a.click();
+      showToast('\u2705 Combined image downloaded!');
+    }).catch(function(){
+      restoreTableWrappers(savedA); restoreTableWrappers(savedO);
+      showToast('\u274c Error capturing image');
+    });
+  },500);
+}
+
+/* ============================================================
+   PDF — COMBINED ASSET + HAPPAY (LANDSCAPE A4)
+============================================================ */
+function downloadCombinedPDF(){
+  showToast('📄 Generating PDF (Landscape A4)...');
+  var fd=filteredData();
+  var d1=fd.asset, d2=fd.happay;
+  var g1=groupByDate(d1), g2=groupByDate(d2);
+
+  function makeFreq(grp){
+    var map={};
+    Object.keys(grp).forEach(function(dt){
+      var freq={};
+      grp[dt].entries.forEach(function(r){var k=Math.round(r.debit*100);freq[k]=(freq[k]||0)+1;});
+      map[dt]=freq;
+    });
+    return map;
+  }
+
+  var f2Used=JSON.parse(JSON.stringify(makeFreq(g2)));
+  var assetStatus=d1.map(function(r){
+    if(!g2[r.date]) return 'only_asset';
+    var k=Math.round(r.debit*100);
+    if(f2Used[r.date]&&f2Used[r.date][k]>0){f2Used[r.date][k]--;return 'match';}
+    return 'diff';
+  });
+
+  var f1Used=JSON.parse(JSON.stringify(makeFreq(g1)));
+  var happayStatus=d2.map(function(r){
+    if(!g1[r.date]) return 'only_happay';
+    var k=Math.round(r.debit*100);
+    if(f1Used[r.date]&&f1Used[r.date][k]>0){f1Used[r.date][k]--;return 'match';}
+    return 'diff';
+  });
+
+  var tA=d1.reduce(function(s,r){return s+r.debit;},0);
+  var tO=d2.reduce(function(s,r){return s+r.debit;},0);
+  var netDiff=tA-tO;
+  var matchCnt=cmpRows.filter(function(r){return r.status==='match';}).length;
+  var diffCnt=cmpRows.filter(function(r){return r.status==='diff';}).length;
+  var onlyCnt=cmpRows.filter(function(r){return r.status==='only_asset'||r.status==='only_happay';}).length;
+  var now=new Date().toLocaleString('en-IN');
+
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF('l','mm','a4');
+  var pageW=297, pageH=210, margin=10;
+
+  // ── PAGE 1: HEADER + STATS + COMPARISON ────────────────
+  doc.setFillColor(26,35,126);
+  doc.rect(0,0,pageW,18,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(15);
+  doc.setFont('helvetica','bold');
+  doc.text('MM ROADWAYS',10,12);
+  doc.setFontSize(8);
+  doc.setFont('helvetica','normal');
+  doc.setTextColor(187,222,251);
+  doc.text('Asset DATA + Happay DATA  |  Combined Tally Report',68,12);
+  doc.setTextColor(144,202,249);
+  doc.setFontSize(6.5);
+  var dtTxt='Generated: '+now;
+  var dtW2=doc.getTextWidth(dtTxt);
+  doc.text(dtTxt,pageW-margin-dtW2,12);
+
+  // Accent strip
+  doc.setFillColor(229,57,53); doc.rect(0,18,74.25,2,'F');
+  doc.setFillColor(255,152,0); doc.rect(74.25,18,74.25,2,'F');
+  doc.setFillColor(76,175,80); doc.rect(148.5,18,74.25,2,'F');
+  doc.setFillColor(26,35,126); doc.rect(222.75,18,74.25,2,'F');
+
+  // Summary stat cards
+  var statsArr=[
+    {lbl:'ASSET TOTAL',val:'Rs.'+fmtAmt(tA),bg:[232,234,246],fg:[26,35,126],bdr:[57,73,171]},
+    {lbl:'HAPPAY TOTAL',val:'Rs.'+fmtAmt(tO),bg:[225,245,254],fg:[2,119,189],bdr:[2,136,209]},
+    {lbl:'DIFFERENCE',val:(netDiff>=0?'+':'')+'Rs.'+fmtAmt(Math.abs(netDiff)),bg:Math.abs(netDiff)<0.01?[232,245,233]:[252,228,236],fg:Math.abs(netDiff)<0.01?[46,125,50]:[198,40,40],bdr:Math.abs(netDiff)<0.01?[76,175,80]:[229,57,53]},
+    {lbl:'MATCHED',val:matchCnt+' dates',bg:[232,245,233],fg:[46,125,50],bdr:[76,175,80]},
+    {lbl:'MISMATCH',val:diffCnt+' dates',bg:diffCnt?[252,228,236]:[232,245,233],fg:diffCnt?[198,40,40]:[46,125,50],bdr:diffCnt?[229,57,53]:[76,175,80]},
+    {lbl:'ONLY ONE',val:onlyCnt+' dates',bg:onlyCnt?[255,243,224]:[232,245,233],fg:onlyCnt?[230,81,0]:[46,125,50],bdr:onlyCnt?[255,152,0]:[76,175,80]}
+  ];
+  var cardW=44, cardH=16, cardGap=3, statsY=23;
+  statsArr.forEach(function(s,i){
+    var cx=margin+i*(cardW+cardGap);
+    doc.setFillColor(s.bg[0],s.bg[1],s.bg[2]);
+    doc.roundedRect(cx,statsY,cardW,cardH,2,2,'F');
+    doc.setFillColor(s.bdr[0],s.bdr[1],s.bdr[2]);
+    doc.rect(cx,statsY,1.8,cardH,'F');
+    doc.setTextColor(s.fg[0],s.fg[1],s.fg[2]);
+    doc.setFontSize(5.5);
+    doc.setFont('helvetica','bold');
+    doc.text(s.lbl,cx+3.5,statsY+5);
+    doc.setFontSize(8.5);
+    doc.text(s.val,cx+3.5,statsY+11.5);
+  });
+
+  // Date-wise Comparison Section Header
+  var cmpStartY=statsY+cardH+5;
+  doc.setFillColor(55,71,79);
+  doc.roundedRect(margin,cmpStartY,pageW-2*margin,7,1,1,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(8);
+  doc.setFont('helvetica','bold');
+  doc.text('Date-wise Comparison',margin+3,cmpStartY+5);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(6);
+  doc.setTextColor(176,190,197);
+  doc.text(cmpRows.length+' date entries',pageW-margin-35,cmpStartY+5);
+
+  // Comparison table
+  var cmpHead=[['Date','Asset Entries','Asset Debit (Rs.)','Happay Txns','Happay Debit (Rs.)','Difference (Rs.)','Status']];
+  var cmpBody=cmpRows.map(function(r){
+    var diffTxt=Math.abs(r.diff)<0.01?'0.00':(r.status==='only_asset'||r.status==='only_happay')?'--':(r.diff>0?'+':'')+fmtAmt(r.diff);
+    var stTxt=r.status==='match'?'MATCH':r.status==='diff'?'DIFF':r.status==='only_asset'?'ASSET ONLY':'HAPPAY ONLY';
+    return[dispDate(r.date),r.aCount||'--',r.aAmt?fmtAmt(r.aAmt):'--',r.oCount||'--',r.oAmt?fmtAmt(r.oAmt):'--',diffTxt,stTxt];
+  });
+
+  doc.autoTable({
+    head:cmpHead,
+    body:cmpBody,
+    startY:cmpStartY+8,
+    margin:{left:margin,right:margin},
+    styles:{fontSize:6.5,font:'helvetica',cellPadding:1.8,lineColor:[226,232,240],lineWidth:0.2},
+    headStyles:{fillColor:[236,239,241],textColor:[71,85,105],fontStyle:'bold',fontSize:5.5},
+    columnStyles:{
+      0:{fontStyle:'bold',cellWidth:22},
+      2:{textColor:[26,35,126],fontStyle:'bold',halign:'right'},
+      4:{textColor:[2,119,189],fontStyle:'bold',halign:'right'},
+      5:{fontStyle:'bold',halign:'right'},
+      6:{halign:'center',cellWidth:22}
+    },
+    didParseCell:function(data){
+      if(data.section==='body'){
+        var rowIdx=data.row.index;
+        if(rowIdx<cmpRows.length){
+          var st=cmpRows[rowIdx].status;
+          if(st==='match') data.cell.styles.fillColor=[240,253,244];
+          else if(st==='diff') data.cell.styles.fillColor=[252,228,236];
+          else data.cell.styles.fillColor=[255,248,225];
+          if(data.column.index===6){
+            if(st==='match') data.cell.styles.textColor=[22,101,52];
+            else if(st==='diff') data.cell.styles.textColor=[153,27,27];
+            else data.cell.styles.textColor=[194,65,12];
+            data.cell.styles.fontStyle='bold';
+          }
+          if(data.column.index===5){
+            var st2=cmpRows[rowIdx].status;
+            if(st2==='diff') data.cell.styles.textColor=[198,40,40];
+            else if(st2==='match') data.cell.styles.textColor=[22,101,52];
+          }
+        }
+      }
+    }
+  });
+
+  // ── PAGE 2: ASSET RECORDS ──────────────────────────────
+  doc.addPage();
+
+  // Asset page header
+  doc.setFillColor(26,35,126);
+  doc.rect(0,0,pageW,14,'F');
+  doc.setDrawColor(255,255,255);
+  doc.setLineWidth(0.4);
+  doc.circle(14,7,3.5,'S');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(12);
+  doc.setFont('helvetica','bold');
+  doc.text('A',14,9.5);
+  doc.text('ASSET DATA',21,9.5);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(197,202,233);
+  doc.text(d1.length+' Records  |  Total: Rs.'+fmtAmt(tA),pageW-margin-60,9.5);
+
+  // Accent strip
+  doc.setFillColor(229,57,53); doc.rect(0,14,74.25,1.5,'F');
+  doc.setFillColor(255,152,0); doc.rect(74.25,14,74.25,1.5,'F');
+  doc.setFillColor(76,175,80); doc.rect(148.5,14,74.25,1.5,'F');
+  doc.setFillColor(26,35,126); doc.rect(222.75,14,74.25,1.5,'F');
+
+  var assetHead=[['Vehicle No','Driver Name','Date','Payment Source','Debit (Rs.)','Note No','Status']];
+  var assetBody=d1.map(function(r,i){
+    var st=assetStatus[i];
+    var stTxt=st==='match'?'MATCH':st==='diff'?'DIFF':'ASSET ONLY';
+    return[r.vehicleNo,r.driverName,dispDate(r.date),r.paymentSource,fmtAmt(r.debit),r.noteNo||'',stTxt];
+  });
+
+  doc.autoTable({
+    head:assetHead,
+    body:assetBody,
+    startY:18,
+    margin:{left:margin,right:margin},
+    styles:{fontSize:6.5,font:'helvetica',cellPadding:1.8,lineColor:[226,232,240],lineWidth:0.2},
+    headStyles:{fillColor:[26,35,126],textColor:[255,255,255],fontStyle:'bold',fontSize:5.5},
+    columnStyles:{
+      4:{textColor:[26,35,126],fontStyle:'bold',halign:'right'},
+      6:{halign:'center',cellWidth:20}
+    },
+    didParseCell:function(data){
+      if(data.section==='body'){
+        var rowIdx=data.row.index;
+        if(rowIdx<assetStatus.length){
+          var st=assetStatus[rowIdx];
+          if(st==='match') data.cell.styles.fillColor=[240,253,244];
+          else if(st==='diff') data.cell.styles.fillColor=[252,228,236];
+          else data.cell.styles.fillColor=[255,248,225];
+          if(data.column.index===6){
+            if(st==='match') data.cell.styles.textColor=[22,101,52];
+            else if(st==='diff') data.cell.styles.textColor=[153,27,27];
+            else data.cell.styles.textColor=[194,65,12];
+            data.cell.styles.fontStyle='bold';
+          }
+          if(data.column.index===4){
+            if(st==='diff') data.cell.styles.textColor=[198,40,40];
+          }
+        }
+      }
+    }
+  });
+
+  // ── PAGE 3: HAPPAY RECORDS ─────────────────────────────
+  doc.addPage();
+
+  // Happay page header
+  doc.setFillColor(1,87,155);
+  doc.rect(0,0,pageW,14,'F');
+  doc.circle(14,7,3.5,'S');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(12);
+  doc.setFont('helvetica','bold');
+  doc.text('H',14,9.5);
+  doc.text('HAPPAY DATA',21,9.5);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(6.5);
+  doc.setTextColor(179,229,252);
+  doc.text(d2.length+' Records  |  Total: Rs.'+fmtAmt(tO),pageW-margin-60,9.5);
+
+  // Accent strip
+  doc.setFillColor(229,57,53); doc.rect(0,14,74.25,1.5,'F');
+  doc.setFillColor(255,152,0); doc.rect(74.25,14,74.25,1.5,'F');
+  doc.setFillColor(76,175,80); doc.rect(148.5,14,74.25,1.5,'F');
+  doc.setFillColor(1,87,155); doc.rect(222.75,14,74.25,1.5,'F');
+
+  var happayHead=[['Date','Debit (Rs.)','Remarks','Status']];
+  var happayBody=d2.map(function(r,i){
+    var st=happayStatus[i];
+    var stTxt=st==='match'?'MATCH':st==='diff'?'DIFF':'HAPPAY ONLY';
+    return[dispDate(r.date),fmtAmt(r.debit),r.remarks,stTxt];
+  });
+
+  doc.autoTable({
+    head:happayHead,
+    body:happayBody,
+    startY:18,
+    margin:{left:margin,right:margin},
+    styles:{fontSize:6.5,font:'helvetica',cellPadding:1.8,lineColor:[226,232,240],lineWidth:0.2},
+    headStyles:{fillColor:[2,119,189],textColor:[255,255,255],fontStyle:'bold',fontSize:5.5},
+    columnStyles:{
+      1:{textColor:[2,119,189],fontStyle:'bold',halign:'right'},
+      3:{halign:'center',cellWidth:20}
+    },
+    didParseCell:function(data){
+      if(data.section==='body'){
+        var rowIdx=data.row.index;
+        if(rowIdx<happayStatus.length){
+          var st=happayStatus[rowIdx];
+          if(st==='match') data.cell.styles.fillColor=[240,253,244];
+          else if(st==='diff') data.cell.styles.fillColor=[252,228,236];
+          else data.cell.styles.fillColor=[255,248,225];
+          if(data.column.index===5){
+            if(st==='match') data.cell.styles.textColor=[22,101,52];
+            else if(st==='diff') data.cell.styles.textColor=[153,27,27];
+            else data.cell.styles.textColor=[194,65,12];
+            data.cell.styles.fontStyle='bold';
+          }
+          if(data.column.index===1){
+            if(st==='diff') data.cell.styles.textColor=[198,40,40];
+          }
+        }
+      }
+    }
+  });
+
+  // Add legend below the Happay table
+  var legY2=doc.lastAutoTable.finalY+8;
+  if(legY2>pageH-18){
+    doc.addPage();
+    legY2=14;
+  }
+
+  doc.setFillColor(248,250,252);
+  doc.roundedRect(margin,legY2,pageW-2*margin,10,2,2,'F');
+  doc.setDrawColor(226,232,240);
+  doc.setLineWidth(0.2);
+  doc.roundedRect(margin,legY2,pageW-2*margin,10,2,2,'S');
+
+  doc.setTextColor(71,85,105);
+  doc.setFontSize(6.5);
+  doc.setFont('helvetica','bold');
+  doc.text('LEGEND:',margin+4,legY2+6.5);
+
+  // Match legend
+  doc.setFillColor(220,252,231);
+  doc.roundedRect(margin+26,legY2+2.5,7,5,1,1,'F');
+  doc.setDrawColor(134,239,172);
+  doc.setLineWidth(0.2);
+  doc.roundedRect(margin+26,legY2+2.5,7,5,1,1,'S');
+  doc.setTextColor(22,101,52);
+  doc.setFontSize(6);
+  doc.text('MATCH',margin+35,legY2+6.5);
+
+  // Diff legend
+  doc.setFillColor(254,226,226);
+  doc.roundedRect(margin+58,legY2+2.5,7,5,1,1,'F');
+  doc.setDrawColor(252,165,165);
+  doc.roundedRect(margin+58,legY2+2.5,7,5,1,1,'S');
+  doc.setTextColor(153,27,27);
+  doc.text('DIFF',margin+67,legY2+6.5);
+
+  // Only legend
+  doc.setFillColor(255,247,237);
+  doc.roundedRect(margin+85,legY2+2.5,7,5,1,1,'F');
+  doc.setDrawColor(253,186,116);
+  doc.roundedRect(margin+85,legY2+2.5,7,5,1,1,'S');
+  doc.setTextColor(194,65,12);
+  doc.text('ONLY ONE FILE',margin+94,legY2+6.5);
+
+  // Footer info
+  doc.setTextColor(148,163,184);
+  doc.setFontSize(5.5);
+  doc.setFont('helvetica','normal');
+  doc.text('MM Roadways Tally Checker  |  Asset: '+d1.length+' records  |  Happay: '+d2.length+' records',margin+130,legY2+6.5);
+
+  // ── ADD FOOTERS TO ALL PAGES ───────────────────────────
+  var totalPages=doc.internal.getNumberOfPages();
+  for(var p=1;p<=totalPages;p++){
+    doc.setPage(p);
+    doc.setDrawColor(226,232,240);
+    doc.setLineWidth(0.3);
+    doc.line(margin,pageH-8,pageW-margin,pageH-8);
+    doc.setTextColor(148,163,184);
+    doc.setFontSize(5.5);
+    doc.setFont('helvetica','normal');
+    doc.text('MM Roadways - Tally Checker Report',margin,pageH-4);
+    var pgTxt='Page '+p+' of '+totalPages;
+    var pgW=doc.getTextWidth(pgTxt);
+    doc.text(pgTxt,pageW-margin-pgW,pageH-4);
+  }
+
+  doc.save('MMROADWAYS_Combined_Asset_Happay_DATA.pdf');
+  showToast('✅ PDF downloaded! (Landscape A4, '+totalPages+' pages)');
+}
+
+/* ============================================================
+   MS WORD — COMBINED ASSET + HAPPAY (LANDSCAPE A4)
+============================================================ */
+function downloadCombinedWord(){
+  showToast('📝 Generating Word document...');
+  var fd=filteredData();
+  var d1=fd.asset, d2=fd.happay;
+  var g1=groupByDate(d1), g2=groupByDate(d2);
+
+  function makeFreq(grp){
+    var map={};
+    Object.keys(grp).forEach(function(dt){
+      var freq={};
+      grp[dt].entries.forEach(function(r){var k=Math.round(r.debit*100);freq[k]=(freq[k]||0)+1;});
+      map[dt]=freq;
+    });
+    return map;
+  }
+  var f2Used=JSON.parse(JSON.stringify(makeFreq(g2)));
+  var assetStatus=d1.map(function(r){
+    if(!g2[r.date]) return 'only_asset';
+    var k=Math.round(r.debit*100);
+    if(f2Used[r.date]&&f2Used[r.date][k]>0){f2Used[r.date][k]--;return 'match';}
+    return 'diff';
+  });
+  var f1Used=JSON.parse(JSON.stringify(makeFreq(g1)));
+  var happayStatus=d2.map(function(r){
+    if(!g1[r.date]) return 'only_happay';
+    var k=Math.round(r.debit*100);
+    if(f1Used[r.date]&&f1Used[r.date][k]>0){f1Used[r.date][k]--;return 'match';}
+    return 'diff';
+  });
+
+  var tA=d1.reduce(function(s,r){return s+r.debit;},0);
+  var tO=d2.reduce(function(s,r){return s+r.debit;},0);
+  var netDiff=tA-tO;
+  var matchCnt=cmpRows.filter(function(r){return r.status==='match';}).length;
+  var diffCnt=cmpRows.filter(function(r){return r.status==='diff';}).length;
+  var onlyCnt=cmpRows.filter(function(r){return r.status==='only_asset'||r.status==='only_happay';}).length;
+  var now=new Date().toLocaleString('en-IN');
+
+  function stBg(st){return st==='match'?'#f0fdf4':st==='diff'?'#fce4ec':'#fff8e1';}
+  function stBdr(st){return st==='match'?'3px solid #2e7d32':st==='diff'?'3px solid #c62828':'3px solid #ef6c00';}
+  function stChip(st){
+    var styles={match:'background:#dcfce7;color:#166534;border:1px solid #86efac;',diff:'background:#fee2e2;color:#991b1b;border:1px solid #fca5a5;',only_asset:'background:#fff7ed;color:#c2410c;border:1px solid #fdba74;',only_happay:'background:#fff7ed;color:#c2410c;border:1px solid #fdba74;'};
+    var labels={match:'&#10003; MATCH',diff:'&#10007; DIFF',only_asset:'&#9888; Asset Only',only_happay:'&#9888; Happay Only'};
+    return '<span style="'+styles[st]+'padding:2px 8px;border-radius:4px;font-size:9px;font-weight:bold;font-family:Calibri,Arial;">'+labels[st]+'</span>';
+  }
+  var TD='padding:5px 9px;border-bottom:1px solid #e2e8f0;font-family:Consolas,Courier New,monospace;font-size:10px;vertical-align:middle;';
+  var TH_A='padding:6px 9px;text-align:left;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #1a237e;background:#eef2ff;font-family:Calibri,Arial;';
+  var TH_O='padding:6px 9px;text-align:left;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #0288d1;background:#e1f5fe;font-family:Calibri,Arial;';
+
+  var assetRows='';
+  d1.forEach(function(r,i){
+    var st=assetStatus[i];
+    assetRows+='<tr style="background:'+stBg(st)+';border-left:'+stBdr(st)+';">'
+      +'<td style="'+TD+'">'+escHtml(r.vehicleNo)+'</td>'
+      +'<td style="'+TD+'">'+escHtml(r.driverName)+'</td>'
+      +'<td style="'+TD+'">'+dispDate(r.date)+'</td>'
+      +'<td style="'+TD+'">'+escHtml(r.paymentSource)+'</td>'
+      +'<td style="'+TD+'color:#1a237e;font-weight:bold;text-align:right;">'+fmtAmt(r.debit)+'</td>'
+      +'<td style="'+TD+'">'+escHtml(r.noteNo||'')+'</td>'
+      +'<td style="'+TD+'text-align:center;">'+stChip(st)+'</td>'
+      +'</tr>';
+  });
+  if(!d1.length) assetRows='<tr><td colspan="7" style="padding:18px;text-align:center;color:#94a3b8;font-family:Calibri,Arial;font-size:11px;">No data</td></tr>';
+
+  var happayRows='';
+  d2.forEach(function(r,i){
+    var st=happayStatus[i];
+    happayRows+='<tr style="background:'+stBg(st)+';border-left:'+stBdr(st)+';">'
+      +'<td style="'+TD+'">'+dispDate(r.date)+'</td>'
+      +'<td style="'+TD+'color:#0277bd;font-weight:bold;text-align:right;">'+fmtAmt(r.debit)+'</td>'
+      +'<td style="'+TD+'max-width:180px;word-wrap:break-word;">'+escHtml(r.remarks)+'</td>'
+      +'<td style="'+TD+'text-align:center;">'+stChip(st)+'</td>'
+      +'</tr>';
+  });
+  if(!d2.length) happayRows='<tr><td colspan="4" style="padding:18px;text-align:center;color:#94a3b8;font-family:Calibri,Arial;font-size:11px;">No data</td></tr>';
+
+  var cmpHtmlRows='';
+  cmpRows.forEach(function(r){
+    var rowBg=r.status==='match'?'#f0fdf4':r.status==='diff'?'#fce4ec':'#fff8e1';
+    var diffVal=Math.abs(r.diff)<0.01?'<span style="color:#16a34a;font-weight:bold;">0.00</span>'
+      :(r.status==='only_asset'||r.status==='only_happay')?'<span style="color:#d97706;font-weight:bold;">—</span>':'<span style="color:#dc2626;font-weight:bold;">'+(r.diff>0?'+':'')+fmtAmt(r.diff)+'</span>';
+    cmpHtmlRows+='<tr style="background:'+rowBg+';border-left:'+stBdr(r.status)+';">'
+      +'<td style="'+TD+'font-weight:bold;">'+dispDate(r.date)+'</td>'
+      +'<td style="'+TD+'text-align:center;">'+(r.aCount||'—')+'</td>'
+      +'<td style="'+TD+'color:#1a237e;font-weight:bold;text-align:right;">'+(r.aAmt?fmtAmt(r.aAmt):'—')+'</td>'
+      +'<td style="'+TD+'text-align:center;">'+(r.oCount||'—')+'</td>'
+      +'<td style="'+TD+'color:#0277bd;font-weight:bold;text-align:right;">'+(r.oAmt?fmtAmt(r.oAmt):'—')+'</td>'
+      +'<td style="'+TD+'text-align:right;">'+diffVal+'</td>'
+      +'<td style="'+TD+'text-align:center;">'+stChip(r.status)+'</td>'
+      +'</tr>';
+  });
+  if(!cmpRows.length) cmpHtmlRows='<tr><td colspan="7" style="padding:18px;text-align:center;color:#94a3b8;font-family:Calibri,Arial;font-size:11px;">No comparison data</td></tr>';
+
+  // ── Summary stat cards ───────────────────────────────────
+  var statsArr=[
+    {lbl:'ASSET TOTAL',val:'&#8377;'+fmtAmt(tA),bg:'#e8eaf6',fg:'#1a237e',bdr:'#3949ab'},
+    {lbl:'HAPPAY TOTAL',val:'&#8377;'+fmtAmt(tO),bg:'#e1f5fe',fg:'#0277bd',bdr:'#0288d1'},
+    {lbl:'DIFFERENCE',val:(netDiff>=0?'+':'')+'&#8377;'+fmtAmt(Math.abs(netDiff)),bg:Math.abs(netDiff)<0.01?'#e8f5e9':'#fce4ec',fg:Math.abs(netDiff)<0.01?'#2e7d32':'#c62828',bdr:Math.abs(netDiff)<0.01?'#4caf50':'#e53935'},
+    {lbl:'MATCHED',val:matchCnt+' dates',bg:'#e8f5e9',fg:'#2e7d32',bdr:'#4caf50'},
+    {lbl:'MISMATCH',val:diffCnt+' dates',bg:diffCnt?'#fce4ec':'#e8f5e9',fg:diffCnt?'#c62828':'#2e7d32',bdr:diffCnt?'#e53935':'#4caf50'},
+    {lbl:'ONLY ONE',val:onlyCnt+' dates',bg:onlyCnt?'#fff3e0':'#e8f5e9',fg:onlyCnt?'#e65100':'#2e7d32',bdr:onlyCnt?'#ff9800':'#4caf50'}
+  ];
+  var statsHtml='';
+  statsArr.forEach(function(s){
+    statsHtml+='<td style="background:'+s.bg+';border-left:4px solid '+s.bdr+';border-radius:6px;padding:10px 14px;vertical-align:top;width:16%;"><div style="font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.8px;color:'+s.fg+';margin-bottom:4px;font-family:Calibri,Arial;">'+s.lbl+'</div><div style="font-size:17px;font-weight:bold;color:'+s.fg+';font-family:Consolas,Courier New,monospace;">'+s.val+'</div></td>';
+  });
+
+  // ── Build full HTML doc ───────────────────────────────────
+  var html=''
+    +'<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'
+    +'<head><meta charset="utf-8"><title>MM Roadways &#8212; Tally Report</title>'
+    +'<!--[if gte mso 9]><xml><w:WordDocument>'
+    +'<w:View>Print</w:View><w:Zoom>90</w:Zoom>'
+    +'<w:DoNotOptimizeForBrowser/>'
+    +'</w:WordDocument></xml><![endif]-->'
+    +'<style>'
+    +'@page Section1{size:841.9pt 595.3pt;mso-page-orientation:landscape;margin:14mm 12mm 14mm 12mm;}'
+    +'div.Section1{page:Section1;}'
+    +'@page{size:A4 landscape;margin:14mm 12mm;}'
+    +'body{font-family:Calibri,Arial,sans-serif;font-size:10pt;color:#0f172a;margin:0;padding:0;background:#fff;}'
+    +'table{border-collapse:collapse;width:100%;}'
+    +'th,td{font-family:Calibri,Arial,sans-serif;}'
+    +'</style>'
+    +'</head><body><div class="Section1">'
+
+    // ── Header bar ──────────────────────────────────────────
+    +'<table cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:0;"><tr>'
+    +'<td style="background:#1a237e;padding:13px 20px;border-radius:8px 8px 0 0;">'
+    +'<table style="width:100%;"><tr>'
+    +'<td style="color:#ffffff;font-size:20pt;font-weight:bold;font-family:Calibri,Arial;letter-spacing:-0.5px;">MM ROADWAYS</td>'
+    +'<td style="text-align:right;">'
+    +'<div style="color:#bbdefb;font-size:11pt;font-weight:bold;font-family:Calibri,Arial;">Asset DATA + Happay DATA &#8212; Combined Tally Report</div>'
+    +'<div style="color:#90caf9;font-size:8pt;font-family:Calibri,Arial;margin-top:2px;">Debit Reconciliation System &nbsp;|&nbsp; Generated: '+now+'</div>'
+    +'</td>'
+    +'</tr></table>'
+    +'</td>'
+    +'</tr></table>'
+
+    // coloured accent strip
+    +'<table cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:10px;"><tr>'
+    +'<td style="background:#e53935;height:4px;width:25%;font-size:1px;">&nbsp;</td>'
+    +'<td style="background:#ff9800;height:4px;width:25%;font-size:1px;">&nbsp;</td>'
+    +'<td style="background:#4caf50;height:4px;width:25%;font-size:1px;">&nbsp;</td>'
+    +'<td style="background:#1a237e;height:4px;width:25%;font-size:1px;">&nbsp;</td>'
+    +'</tr></table>'
+
+    // ── Summary cards row ────────────────────────────────────
+    +'<table cellpadding="0" cellspacing="8" style="width:100%;border-collapse:separate;margin-bottom:12px;">'
+    +'<tr>'+statsHtml+'</tr></table>'
+
+    // ── Section 1: Date-wise Comparison (full width) ─────────
+    +'<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:12px;">'
+    +'<div style="background:#37474f;padding:9px 16px;">'
+    +'<table style="width:100%;"><tr>'
+    +'<td style="color:#fff;font-size:13pt;font-weight:bold;font-family:Calibri,Arial;">&#128269; Date-wise Comparison</td>'
+    +'<td style="text-align:right;color:#b0bec5;font-size:9pt;font-family:Calibri,Arial;">'+cmpRows.length+' date entries</td>'
+    +'</tr></table>'
+    +'</div>'
+    +'<table style="width:100%;"><thead><tr style="background:#f8fafc;">'
+    +'<th style="padding:7px 9px;text-align:left;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #37474f;background:#eceff1;font-family:Calibri,Arial;">Date</th>'
+    +'<th style="padding:7px 9px;text-align:center;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #37474f;background:#eceff1;font-family:Calibri,Arial;">Asset Entries</th>'
+    +'<th style="padding:7px 9px;text-align:right;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #1a237e;background:#eef2ff;font-family:Calibri,Arial;">Asset Debit (&#8377;)</th>'
+    +'<th style="padding:7px 9px;text-align:center;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #37474f;background:#eceff1;font-family:Calibri,Arial;">Happay Txns</th>'
+    +'<th style="padding:7px 9px;text-align:right;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #0288d1;background:#e1f5fe;font-family:Calibri,Arial;">Happay Debit (&#8377;)</th>'
+    +'<th style="padding:7px 9px;text-align:right;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #e53935;background:#fce4ec;font-family:Calibri,Arial;">Difference (&#8377;)</th>'
+    +'<th style="padding:7px 9px;text-align:center;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #37474f;background:#eceff1;font-family:Calibri,Arial;">Status</th>'
+    +'</tr></thead>'
+    +'<tbody>'+cmpHtmlRows+'</tbody></table>'
+    +'</div>'
+
+    // ── Section 2: Asset + Happay side by side ─────────────────
+    +'<table cellpadding="0" cellspacing="10" style="width:100%;border-collapse:separate;margin-bottom:12px;"><tr>'
+
+    // Asset panel (55%)
+    +'<td style="width:55%;vertical-align:top;">'
+    +'<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">'
+    +'<div style="background:#1a237e;padding:9px 16px;">'
+    +'<table style="width:100%;"><tr>'
+    +'<td style="color:#fff;font-size:12pt;font-weight:bold;font-family:Calibri,Arial;">'
+    +'<span style="background:rgba(255,255,255,0.18);padding:2px 9px;border-radius:4px;margin-right:8px;">A</span>'
+    +'ASSET <span style="color:#ffd54f;">DATA</span></td>'
+    +'<td style="color:#c5cae9;font-size:9pt;text-align:right;font-family:Calibri,Arial;">'+d1.length+' Records</td>'
+    +'</tr></table>'
+    +'</div>'
+    +'<table style="width:100%;"><thead><tr>'
+    +'<th style="'+TH_A+'">Vehicle No</th>'
+    +'<th style="'+TH_A+'">Driver Name</th>'
+    +'<th style="'+TH_A+'">Date</th>'
+    +'<th style="'+TH_A+'">Source</th>'
+    +'<th style="'+TH_A+'text-align:right;">Debit (&#8377;)</th>'
+    +'<th style="'+TH_A+'">Note No</th>'
+    +'<th style="'+TH_A+'text-align:center;">Status</th>'
+    +'</tr></thead>'
+    +'<tbody>'+assetRows+'</tbody></table>'
+    +'</div>'
+    +'</td>'
+
+    // Happay panel (45%)
+    +'<td style="width:45%;vertical-align:top;">'
+    +'<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">'
+    +'<div style="background:#01579b;padding:9px 16px;">'
+    +'<table style="width:100%;"><tr>'
+    +'<td style="color:#fff;font-size:12pt;font-weight:bold;font-family:Calibri,Arial;">'
+    +'<span style="background:rgba(255,255,255,0.18);padding:2px 9px;border-radius:4px;margin-right:8px;">H</span>'
+    +'HAPPAY <span style="color:#69f0ae;">DATA</span></td>'
+    +'<td style="color:#b3e5fc;font-size:9pt;text-align:right;font-family:Calibri,Arial;">'+d2.length+' Records</td>'
+    +'</tr></table>'
+    +'</div>'
+    +'<table style="width:100%;"><thead><tr>'
+    +'<th style="'+TH_O+'">Date</th>'
+    +'<th style="'+TH_O+'text-align:right;">Debit (&#8377;)</th>'
+    +'<th style="'+TH_O+'">Remarks</th>'
+    +'<th style="'+TH_O+'text-align:center;">Status</th>'
+    +'</tr></thead>'
+    +'<tbody>'+happayRows+'</tbody></table>'
+    +'</div>'
+    +'</td>'
+
+    +'</tr></table>'
+
+    // ── Legend bar ───────────────────────────────────────────
+    +'<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:9px 16px;margin-bottom:8px;">'
+    +'<table style="width:100%;"><tr>'
+    +'<td style="font-size:9pt;font-weight:bold;color:#475569;padding-right:16px;font-family:Calibri,Arial;">LEGEND:</td>'
+    +'<td style="padding-right:16px;"><span style="background:#dcfce7;border:1px solid #86efac;padding:3px 10px;border-radius:4px;font-size:9pt;font-weight:bold;color:#166534;font-family:Calibri,Arial;">&#10003; Matched</span></td>'
+    +'<td style="padding-right:16px;"><span style="background:#fee2e2;border:1px solid #fca5a5;padding:3px 10px;border-radius:4px;font-size:9pt;font-weight:bold;color:#991b1b;font-family:Calibri,Arial;">&#10007; Amount Mismatch</span></td>'
+    +'<td><span style="background:#fff7ed;border:1px solid #fdba74;padding:3px 10px;border-radius:4px;font-size:9pt;font-weight:bold;color:#c2410c;font-family:Calibri,Arial;">&#9888; Only in One File</span></td>'
+    +'<td style="text-align:right;font-size:8pt;color:#94a3b8;font-family:Calibri,Arial;">Asset: '+d1.length+' records &nbsp;|&nbsp; Happay: '+d2.length+' records &nbsp;|&nbsp; Generated by MM Roadways Tally Checker</td>'
+    +'</tr></table>'
+    +'</div>'
+    +'</div></body></html>';
+
+  var blob=new Blob(['\ufeff',html],{type:'application/msword'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url;
+  a.download='MMROADWAYS_Combined_Asset_Happay_DATA.doc';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('\u2705 Word document downloaded! (Landscape A4)');
+}
+
+/* ============================================================ EXCEL HELPERS */
+function xlsFill(rgb){return{patternType:'solid',fgColor:{rgb:rgb}};}
+function hdrStyle2(bg){return{fill:xlsFill(bg),font:{bold:true,color:{rgb:'FFFFFF'},sz:11},alignment:{horizontal:'center',wrapText:true}};}
+function cellStyle2(bg){return{fill:xlsFill(bg),border:{bottom:{style:'thin',color:{rgb:'E2E8F0'}}}};}
+function applySheetStyle(ws,rows,cols,hdrBg,evenBg,oddBg){
+  for(var c=0;c<cols;c++){var cell=XLSX.utils.encode_cell({r:0,c:c});if(ws[cell])ws[cell].s=hdrStyle2(hdrBg);}
+  for(var r=1;r<rows;r++){for(var c=0;c<cols;c++){var cell=XLSX.utils.encode_cell({r:r,c:c});if(ws[cell])ws[cell].s=cellStyle2(r%2===0?evenBg:oddBg);}}
+}
+
+function downloadExcelReport(){
+  var wb=XLSX.utils.book_new();
+  var sumData=[['MM Roadways \u2014 Tally Checker Report'],['Generated: '+new Date().toLocaleString('en-IN')],[''],
+    ['Total Asset Entries',assetData.length],['Total Happay Transactions',happayData.length],
+    ['Asset Total Debit',parseFloat(assetData.reduce(function(s,r){return s+r.debit;},0).toFixed(2))],
+    ['Happay Total Debit',parseFloat(happayData.reduce(function(s,r){return s+r.debit;},0).toFixed(2))],
+    ['Net Difference',parseFloat((assetData.reduce(function(s,r){return s+r.debit;},0)-happayData.reduce(function(s,r){return s+r.debit;},0)).toFixed(2))],
+    ['Matched Dates',cmpRows.filter(function(r){return r.status==='match';}).length],
+    ['Diff Dates',cmpRows.filter(function(r){return r.status==='diff';}).length],
+    ['Only Asset Dates',cmpRows.filter(function(r){return r.status==='only_asset';}).length],
+    ['Only Happay Dates',cmpRows.filter(function(r){return r.status==='only_happay';}).length]
+  ];
+  var wsSummary=XLSX.utils.aoa_to_sheet(sumData);wsSummary['!cols']=[{wch:30},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,wsSummary,'Summary');
+  var cmpData=[['Date','Asset Entries','Asset Debit (\u20b9)','Happay Txns','Happay Debit (\u20b9)','Difference (\u20b9)','Status']];
+  cmpRows.forEach(function(r){var stLbl=r.status==='match'?'MATCH':r.status==='diff'?'DIFFERENCE':r.status==='only_asset'?'ASSET ONLY':'HAPPAY ONLY';cmpData.push([dispDate(r.date),r.aCount||0,parseFloat(r.aAmt.toFixed(2)),r.oCount||0,parseFloat(r.oAmt.toFixed(2)),parseFloat(r.diff.toFixed(2)),stLbl]);});
+  var wsCmp=XLSX.utils.aoa_to_sheet(cmpData);wsCmp['!cols']=[{wch:14},{wch:14},{wch:18},{wch:12},{wch:18},{wch:16},{wch:16}];
+  applySheetStyle(wsCmp,cmpData.length,7,'1A237E','EEF2FF','E8EAF6');
+  for(var i=1;i<cmpData.length;i++){if(cmpRows[i-1]&&cmpRows[i-1].status==='diff'){['A','B','C','D','E','F','G'].forEach(function(col){var c=col+(i+1);if(wsCmp[c])wsCmp[c].s=cellStyle2('FCE4EC');});}}
+  XLSX.utils.book_append_sheet(wb,wsCmp,'Date Comparison');
+  var g2=groupByDate(happayData),f2freq={};
+  Object.keys(g2).forEach(function(dt){var freq={};g2[dt].entries.forEach(function(r){var k=Math.round(r.debit*100);freq[k]=(freq[k]||0)+1;});f2freq[dt]=freq;});
+  var f2u=JSON.parse(JSON.stringify(f2freq));
+  var assetSheet=[['Vehicle No','Driver Name','Payment Date','Payment Source','Debit (\u20b9)','Note No','Status']],assetSt=[];
+  assetData.forEach(function(r){var st;if(!g2[r.date]) st='ASSET ONLY';else{var k=Math.round(r.debit*100);if(f2u[r.date]&&f2u[r.date][k]>0){f2u[r.date][k]--;st='MATCH';}else st='DIFFERENCE';}assetSheet.push([r.vehicleNo,r.driverName,dispDate(r.date),r.paymentSource,parseFloat(r.debit.toFixed(2)),r.noteNo||'',st]);assetSt.push(st);});
+  var wsAsset=XLSX.utils.aoa_to_sheet(assetSheet);wsAsset['!cols']=[{wch:14},{wch:18},{wch:14},{wch:18},{wch:16},{wch:14},{wch:16}];
+  applySheetStyle(wsAsset,assetSheet.length,7,'1A237E','EEF2FF','E8EAF6');
+  assetSt.forEach(function(st,i){var bg=st==='MATCH'?'E8F5E9':st==='DIFFERENCE'?'FCE4EC':'FFF8E1';['A','B','C','D','E','F','G'].forEach(function(col){var c=col+(i+2);if(wsAsset[c])wsAsset[c].s=cellStyle2(bg);});});
+  XLSX.utils.book_append_sheet(wb,wsAsset,'Asset Records');
+  var g1=groupByDate(assetData),f1freq={};
+  Object.keys(g1).forEach(function(dt){var freq={};g1[dt].entries.forEach(function(r){var k=Math.round(r.debit*100);freq[k]=(freq[k]||0)+1;});f1freq[dt]=freq;});
+  var f1u=JSON.parse(JSON.stringify(f1freq));
+  var happaySheet=[['Transaction Date','Debit (\u20b9)','Remarks','Status']],happaySt=[];
+  happayData.forEach(function(r){var st;if(!g1[r.date]) st='HAPPAY ONLY';else{var k=Math.round(r.debit*100);if(f1u[r.date]&&f1u[r.date][k]>0){f1u[r.date][k]--;st='MATCH';}else st='DIFFERENCE';}happaySheet.push([dispDate(r.date),parseFloat(r.debit.toFixed(2)),r.remarks,st]);happaySt.push(st);});
+  var wsHappay=XLSX.utils.aoa_to_sheet(happaySheet);wsHappay['!cols']=[{wch:16},{wch:16},{wch:30},{wch:16}];
+  applySheetStyle(wsHappay,happaySheet.length,4,'0277BD','E1F5FE','B3E5FC');
+  happaySt.forEach(function(st,i){var bg=st==='MATCH'?'E8F5E9':st==='DIFFERENCE'?'FCE4EC':'FFF8E1';['A','B','C','D'].forEach(function(col){var c=col+(i+2);if(wsHappay[c])wsHappay[c].s=cellStyle2(bg);});});
+  XLSX.utils.book_append_sheet(wb,wsHappay,'Happay Records');
+  var diffOnly=cmpRows.filter(function(r){return r.status==='diff';});
+  if(diffOnly.length){
+    var diffSheet=[['Date','Asset Entries','Asset Debit (\u20b9)','Happay Txns','Happay Debit (\u20b9)','Difference (\u20b9)']];
+    diffOnly.forEach(function(r){diffSheet.push([dispDate(r.date),r.aCount,parseFloat(r.aAmt.toFixed(2)),r.oCount,parseFloat(r.oAmt.toFixed(2)),parseFloat(r.diff.toFixed(2))]);});
+    var wsDiff=XLSX.utils.aoa_to_sheet(diffSheet);wsDiff['!cols']=[{wch:14},{wch:14},{wch:18},{wch:12},{wch:18},{wch:16}];
+    applySheetStyle(wsDiff,diffSheet.length,6,'B71C1C','FFF5F5','FCE4EC');
+    XLSX.utils.book_append_sheet(wb,wsDiff,'Differences Only');
+  }
+  XLSX.writeFile(wb,'MMROADWAYS_Tally_Report.xlsx');
+}
+
+function downloadRawExcel(type){
+  var wb=XLSX.utils.book_new();
+  if(type==='asset'){
+    var g2=groupByDate(happayData),freq={};
+    Object.keys(g2).forEach(function(dt){var f={};g2[dt].entries.forEach(function(r){var k=Math.round(r.debit*100);f[k]=(f[k]||0)+1;});freq[dt]=f;});
+    var fu=JSON.parse(JSON.stringify(freq));
+    var rows=[['Vehicle No','Driver Name','Payment Date','Payment Source','Debit (\u20b9)','Note No','Status']],stArr=[];
+    assetData.forEach(function(r){var st;if(!g2[r.date]) st='ASSET ONLY';else{var k=Math.round(r.debit*100);if(fu[r.date]&&fu[r.date][k]>0){fu[r.date][k]--;st='MATCH';}else st='DIFFERENCE';}rows.push([r.vehicleNo,r.driverName,dispDate(r.date),r.paymentSource,parseFloat(r.debit.toFixed(2)),r.noteNo||'',st]);stArr.push(st);});
+    var ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:14},{wch:18},{wch:14},{wch:18},{wch:16},{wch:14},{wch:16}];
+    applySheetStyle(ws,rows.length,7,'1A237E','EEF2FF','E8EAF6');
+    stArr.forEach(function(st,i){var bg=st==='MATCH'?'E8F5E9':st==='DIFFERENCE'?'FCE4EC':'FFF8E1';['A','B','C','D','E','F','G'].forEach(function(col){var c=col+(i+2);if(ws[c])ws[c].s=cellStyle2(bg);});});
+    XLSX.utils.book_append_sheet(wb,ws,'Asset Records');
+    XLSX.writeFile(wb,'MMROADWAYS_Asset_Records.xlsx');
+  } else {
+    var g1=groupByDate(assetData),freq={};
+    Object.keys(g1).forEach(function(dt){var f={};g1[dt].entries.forEach(function(r){var k=Math.round(r.debit*100);f[k]=(f[k]||0)+1;});freq[dt]=f;});
+    var fu=JSON.parse(JSON.stringify(freq));
+    var rows=[['Transaction Date','Debit (\u20b9)','Remarks','Status']],stArr=[];
+    happayData.forEach(function(r){var st;if(!g1[r.date]) st='HAPPAY ONLY';else{var k=Math.round(r.debit*100);if(fu[r.date]&&fu[r.date][k]>0){fu[r.date][k]--;st='MATCH';}else st='DIFFERENCE';}rows.push([dispDate(r.date),parseFloat(r.debit.toFixed(2)),r.remarks,st]);stArr.push(st);});
+    var ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:16},{wch:16},{wch:30},{wch:16}];
+    applySheetStyle(ws,rows.length,4,'0277BD','E1F5FE','B3E5FC');
+    stArr.forEach(function(st,i){var bg=st==='MATCH'?'E8F5E9':st==='DIFFERENCE'?'FCE4EC':'FFF8E1';['A','B','C','D'].forEach(function(col){var c=col+(i+2);if(ws[c])ws[c].s=cellStyle2(bg);});});
+    XLSX.utils.book_append_sheet(wb,ws,'Happay Records');
+    XLSX.writeFile(wb,'MMROADWAYS_Happay_Records.xlsx');
+  }
+}
+
+})(); // end IIFE
+</script>
+</body>
+</html>
