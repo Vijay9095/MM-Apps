@@ -135,27 +135,6 @@ tr:hover td{background:#f8fafc}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(--surface2)}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
-/* Snap styles for image export */
-.snap-wrap{background:#fff;padding:20px;font-family:'Nunito',sans-serif}
-.snap-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.snap-panel{border:1px solid #e2e8f0;border-radius:10px;overflow:hidden}
-.snap-ph{padding:8px 12px;font-size:11px;font-weight:800;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center}
-.snap-ph1{background:#eff6ff;color:#2563eb}
-.snap-ph2{background:#ecfeff;color:#0891b2}
-.snap-tbl{width:100%;border-collapse:collapse;font-size:10px}
-.snap-tbl th{background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0}
-.snap-tbl td{padding:4px 7px;border-bottom:1px solid #f1f5f9;font-family:'JetBrains Mono',monospace;font-size:9.5px}
-.snap-match td{background:#f0fdf4}
-.snap-mismatch td{background:#fef2f2}
-.snap-mismatch td:first-child{border-left:3px solid #dc2626}
-.snap-warn td{background:#fff7ed}
-.snap-warn td:first-child{border-left:3px solid #f97316}
-.snap-badge-ok{background:#dcfce7;color:#059669;padding:1px 5px;border-radius:4px;font-size:8px;font-weight:800;font-family:'Nunito',sans-serif}
-.snap-badge-diff{background:#fee2e2;color:#dc2626;padding:1px 5px;border-radius:4px;font-size:8px;font-weight:800;font-family:'Nunito',sans-serif}
-.snap-badge-warn{background:#ffedd5;color:#c2410c;padding:1px 5px;border-radius:4px;font-size:8px;font-weight:800;font-family:'Nunito',sans-serif}
-.snap-legend{display:flex;gap:14px;margin-bottom:12px;flex-wrap:wrap}
-.snap-rl{display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:#64748b}
-.snap-rl-box{width:10px;height:10px;border-radius:2px}
 @media(max-width:780px){.upload-grid,.day-grid,.raw-grid{grid-template-columns:1fr}.main{padding:1rem}header{padding:0 1rem}}
 </style>
 </head>
@@ -230,19 +209,20 @@ tr:hover td{background:#f8fafc}
     <div class="sec-title">📅 Per Day Summary</div>
     <div class="day-grid">
       <div class="panel">
-        <div class="panel-head ph1"><span>Asset — Per Day</span><span class="total-badge tb1" id="badge1">₹0</span></div>
+        <div class="panel-head ph1"><span>Asset — Per Day</span><span class="total-badge tb1" id="badge1">Rs.0</span></div>
         <div class="tbl-wrap">
           <table id="dt1"><thead><tr><th>Date</th><th>Entries</th><th>Fuel (L)</th><th>Amount</th></tr></thead><tbody></tbody></table>
         </div>
       </div>
       <div class="panel">
-        <div class="panel-head ph2"><span>IOCL OTP — Per Day</span><span class="total-badge tb2" id="badge2">₹0</span></div>
+        <div class="panel-head ph2"><span>IOCL OTP — Per Day</span><span class="total-badge tb2" id="badge2">Rs.0</span></div>
         <div class="tbl-wrap">
           <table id="dt2"><thead><tr><th>Date</th><th>Txns</th><th>Qty</th><th>Amount</th></tr></thead><tbody></tbody></table>
         </div>
       </div>
     </div>
 
+    <!-- DATE-WISE COMPARISON with Image Download -->
     <div class="sec-title">🔍 Date-wise Comparison</div>
     <div class="cmp-section">
       <div class="cmp-head">
@@ -251,11 +231,13 @@ tr:hover td{background:#f8fafc}
           <button class="tab-btn tab-ok" data-f="match">✓ Match <span class="count-chip chip-g" id="cntMatch">0</span></button>
           <button class="tab-btn tab-diff" data-f="diff">✗ Difference <span class="count-chip chip-r" id="cntDiff">0</span></button>
         </div>
+        <!-- NEW: Image download button for date-wise comparison -->
+        <button class="img-dl-btn" id="dlCmpImageBtn">🖼 Download Image (PNG)</button>
         <button class="dl-btn" id="dlDiffBtn">⬇ Download Differences (Excel)</button>
       </div>
-      <div class="tbl-wrap" style="max-height:360px">
-        <table>
-          <thead><tr><th>Date</th><th>Asset Entries</th><th>Asset Amount (₹)</th><th>IOCL OTP Txns</th><th>IOCL OTP Amount (₹)</th><th>Difference</th><th>Status</th></tr></thead>
+      <div class="tbl-wrap" style="max-height:360px" id="cmpTableWrap">
+        <table id="cmpTable">
+          <thead><tr><th>Date</th><th>Asset Entries</th><th>Asset Amount (Rs.)</th><th>IOCL OTP Txns</th><th>IOCL OTP Amount (Rs.)</th><th>Difference</th><th>Status</th></tr></thead>
           <tbody id="cmpBody"></tbody>
         </table>
       </div>
@@ -322,6 +304,7 @@ document.getElementById('dlRaw1').addEventListener('click',function(){downloadRa
 document.getElementById('dlRaw2').addEventListener('click',function(){downloadRawExcel(2);});
 document.getElementById('dlRawImageBtn').addEventListener('click',function(){downloadCombinedImage();});
 document.getElementById('dlRawPdfBtn').addEventListener('click',function(){downloadCombinedPDF();});
+document.getElementById('dlCmpImageBtn').addEventListener('click',function(){downloadCmpImage();});
 document.querySelectorAll('.tab-btn').forEach(function(btn){
   btn.addEventListener('click',function(){
     document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
@@ -547,7 +530,121 @@ function statusBadgeRaw(st,name){
 }
 
 /* ================================================================
-   BUILD SNAP HTML (shared by Image and PDF)
+   NEW: DATE-WISE COMPARISON IMAGE DOWNLOAD
+================================================================ */
+function downloadCmpImage(){
+  var btn=document.getElementById('dlCmpImageBtn');
+  if(!cmpRows.length){alert('No comparison data. Please compare files first.');return;}
+  btn.disabled=true;btn.textContent='⏳ Generating...';
+
+  var rows=cmpRows;
+  if(activeFilter==='match') rows=rows.filter(function(r){return r.status==='match';});
+  if(activeFilter==='diff')  rows=rows.filter(function(r){return r.status==='diff';});
+
+  var now=new Date();var dateStr=dd(isoDate(now));
+  var totalMatch=cmpRows.filter(function(r){return r.status==='match';}).length;
+  var totalDiff=cmpRows.filter(function(r){return r.status==='diff';}).length;
+  var t1=lastD1.reduce(function(s,r){return s+r.amount;},0);
+  var t2=lastD2.reduce(function(s,r){return s+r.amount;},0);
+  var overallDiff=t1-t2;
+
+  var filterLabel='';
+  if(isFiltered){filterLabel=' (Filtered)';}
+  var activeLabel=activeFilter==='all'?'All Dates':activeFilter==='match'?'Matching Only':'Differences Only';
+
+  var trs=rows.map(function(r){
+    var bg=r.status==='match'?'#f0fdf4':'#fef2f2';
+    var lft=r.status==='match'?'#059669':'#dc2626';
+    var badge=r.status==='match'?
+      '<span style="background:#dcfce7;color:#059669;padding:2px 8px;border-radius:5px;font-size:9px;font-weight:800;font-family:Nunito,sans-serif">✓ MATCH</span>':
+      '<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:5px;font-size:9px;font-weight:800;font-family:Nunito,sans-serif">✗ DIFF</span>';
+    var diffTxt=Math.abs(r.diff)<0.01?
+      '<span style="color:#059669;font-weight:700">0.00</span>':
+      '<span style="color:#dc2626;font-weight:700">'+(r.diff>0?'+':'')+fmtN(r.diff)+'</span>';
+    return '<tr style="background:'+bg+'">'
+      +'<td style="border-left:3px solid '+lft+';padding:6px 10px;font-family:monospace;font-size:10px;border-bottom:1px solid #e8f0f8;font-weight:700">'+dd(r.date)+'</td>'
+      +'<td style="padding:6px 10px;font-family:monospace;font-size:10px;border-bottom:1px solid #e8f0f8;text-align:center">'+r.f1Count+'</td>'
+      +'<td style="padding:6px 10px;font-family:monospace;font-size:10px;border-bottom:1px solid #e8f0f8;color:#2563eb;font-weight:600">'+fmtN(r.f1Amt)+'</td>'
+      +'<td style="padding:6px 10px;font-family:monospace;font-size:10px;border-bottom:1px solid #e8f0f8;text-align:center">'+r.f2Count+'</td>'
+      +'<td style="padding:6px 10px;font-family:monospace;font-size:10px;border-bottom:1px solid #e8f0f8;color:#0891b2;font-weight:600">'+fmtN(r.f2Amt)+'</td>'
+      +'<td style="padding:6px 10px;font-family:monospace;font-size:10px;border-bottom:1px solid #e8f0f8">'+diffTxt+'</td>'
+      +'<td style="padding:6px 10px;border-bottom:1px solid #e8f0f8">'+badge+'</td>'
+      +'</tr>';
+  }).join('');
+
+  var html='<div style="background:#fff;padding:24px;font-family:Nunito,sans-serif;width:1400px">'
+    // Header
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:3px solid #e2e8f0">'
+    +'<div style="display:flex;align-items:center;gap:10px">'
+    +'<div style="width:36px;height:36px;background:linear-gradient(135deg,#2563eb,#0891b2);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px">⛽</div>'
+    +'<div><div style="font-size:17px;font-weight:800;color:#1e293b">FuelCheck — Date-wise Comparison'+filterLabel+'</div>'
+    +'<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-top:2px">Asset vs IOCL OTP | View: '+activeLabel+'</div></div>'
+    +'</div>'
+    +'<div style="text-align:right;font-size:10px;color:#64748b">Generated - Vignesh: '+dateStr+'<br>'
+    +'<span style="color:#2563eb;font-weight:700">Total Dates: '+cmpRows.length+'</span></div>'
+    +'</div>'
+    // Summary boxes
+    +'<div style="display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap">'
+    +'<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 18px;flex:1;min-width:160px">'
+    +'<div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#3b82f6;margin-bottom:4px">Asset Total</div>'
+    +'<div style="font-size:15px;font-weight:800;color:#1e293b;font-family:monospace">Rs.'+fmtN(t1)+'</div>'
+    +'<div style="font-size:9px;color:#93c5fd;margin-top:2px">'+lastD1.length+' transactions</div>'
+    +'</div>'
+    +'<div style="background:#ecfeff;border:1px solid #a5f3fc;border-radius:10px;padding:10px 18px;flex:1;min-width:160px">'
+    +'<div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#0891b2;margin-bottom:4px">IOCL OTP Total</div>'
+    +'<div style="font-size:15px;font-weight:800;color:#1e293b;font-family:monospace">Rs.'+fmtN(t2)+'</div>'
+    +'<div style="font-size:9px;color:#67e8f9;margin-top:2px">'+lastD2.length+' transactions</div>'
+    +'</div>'
+    +'<div style="background:'+(Math.abs(overallDiff)<0.01?'#ecfdf5':'#fef2f2')+';border:1px solid '+(Math.abs(overallDiff)<0.01?'#6ee7b7':'#fca5a5')+';border-radius:10px;padding:10px 18px;flex:1;min-width:160px">'
+    +'<div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:'+(Math.abs(overallDiff)<0.01?'#059669':'#dc2626')+';margin-bottom:4px">Overall Difference</div>'
+    +'<div style="font-size:15px;font-weight:800;color:#1e293b;font-family:monospace">'+(overallDiff>=0?'+':'')+fmtN(overallDiff)+'</div>'
+    +'<div style="font-size:9px;color:#94a3b8;margin-top:2px">'+(Math.abs(overallDiff)<0.01?'Balanced':'Discrepancy found')+'</div>'
+    +'</div>'
+    +'<div style="background:#dcfce7;border:1px solid #86efac;border-radius:10px;padding:10px 18px;flex:1;min-width:160px">'
+    +'<div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#059669;margin-bottom:4px">Matching Dates</div>'
+    +'<div style="font-size:15px;font-weight:800;color:#1e293b;font-family:monospace">'+totalMatch+' / '+cmpRows.length+'</div>'
+    +'<div style="font-size:9px;color:#86efac;margin-top:2px">'+totalDiff+' differences found</div>'
+    +'</div>'
+    +'</div>'
+    // Legend
+    +'<div style="display:flex;gap:16px;margin-bottom:12px">'
+    +'<div style="display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:#64748b">'
+    +'<div style="width:14px;height:14px;background:#f0fdf4;border:2px solid #059669;border-radius:3px"></div>Match — Amounts Balanced</div>'
+    +'<div style="display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:#64748b">'
+    +'<div style="width:14px;height:14px;background:#fef2f2;border:2px solid #dc2626;border-radius:3px"></div>Difference — Amount Mismatch</div>'
+    +'</div>'
+    // Table
+    +'<div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">'
+    +'<table style="width:100%;border-collapse:collapse">'
+    +'<thead><tr style="background:linear-gradient(135deg,#1e3a8a,#0c4a6e)">'
+    +'<th style="padding:9px 10px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#e2e8f0;border-right:1px solid rgba(255,255,255,.1)">Date</th>'
+    +'<th style="padding:9px 10px;text-align:center;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#bfdbfe;border-right:1px solid rgba(255,255,255,.1)">Asset Entries</th>'
+    +'<th style="padding:9px 10px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#93c5fd;border-right:1px solid rgba(255,255,255,.1)">Asset Amount (Rs.)</th>'
+    +'<th style="padding:9px 10px;text-align:center;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#a5f3fc;border-right:1px solid rgba(255,255,255,.1)">IOCL Txns</th>'
+    +'<th style="padding:9px 10px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#67e8f9;border-right:1px solid rgba(255,255,255,.1)">IOCL Amount (Rs.)</th>'
+    +'<th style="padding:9px 10px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#fca5a5;border-right:1px solid rgba(255,255,255,.1)">Difference</th>'
+    +'<th style="padding:9px 10px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#d1fae5">Status</th>'
+    +'</tr></thead>'
+    +'<tbody>'+trs+'</tbody>'
+    +'</table>'
+    +'</div>'
+    +'<div style="margin-top:12px;font-size:9px;color:#94a3b8;text-align:right">FuelCheck Transaction Comparator — Date-wise Comparison | '+dateStr+'</div>'
+    +'</div>';
+
+  var snap=document.getElementById('snapContainer');
+  snap.innerHTML=html;snap.style.left='-9999px';snap.style.position='fixed';snap.style.top='0';snap.style.width='1400px';snap.style.background='#fff';
+  setTimeout(function(){
+    html2canvas(snap,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,width:1400,windowWidth:1400}).then(function(canvas){
+      var link=document.createElement('a');
+      link.download='FuelCheck_DatewiseComparison_'+now.getFullYear()+z(now.getMonth()+1)+z(now.getDate())+'.png';
+      link.href=canvas.toDataURL('image/png');link.click();
+      snap.innerHTML='';btn.disabled=false;btn.textContent='🖼 Download Image (PNG)';
+    }).catch(function(err){alert('Image failed: '+err.message);btn.disabled=false;btn.textContent='🖼 Download Image (PNG)';});
+  },300);
+}
+
+/* ================================================================
+   BUILD SNAP HTML (for All Records Image)
 ================================================================ */
 function buildSnapHTML(){
   var d1=lastD1,d2=lastD2;
@@ -560,17 +657,25 @@ function buildSnapHTML(){
   var d2only=lastRow2Status.filter(function(s){return s==='only2';}).length;
 
   function snapBadge(st,fn){
-    if(st==='match') return '<span class="snap-badge-ok">✓ Match</span>';
-    if(st==='diff')  return '<span class="snap-badge-diff">✗ Diff</span>';
-    return '<span class="snap-badge-warn">Only '+fn+'</span>';
+    if(st==='match') return '<span style="background:#dcfce7;color:#059669;padding:1px 5px;border-radius:4px;font-size:8px;font-weight:800">Match</span>';
+    if(st==='diff')  return '<span style="background:#fee2e2;color:#dc2626;padding:1px 5px;border-radius:4px;font-size:8px;font-weight:800">Diff</span>';
+    return '<span style="background:#ffedd5;color:#c2410c;padding:1px 5px;border-radius:4px;font-size:8px;font-weight:800">Only '+fn+'</span>';
   }
-  function rowCls(st){if(st==='match') return 'snap-match';if(st==='diff') return 'snap-mismatch';return 'snap-warn';}
+  function rowCls(st){if(st==='match') return '#f0fdf4';if(st==='diff') return '#fef2f2';return '#fff7ed';}
+  function rowBorder(st){if(st==='match') return '#059669';if(st==='diff') return '#dc2626';return '#f97316';}
 
   var rows1='';
   d1.forEach(function(r,i){
     var st=lastRow1Status[i];
     var amtStyle=st==='diff'?'color:#dc2626;font-weight:700':st==='only1'?'color:#d97706;font-weight:700':'color:#2563eb';
-    rows1+='<tr class="'+rowCls(st)+'"><td>'+r.vehicleNo+'</td><td>'+dd(r.date)+'</td><td>'+r.fuelLtr.toFixed(2)+'</td><td>'+fmtN(r.costPerLtr)+'</td><td style="'+amtStyle+'">'+fmtN(r.amount)+'</td><td>'+snapBadge(st,'Asset')+'</td></tr>';
+    rows1+='<tr style="background:'+rowCls(st)+'">'
+      +'<td style="border-left:3px solid '+rowBorder(st)+';padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9">'+r.vehicleNo+'</td>'
+      +'<td style="padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9">'+dd(r.date)+'</td>'
+      +'<td style="padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9">'+r.fuelLtr.toFixed(2)+'</td>'
+      +'<td style="padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9">'+fmtN(r.costPerLtr)+'</td>'
+      +'<td style="padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9;'+amtStyle+'">'+fmtN(r.amount)+'</td>'
+      +'<td style="padding:4px 7px;border-bottom:1px solid #f1f5f9">'+snapBadge(st,'Asset')+'</td>'
+      +'</tr>';
   });
   if(!d1.length) rows1='<tr><td colspan="6" style="text-align:center;padding:12px;color:#94a3b8">No data</td></tr>';
 
@@ -578,12 +683,19 @@ function buildSnapHTML(){
   d2.forEach(function(r,i){
     var st=lastRow2Status[i];
     var amtStyle=st==='diff'?'color:#dc2626;font-weight:700':st==='only2'?'color:#d97706;font-weight:700':'color:#0891b2';
-    rows2+='<tr class="'+rowCls(st)+'"><td>'+dd(r.date)+'</td><td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.merchant+'</td><td>'+r.rsp.toFixed(2)+'</td><td>'+r.quantity.toFixed(2)+'</td><td style="'+amtStyle+'">'+fmtN(r.amount)+'</td><td>'+snapBadge(st,'IOCL')+'</td></tr>';
+    rows2+='<tr style="background:'+rowCls(st)+'">'
+      +'<td style="border-left:3px solid '+rowBorder(st)+';padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9">'+dd(r.date)+'</td>'
+      +'<td style="padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.merchant+'</td>'
+      +'<td style="padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9">'+r.rsp.toFixed(2)+'</td>'
+      +'<td style="padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9">'+r.quantity.toFixed(2)+'</td>'
+      +'<td style="padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9;'+amtStyle+'">'+fmtN(r.amount)+'</td>'
+      +'<td style="padding:4px 7px;border-bottom:1px solid #f1f5f9">'+snapBadge(st,'IOCL')+'</td>'
+      +'</tr>';
   });
   if(!d2.length) rows2='<tr><td colspan="6" style="text-align:center;padding:12px;color:#94a3b8">No data</td></tr>';
 
   return {html:
-    '<div class="snap-wrap">'
+    '<div style="background:#fff;padding:20px;font-family:Nunito,sans-serif">'
     +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid #e2e8f0">'
     +'<div style="display:flex;align-items:center;gap:8px">'
     +'<div style="width:28px;height:28px;background:linear-gradient(135deg,#2563eb,#0891b2);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px">⛽</div>'
@@ -592,10 +704,10 @@ function buildSnapHTML(){
     +'</div>'
     +'<div style="font-size:10px;color:#64748b;text-align:right">Generated - Vignesh: '+dateStr+'<br>Asset: '+d1.length+' records | IOCL OTP: '+d2.length+' records</div>'
     +'</div>'
-    +'<div class="snap-legend">'
-    +'<div class="snap-rl"><div class="snap-rl-box" style="background:#f0fdf4;border:1.5px solid #059669"></div>Match</div>'
-    +'<div class="snap-rl"><div class="snap-rl-box" style="background:#fef2f2;border:1.5px solid #dc2626"></div>Amount Mismatch</div>'
-    +'<div class="snap-rl"><div class="snap-rl-box" style="background:#fff7ed;border:1.5px solid #f97316"></div>Only in one file</div>'
+    +'<div style="display:flex;gap:14px;margin-bottom:12px;flex-wrap:wrap">'
+    +'<div style="display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:#64748b"><div style="width:10px;height:10px;background:#f0fdf4;border:1.5px solid #059669;border-radius:2px"></div>Match</div>'
+    +'<div style="display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:#64748b"><div style="width:10px;height:10px;background:#fef2f2;border:1.5px solid #dc2626;border-radius:2px"></div>Amount Mismatch</div>'
+    +'<div style="display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:#64748b"><div style="width:10px;height:10px;background:#fff7ed;border:1.5px solid #f97316;border-radius:2px"></div>Only in one file</div>'
     +'</div>'
     +'<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">'
     +'<span style="background:#dcfce7;color:#059669;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">Asset ✓ '+d1match+' Match</span>'
@@ -605,11 +717,29 @@ function buildSnapHTML(){
     +'<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">IOCL ✗ '+d2diff+' Diff</span>'
     +(d2only>0?'<span style="background:#ffedd5;color:#c2410c;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">IOCL Only '+d2only+'</span>':'')
     +'</div>'
-    +'<div class="snap-grid">'
-    +'<div class="snap-panel"><div class="snap-ph snap-ph1"><span>Asset — Internal Records</span><span style="font-family:monospace;font-size:9px;background:rgba(37,99,235,.12);padding:2px 7px;border-radius:10px">'+d1.length+' records</span></div>'
-    +'<table class="snap-tbl"><thead><tr><th>Vehicle No</th><th>Date</th><th>Fuel (L)</th><th>Rate/L</th><th>Amount (Rs.)</th><th>Status</th></tr></thead><tbody>'+rows1+'</tbody></table></div>'
-    +'<div class="snap-panel"><div class="snap-ph snap-ph2"><span>IOCL OTP — Transactions</span><span style="font-family:monospace;font-size:9px;background:rgba(8,145,178,.12);padding:2px 7px;border-radius:10px">'+d2.length+' records</span></div>'
-    +'<table class="snap-tbl"><thead><tr><th>Date</th><th>Merchant</th><th>RSP</th><th>Qty</th><th>Amount (Rs.)</th><th>Status</th></tr></thead><tbody>'+rows2+'</tbody></table></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">'
+    +'<div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">'
+    +'<div style="padding:8px 12px;font-size:11px;font-weight:800;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;background:#eff6ff;color:#2563eb">'
+    +'<span>Asset — Internal Records</span><span style="font-family:monospace;font-size:9px;background:rgba(37,99,235,.12);padding:2px 7px;border-radius:10px">'+d1.length+' records</span></div>'
+    +'<table style="width:100%;border-collapse:collapse"><thead><tr>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Vehicle No</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Date</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Fuel (L)</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Rate/L</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Amount (Rs.)</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Status</th>'
+    +'</tr></thead><tbody>'+rows1+'</tbody></table></div>'
+    +'<div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">'
+    +'<div style="padding:8px 12px;font-size:11px;font-weight:800;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;background:#ecfeff;color:#0891b2">'
+    +'<span>IOCL OTP — Transactions</span><span style="font-family:monospace;font-size:9px;background:rgba(8,145,178,.12);padding:2px 7px;border-radius:10px">'+d2.length+' records</span></div>'
+    +'<table style="width:100%;border-collapse:collapse"><thead><tr>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Date</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Merchant</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">RSP</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Qty</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Amount (Rs.)</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Status</th>'
+    +'</tr></thead><tbody>'+rows2+'</tbody></table></div>'
     +'</div>'
     +'<div style="margin-top:12px;font-size:9px;color:#94a3b8;text-align:right">FuelCheck Transaction Comparator — Asset vs IOCL OTP | '+dateStr+'</div>'
     +'</div>',
@@ -618,7 +748,7 @@ function buildSnapHTML(){
 }
 
 /* ================================================================
-   DOWNLOAD COMBINED IMAGE (PNG)
+   DOWNLOAD COMBINED IMAGE (PNG) — All Records
 ================================================================ */
 function downloadCombinedImage(){
   var btn=document.getElementById('dlRawImageBtn');
@@ -639,10 +769,8 @@ function downloadCombinedImage(){
 }
 
 /* ================================================================
-   DOWNLOAD COMBINED PDF
-   Uses jsPDF + html2canvas:
-   - Cover/summary page drawn with jsPDF directly (vector text)
-   - Data tables rendered via html2canvas page-by-page and added as images
+   IMPROVED PDF DOWNLOAD — Clean, User-Friendly, Multi-page
+   Uses jsPDF table rendering for crisp text (no blurry screenshots)
 ================================================================ */
 function downloadCombinedPDF(){
   var btn=document.getElementById('dlRawPdfBtn');
@@ -658,174 +786,266 @@ function downloadCombinedPDF(){
   var d2match=lastRow2Status.filter(function(s){return s==='match';}).length;
   var d2diff=lastRow2Status.filter(function(s){return s==='diff';}).length;
   var d2only=lastRow2Status.filter(function(s){return s==='only2';}).length;
+  var t1=d1.reduce(function(s,r){return s+r.amount;},0);
+  var t2=d2.reduce(function(s,r){return s+r.amount;},0);
+  var overallDiff=t1-t2;
 
   var jsPDF=window.jspdf.jsPDF;
   var doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-  var PW=297,PH=210,M=14;
+  var PW=297,PH=210,M=12;
+  var pageNum=1;
 
-  /* ── PAGE 1: Cover / Summary ── */
-  /* Header bar */
-  doc.setFillColor(37,99,235);doc.rect(0,0,PW,18,'F');
-  doc.setTextColor(255,255,255);doc.setFontSize(13);doc.setFont('helvetica','bold');
-  doc.text('FuelCheck — MM ROADWAYS',M,11.5);
-  doc.setFontSize(8);doc.setFont('helvetica','normal');
-  doc.text('Asset vs IOCL OTP Transaction Comparison',M,16);
-  doc.text('Generated - Vignesh: '+dateStr,PW-M,16,{align:'right'});
-
-  /* Sub header */
-  doc.setTextColor(30,41,59);doc.setFontSize(9);doc.setFont('helvetica','bold');
-  doc.text('MMR Report Summary',M,27);
-  doc.setDrawColor(226,232,240);doc.setLineWidth(0.3);doc.line(M,29,PW-M,29);
-
-  /* Summary stat boxes */
-  function statBox(x,y,w,h,bg,label,val,sub){
-    doc.setFillColor(bg[0],bg[1],bg[2]);doc.roundedRect(x,y,w,h,2,2,'F');
-    doc.setTextColor(100,116,139);doc.setFontSize(6.5);doc.setFont('helvetica','bold');
-    doc.text(label.toUpperCase(),x+4,y+6);
-    doc.setTextColor(30,41,59);doc.setFontSize(10);doc.setFont('helvetica','bold');
-    doc.text(val,x+4,y+13);
-    doc.setTextColor(148,163,184);doc.setFontSize(6);doc.setFont('helvetica','normal');
-    doc.text(sub,x+4,y+18);
+  /* ── Shared helpers ── */
+  function drawPageHeader(title,subtitle){
+    doc.setFillColor(15,40,100);doc.rect(0,0,PW,16,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(11);doc.setFont('helvetica','bold');
+    doc.text('⛽  FuelCheck — MM Roadways',M,10.5);
+    doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(160,185,255);
+    doc.text(title,M,14.5);
+    doc.setTextColor(160,185,255);doc.text('Generated - Vignesh: '+dateStr+'   |   Page '+pageNum,PW-M,14.5,{align:'right'});
   }
-  var t1=d1.reduce(function(s,r){return s+r.amount;},0);
-  var t2=d2.reduce(function(s,r){return s+r.amount;},0);
-  var diff=t1-t2;
-  var bw=60,bh=22,bx=M,by=32,bgap=4;
-  statBox(bx,by,bw,bh,[239,246,255],'Asset Total','Rs.'+fmtN(t1),d1.length+' transactions');
-  statBox(bx+bw+bgap,by,bw,bh,[236,254,255],'IOCL OTP Total','Rs.'+fmtN(t2),d2.length+' transactions');
-  var diffBg=Math.abs(diff)<0.01?[236,253,245]:[254,242,242];
-  statBox(bx+(bw+bgap)*2,by,bw,bh,diffBg,'Difference',(diff>=0?'+':'')+fmtN(diff),Math.abs(diff)<0.01?'Balanced':'Discrepancy');
-  statBox(bx+(bw+bgap)*3,by,bw,bh,[255,251,235],'Total Fuel',d1.reduce(function(s,r){return s+r.fuelLtr;},0).toFixed(1)+' L','from Asset');
+  function drawPageFooter(){
+    doc.setFillColor(248,250,252);doc.rect(0,PH-7,PW,7,'F');
+    doc.setDrawColor(226,232,240);doc.setLineWidth(0.2);doc.line(0,PH-7,PW,PH-7);
+    doc.setTextColor(148,163,184);doc.setFontSize(6.5);doc.setFont('helvetica','normal');
+    doc.text('FuelCheck Transaction Comparator  |  Asset vs IOCL OTP  |  Confidential',M,PH-2.5);
+    doc.text(dateStr+'  |  Page '+pageNum,PW-M,PH-2.5,{align:'right'});
+  }
 
-  /* Status summary table */
-  var sy=by+bh+8;
-  doc.setFontSize(8.5);doc.setFont('helvetica','bold');doc.setTextColor(30,41,59);
-  doc.text('Record Status Summary',M,sy);sy+=5;
-  var cols=['Source','Total Records','✓ Match','✗ Difference','Only in this file'];
-  var rows=[
-    ['Asset (File 1)',d1.length,d1match,d1diff,d1only],
-    ['IOCL OTP (File 2)',d2.length,d2match,d2diff,d2only]
+  /* ─────────────────────────────────────────────────────────────
+     PAGE 1 — COVER / SUMMARY
+  ───────────────────────────────────────────────────────────── */
+  drawPageHeader('Transaction Comparison Report','');
+
+  /* Title block */
+  doc.setFillColor(239,246,255);doc.roundedRect(M,20,PW-2*M,18,3,3,'F');
+  doc.setDrawColor(191,219,254);doc.setLineWidth(0.4);doc.roundedRect(M,20,PW-2*M,18,3,3,'S');
+  doc.setTextColor(30,41,59);doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text('FuelCheck — Transaction Comparison Report',PW/2,30,{align:'center'});
+  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(100,116,139);
+  doc.text('Asset (File 1)  vs  IOCL OTP (File 2)  |  All Transactions Summary',PW/2,35.5,{align:'center'});
+
+  /* KPI boxes */
+  var kpis=[
+    {lbl:'Asset Total',val:'Rs.'+fmtN(t1),sub:d1.length+' records',bg:[239,246,255],bd:[147,197,253],vc:[30,64,175]},
+    {lbl:'IOCL OTP Total',val:'Rs.'+fmtN(t2),sub:d2.length+' records',bg:[236,254,255],bd:[103,232,249],vc:[14,116,144]},
+    {lbl:'Difference',val:(overallDiff>=0?'+':'')+fmtN(overallDiff),sub:Math.abs(overallDiff)<0.01?'Balanced':'Discrepancy',bg:Math.abs(overallDiff)<0.01?[240,253,244]:[254,242,242],bd:Math.abs(overallDiff)<0.01?[134,239,172]:[252,165,165],vc:Math.abs(overallDiff)<0.01?[5,150,105]:[220,38,38]},
+    {lbl:'Total Fuel',val:d1.reduce(function(s,r){return s+r.fuelLtr;},0).toFixed(1)+' L',sub:'from Asset file',bg:[255,251,235],bd:[253,211,77],vc:[146,64,14]}
   ];
-  var cws=[60,35,35,35,50];
-  var cx=M;
-  /* Header */
-  doc.setFillColor(30,58,138);
-  var rowH=7;
-  cols.forEach(function(c,i){doc.rect(cx,sy,cws[i],rowH,'F');cx+=cws[i];});
-  cx=M;
-  doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont('helvetica','bold');
-  cols.forEach(function(c,i){doc.text(c,cx+2,sy+4.5);cx+=cws[i];});
-  sy+=rowH;
-  /* Data rows */
-  var rowBgs=[[239,246,255],[236,254,255]];
-  rows.forEach(function(row,ri){
-    cx=M;
-    doc.setFillColor(rowBgs[ri][0],rowBgs[ri][1],rowBgs[ri][2]);
-    cws.forEach(function(cw){doc.rect(cx,sy,cw,rowH,'F');cx+=cw;});
-    cx=M;
-    doc.setTextColor(30,41,59);doc.setFontSize(7);doc.setFont('helvetica','normal');
-    row.forEach(function(cell,ci){doc.text(String(cell),cx+2,sy+4.5);cx+=cws[ci];});
-    sy+=rowH;
+  var kx=M,ky=42,kw=(PW-2*M-9)/4,kh=20;
+  kpis.forEach(function(k,i){
+    doc.setFillColor(k.bg[0],k.bg[1],k.bg[2]);doc.roundedRect(kx,ky,kw,kh,2,2,'F');
+    doc.setDrawColor(k.bd[0],k.bd[1],k.bd[2]);doc.setLineWidth(0.3);doc.roundedRect(kx,ky,kw,kh,2,2,'S');
+    doc.setTextColor(100,116,139);doc.setFontSize(6.5);doc.setFont('helvetica','bold');
+    doc.text(k.lbl.toUpperCase(),kx+4,ky+5.5);
+    doc.setTextColor(k.vc[0],k.vc[1],k.vc[2]);doc.setFontSize(11);doc.setFont('helvetica','bold');
+    doc.text(k.val,kx+4,ky+13);
+    doc.setTextColor(148,163,184);doc.setFontSize(6);doc.setFont('helvetica','normal');
+    doc.text(k.sub,kx+4,ky+18);
+    kx+=kw+3;
   });
 
-  /* Legend */
+  /* Status summary table */
+  var sy=66;
+  doc.setTextColor(30,41,59);doc.setFontSize(9);doc.setFont('helvetica','bold');
+  doc.text('Record Status Summary',M,sy);sy+=4;
+
+  var colW=[55,28,28,28,28,28];var colX=M;var rh=8;
+  var hdrs=['Source','Total','✓ Match','✗ Diff','Only Here','Match %'];
+  /* Header */
+  doc.setFillColor(15,40,100);
+  colW.forEach(function(w,i){doc.rect(colX+colW.slice(0,i).reduce(function(a,b){return a+b;},0),sy,w,rh,'F');});
+  doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont('helvetica','bold');
+  var cx=M;
+  hdrs.forEach(function(h,i){doc.text(h,cx+2,sy+5.2);cx+=colW[i];});
+  sy+=rh;
+
+  var sRows=[
+    {src:'Asset (File 1)',tot:d1.length,m:d1match,df:d1diff,on:d1only,bg:[239,246,255]},
+    {src:'IOCL OTP (File 2)',tot:d2.length,m:d2match,df:d2diff,on:d2only,bg:[236,254,255]}
+  ];
+  sRows.forEach(function(row){
+    doc.setFillColor(row.bg[0],row.bg[1],row.bg[2]);
+    cx=M;colW.forEach(function(w,i){doc.rect(cx+colW.slice(0,i).reduce(function(a,b){return a+b;},0),sy,w,rh,'F');});
+    doc.setDrawColor(226,232,240);doc.setLineWidth(0.1);
+    cx=M;colW.forEach(function(w,i){doc.rect(cx+colW.slice(0,i).reduce(function(a,b){return a+b;},0),sy,w,rh,'S');});
+    cx=M;
+    var cells=[row.src,row.tot,row.m,row.df,row.on,row.tot>0?(row.m/row.tot*100).toFixed(1)+'%':'0%'];
+    doc.setTextColor(30,41,59);doc.setFontSize(7.5);doc.setFont('helvetica','normal');
+    cells.forEach(function(cell,i){
+      if(i===2){doc.setTextColor(5,150,105);doc.setFont('helvetica','bold');}
+      else if(i===3&&row.df>0){doc.setTextColor(220,38,38);doc.setFont('helvetica','bold');}
+      else{doc.setTextColor(30,41,59);doc.setFont('helvetica','normal');}
+      doc.text(String(cell),cx+2,sy+5.2);cx+=colW[i];
+    });
+    sy+=rh;
+  });
+
+  /* Date-wise summary (mini) */
   sy+=6;
-  doc.setFontSize(8);doc.setFont('helvetica','bold');doc.setTextColor(30,41,59);
-  doc.text('Color Legend:',M,sy);sy+=5;
+  doc.setTextColor(30,41,59);doc.setFontSize(9);doc.setFont('helvetica','bold');
+  doc.text('Date-wise Comparison Summary',M,sy);sy+=4;
+
+  var dcols=[30,22,30,22,30,24,22];var dhdrs=['Date','Asset Cnt','Asset Amt (Rs.)','IOCL Cnt','IOCL Amt (Rs.)','Diff (Rs.)','Status'];
+  /* header */
+  doc.setFillColor(30,58,138);
+  var dcx=M;dcols.forEach(function(w){doc.rect(dcx,sy,w,7,'F');dcx+=w;});
+  dcx=M;doc.setTextColor(255,255,255);doc.setFontSize(6.5);doc.setFont('helvetica','bold');
+  dhdrs.forEach(function(h,i){doc.text(h,dcx+1.5,sy+4.8);dcx+=dcols[i];});sy+=7;
+
+  var rowsShown=0;var maxDateRows=Math.min(cmpRows.length,Math.floor((PH-sy-12)/6.5));
+  cmpRows.slice(0,maxDateRows).forEach(function(r,ri){
+    var bg=r.status==='match'?[240,253,244]:[254,242,242];
+    doc.setFillColor(bg[0],bg[1],bg[2]);
+    dcx=M;dcols.forEach(function(w){doc.rect(dcx,sy,w,6.5,'F');dcx+=w;});
+    doc.setDrawColor(226,232,240);doc.setLineWidth(0.08);
+    dcx=M;dcols.forEach(function(w){doc.rect(dcx,sy,w,6.5,'S');dcx+=w;});
+    /* left accent */
+    doc.setFillColor(r.status==='match'?5:220,r.status==='match'?150:38,r.status==='match'?105:38);
+    doc.rect(M,sy,1.5,6.5,'F');
+    dcx=M+1.5;
+    var diffDisp=(Math.abs(r.diff)<0.01?'0.00':(r.diff>0?'+':'')+fmtN(r.diff));
+    var cells=[dd(r.date),r.f1Count,fmtN(r.f1Amt),r.f2Count,fmtN(r.f2Amt),diffDisp,r.status==='match'?'MATCH':'DIFF'];
+    cells.forEach(function(cell,i){
+      if(i===6){doc.setTextColor(r.status==='match'?5:220,r.status==='match'?150:38,r.status==='match'?105:38);doc.setFont('helvetica','bold');}
+      else if(i===5&&Math.abs(r.diff)>=0.01){doc.setTextColor(220,38,38);doc.setFont('helvetica','bold');}
+      else{doc.setTextColor(30,41,59);doc.setFont('helvetica','normal');}
+      doc.setFontSize(6.5);
+      doc.text(String(cell),dcx+1,sy+4.3);dcx+=dcols[i];
+    });
+    sy+=6.5;rowsShown++;
+  });
+  if(cmpRows.length>maxDateRows){
+    doc.setTextColor(148,163,184);doc.setFontSize(6.5);doc.setFont('helvetica','italic');
+    doc.text('... and '+(cmpRows.length-maxDateRows)+' more dates (see following pages for all records)',M,sy+5);
+  }
+
+  /* Legend */
+  sy=PH-18;
+  doc.setTextColor(30,41,59);doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.text('Color Legend:',M,sy);sy+=4;
   var legends=[
-    {col:[240,253,244],bd:[5,150,105],lbl:'Match — amount found in both files'},
-    {col:[254,242,242],bd:[220,38,38],lbl:'Difference — amount mismatch between files'},
-    {col:[255,247,237],bd:[249,115,22],lbl:'Only in one file — date not present in other file'}
+    {bg:[240,253,244],bd:[5,150,105],lbl:'Green — Amount matches between Asset & IOCL OTP'},
+    {bg:[254,242,242],bd:[220,38,38],lbl:'Red — Amount mismatch (difference found)'},
+    {bg:[255,247,237],bd:[249,115,22],lbl:'Orange — Date exists only in one file'}
   ];
   var lx=M;
   legends.forEach(function(lg){
-    doc.setFillColor(lg.col[0],lg.col[1],lg.col[2]);doc.rect(lx,sy-3.5,4,4,'F');
-    doc.setDrawColor(lg.bd[0],lg.bd[1],lg.bd[2]);doc.setLineWidth(0.4);doc.rect(lx,sy-3.5,4,4);
+    doc.setFillColor(lg.bg[0],lg.bg[1],lg.bg[2]);doc.rect(lx,sy-3.5,4,4,'F');
+    doc.setDrawColor(lg.bd[0],lg.bd[1],lg.bd[2]);doc.setLineWidth(0.5);doc.rect(lx,sy-3.5,4,4,'S');
     doc.setDrawColor(226,232,240);doc.setLineWidth(0.1);
     doc.setTextColor(100,116,139);doc.setFontSize(7);doc.setFont('helvetica','normal');
-    doc.text(lg.lbl,lx+5.5,sy);lx+=80;
+    doc.text(lg.lbl,lx+6,sy);lx+=90;
   });
 
-  /* Footer */
-  doc.setFillColor(248,250,252);doc.rect(0,PH-8,PW,8,'F');
-  doc.setTextColor(148,163,184);doc.setFontSize(6.5);doc.setFont('helvetica','normal');
-  doc.text('FuelCheck Transaction Comparator | Asset vs IOCL OTP | Page 1',M,PH-3);
-  doc.text(dateStr,PW-M,PH-3,{align:'right'});
+  drawPageFooter();
 
-  /* ── PAGE 2+: Data tables via html2canvas ── */
-  /* Build both tables separately for cleaner PDF pages */
-  function buildTableHTML(title,headerColor,headers,rowsData,rowStatuses,fileNum){
-    var badgeMap={'match':'<span style="background:#dcfce7;color:#059669;padding:1px 5px;border-radius:4px;font-size:8px;font-weight:800">Match</span>',
-      'diff':'<span style="background:#fee2e2;color:#dc2626;padding:1px 5px;border-radius:4px;font-size:8px;font-weight:800">Diff</span>',
-      'only':'<span style="background:#ffedd5;color:#c2410c;padding:1px 5px;border-radius:4px;font-size:8px;font-weight:800">Only</span>'};
-    var bgMap={'match':'#f0fdf4','diff':'#fef2f2','only':'#fff7ed'};
-    var leftMap={'match':'#059669','diff':'#dc2626','only':'#f97316'};
-    var trs='';
-    rowsData.forEach(function(cells,i){
-      var st=rowStatuses[i]==='match'?'match':rowStatuses[i]==='diff'?'diff':'only';
-      var badge=badgeMap[st];
-      var bg=bgMap[st];var lft=leftMap[st];
-      trs+='<tr style="background:'+bg+'"><td style="border-left:3px solid '+lft+';padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9">'+cells[0]+'</td>';
-      for(var ci=1;ci<cells.length;ci++){
-        var amtStyle=(ci===cells.length-2&&st==='diff')?'color:#dc2626;font-weight:700':(ci===cells.length-2&&st==='only')?'color:#d97706;font-weight:700':'';
-        trs+='<td style="padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9;'+amtStyle+'">'+cells[ci]+'</td>';
-      }
-      trs+='<td style="padding:4px 7px;border-bottom:1px solid #f1f5f9">'+badge+'</td></tr>';
-    });
-    var ths=headers.map(function(h){return '<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">'+h+'</th>';}).join('');
-    return '<div style="background:#fff;padding:16px;font-family:Nunito,sans-serif;width:1400px">'
-      +'<div style="background:'+headerColor+';color:#fff;padding:8px 12px;border-radius:8px 8px 0 0;font-size:12px;font-weight:800;margin-bottom:0">'+title+'</div>'
-      +'<table style="width:100%;border-collapse:collapse"><thead><tr>'+ths+'</tr></thead><tbody>'+trs+'</tbody></table>'
-      +'</div>';
-  }
+  /* ─────────────────────────────────────────────────────────────
+     PAGES 2+ — ASSET RECORDS (pure jsPDF text, no screenshot)
+  ───────────────────────────────────────────────────────────── */
+  function drawDataPages(title,headerColor,colHeaders,colWidths,dataRows,rowStatuses,sourceLabel){
+    var ROWS_PER_PAGE=Math.floor((PH-16-7-16)/6.8); /* header16 + footer7 + table-header16 */
+    var totalPages=Math.ceil(dataRows.length/ROWS_PER_PAGE);
 
-  /* Asset rows */
-  var asset_rows=d1.map(function(r){return [r.vehicleNo,dd(r.date),r.fuelLtr.toFixed(2),fmtN(r.costPerLtr),fmtN(r.amount)];});
-  var asset_st=lastRow1Status.map(function(s){return s==='only1'?'only1':s;});
-  /* IOCL rows */
-  var iocl_rows=d2.map(function(r){return [dd(r.date),r.merchant.substring(0,22),r.rsp.toFixed(2),r.quantity.toFixed(2),fmtN(r.amount)];});
-  var iocl_st=lastRow2Status.map(function(s){return s==='only2'?'only2':s;});
+    for(var pg=0;pg<Math.max(totalPages,1);pg++){
+      doc.addPage();pageNum++;
+      drawPageHeader(title,'');
 
-  var snap=document.getElementById('snapContainer');
+      /* Section header */
+      doc.setFillColor(headerColor[0],headerColor[1],headerColor[2]);
+      doc.roundedRect(M,18,PW-2*M,10,2,2,'F');
+      doc.setTextColor(255,255,255);doc.setFontSize(9);doc.setFont('helvetica','bold');
+      doc.text(title+' — '+dataRows.length+' Records Total',M+4,24.5);
+      doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(200,220,255);
+      doc.text('Page '+(pg+1)+' of '+Math.max(totalPages,1)+'  |  Rows '+(pg*ROWS_PER_PAGE+1)+' – '+Math.min((pg+1)*ROWS_PER_PAGE,dataRows.length),PW-M,24.5,{align:'right'});
 
-  function capturePage(htmlContent,pageLabel,cb){
-    snap.innerHTML=htmlContent;snap.style.left='-9999px';snap.style.position='fixed';snap.style.top='0';snap.style.width='1400px';snap.style.background='#fff';
-    setTimeout(function(){
-      html2canvas(snap,{scale:1.8,backgroundColor:'#ffffff',useCORS:true,logging:false,width:1400,windowWidth:1400}).then(function(canvas){
-        doc.addPage();
-        var imgData=canvas.toDataURL('image/jpeg',0.88);
-        var imgW=PW-2*M;var imgH=canvas.height*(imgW/canvas.width);
-        var maxH=PH-M-12;
-        if(imgH>maxH){imgH=maxH;}
-        doc.addImage(imgData,'JPEG',M,M,imgW,imgH);
-        /* page footer */
-        doc.setFillColor(248,250,252);doc.rect(0,PH-8,PW,8,'F');
-        doc.setTextColor(148,163,184);doc.setFontSize(6.5);doc.setFont('helvetica','normal');
-        doc.text('FuelCheck | '+pageLabel,M,PH-3);doc.text(dateStr,PW-M,PH-3,{align:'right'});
-        snap.innerHTML='';cb();
+      /* Table header */
+      var ty=31;
+      doc.setFillColor(headerColor[0]+20,headerColor[1]+20,headerColor[2]+30);
+      var tcx=M;colWidths.forEach(function(w){doc.rect(tcx,ty,w,7.5,'F');tcx+=w;});
+      tcx=M;doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont('helvetica','bold');
+      colHeaders.forEach(function(h,i){doc.text(h,tcx+1.5,ty+5);tcx+=colWidths[i];});
+      ty+=7.5;
+
+      /* Data rows */
+      var slice=dataRows.slice(pg*ROWS_PER_PAGE,(pg+1)*ROWS_PER_PAGE);
+      slice.forEach(function(cells,ri){
+        var st=rowStatuses[pg*ROWS_PER_PAGE+ri];
+        var bg=st==='match'?[240,253,244]:st==='diff'?[254,242,242]:[255,247,237];
+        var accent=st==='match'?[5,150,105]:st==='diff'?[220,38,38]:[249,115,22];
+        /* row bg */
+        doc.setFillColor(bg[0],bg[1],bg[2]);
+        tcx=M;colWidths.forEach(function(w){doc.rect(tcx,ty,w,6.8,'F');tcx+=w;});
+        /* subtle grid lines */
+        doc.setDrawColor(220,230,240);doc.setLineWidth(0.08);
+        tcx=M;colWidths.forEach(function(w){doc.rect(tcx,ty,w,6.8,'S');tcx+=w;});
+        /* left accent bar */
+        doc.setFillColor(accent[0],accent[1],accent[2]);doc.rect(M,ty,1.8,6.8,'F');
+        /* Cells */
+        tcx=M+1.8;
+        cells.forEach(function(cell,ci){
+          var isAmtCol=(ci===cells.length-2);
+          if(isAmtCol&&st==='diff'){doc.setTextColor(220,38,38);doc.setFont('helvetica','bold');}
+          else if(isAmtCol&&st==='only'+sourceLabel){doc.setTextColor(217,119,6);doc.setFont('helvetica','bold');}
+          else if(ci===cells.length-1){
+            /* Status column */
+            doc.setTextColor(accent[0],accent[1],accent[2]);doc.setFont('helvetica','bold');
+          }
+          else{doc.setTextColor(30,41,59);doc.setFont('helvetica','normal');}
+          doc.setFontSize(7);
+          var cellText=String(cell);
+          /* truncate merchant names */
+          if(ci===1&&sourceLabel==='2'&&cellText.length>22) cellText=cellText.substring(0,22)+'...';
+          doc.text(cellText,tcx+0.5,ty+4.5);
+          tcx+=colWidths[ci];
+        });
+        ty+=6.8;
       });
-    },350);
+
+      /* Totals row */
+      if(pg===totalPages-1||dataRows.length===0){
+        doc.setFillColor(30,41,59);
+        tcx=M;colWidths.forEach(function(w){doc.rect(tcx,ty,w,7,'F');tcx+=w;});
+        doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont('helvetica','bold');
+        var amtTotal=dataRows.reduce(function(s,r){return s+parseFloat(String(r[r.length-2]).replace(/,/g,''));},0);
+        doc.text('TOTAL — '+dataRows.length+' records',M+3,ty+4.8);
+        /* find amount column position */
+        var amtColX=M;colWidths.slice(0,-2).forEach(function(w){amtColX+=w;});
+        doc.text('Rs.'+fmtN(amtTotal),amtColX+2,ty+4.8);
+        doc.setTextColor(134,239,172);
+        doc.text(sourceLabel==='1'?d1match+' Match | '+d1diff+' Diff':d2match+' Match | '+d2diff+' Diff',PW-M-2,ty+4.8,{align:'right'});
+      }
+
+      drawPageFooter();
+    }
   }
 
-  var assetHTML=buildTableHTML(
-    'Asset — Internal Records ('+d1.length+' records)',
-    '#1e40af',
+  /* Build data arrays */
+  var asset_data=d1.map(function(r){return [r.vehicleNo,dd(r.date),r.fuelLtr.toFixed(2),fmtN(r.costPerLtr),fmtN(r.amount),lastRow1Status[d1.indexOf(r)]==='match'?'MATCH':lastRow1Status[d1.indexOf(r)]==='diff'?'DIFF':'ONLY ASSET'];});
+  var asset_st=lastRow1Status;
+
+  var iocl_data=d2.map(function(r){return [dd(r.date),r.merchant,r.rsp.toFixed(2),r.quantity.toFixed(2),fmtN(r.amount),lastRow2Status[d2.indexOf(r)]==='match'?'MATCH':lastRow2Status[d2.indexOf(r)]==='diff'?'DIFF':'ONLY IOCL'];});
+  var iocl_st=lastRow2Status;
+
+  drawDataPages(
+    'Asset — Internal Records',
+    [30,64,175],
     ['Vehicle No','Date','Fuel (L)','Rate/L','Amount (Rs.)','Status'],
-    asset_rows,asset_st,'Asset');
+    [44,26,18,24,32,26],
+    asset_data,asset_st,'1'
+  );
 
-  var ioclHTML=buildTableHTML(
-    'IOCL OTP — Transactions ('+d2.length+' records)',
-    '#0c4a6e',
-    ['Date','Merchant','RSP','Qty','Amount (Rs.)','Status'],
-    iocl_rows,iocl_st,'IOCL');
+  drawDataPages(
+    'IOCL OTP — Transaction Records',
+    [12,74,110],
+    ['Date','Merchant Name','RSP','Quantity','Amount (Rs.)','Status'],
+    [26,58,18,18,32,26],
+    iocl_data,iocl_st,'2'
+  );
 
-  capturePage(assetHTML,'Asset Records — Page 2',function(){
-    capturePage(ioclHTML,'IOCL OTP Records — Page 3',function(){
-      var fname='FuelCheck_AllRecords_'+now.getFullYear()+z(now.getMonth()+1)+z(now.getDate())+'.pdf';
-      doc.save(fname);
-      btn.disabled=false;btn.textContent='📄 Download PDF';
-    });
-  });
+  /* Save */
+  var fname='FuelCheck_AllRecords_'+now.getFullYear()+z(now.getMonth()+1)+z(now.getDate())+'.pdf';
+  doc.save(fname);
+  btn.disabled=false;btn.textContent='📄 Download PDF';
 }
 
 /* ================================================================
