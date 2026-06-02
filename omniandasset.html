@@ -85,18 +85,28 @@ header{
 .compare-btn:hover:not(:disabled){background:var(--navy2);box-shadow:0 6px 20px rgba(26,35,126,.3);transform:translateY(-1px)}
 .compare-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
 
-.date-filter-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.9rem 1.3rem;box-shadow:var(--shadow);margin-bottom:1.2rem;display:none;align-items:center;gap:1rem;flex-wrap:wrap;}
+/* ── DATE FILTER BAR (with manual text input support) ── */
+.date-filter-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.9rem 1.3rem;box-shadow:var(--shadow);margin-bottom:1.2rem;display:none;align-items:flex-start;gap:1rem;flex-wrap:wrap;}
 .date-filter-bar.show{display:flex}
-.filter-lbl{font-weight:800;font-size:.78rem;color:var(--text2);white-space:nowrap}
-.date-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.date-inp{padding:.38rem .7rem;border:1.5px solid var(--border2);border-radius:7px;font-family:'Inter',sans-serif;font-size:.78rem;color:var(--text);background:var(--surface2);transition:border-color .15s;}
+.filter-lbl{font-weight:800;font-size:.78rem;color:var(--text2);white-space:nowrap;padding-top:6px}
+.date-col{display:flex;flex-direction:column;gap:4px}
+.date-col-lbl{font-size:.65rem;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px}
+.date-input-wrap{display:flex;align-items:center;gap:4px}
+.date-inp{padding:.38rem .7rem;border:1.5px solid var(--border2);border-radius:7px;font-family:'Inter',sans-serif;font-size:.78rem;color:var(--text);background:var(--surface2);transition:border-color .15s;width:140px;}
 .date-inp:focus{outline:none;border-color:var(--navy);background:var(--navy-light)}
-.sep-txt{color:var(--text3);font-size:.76rem;font-weight:700}
-.flt-apply{padding:.38rem 1rem;background:var(--navy);color:#fff;border:none;border-radius:7px;font-family:'Inter',sans-serif;font-size:.76rem;font-weight:800;cursor:pointer;transition:all .15s;}
+/* manual text box for dd/mm/yyyy */
+.date-txt{padding:.38rem .7rem;border:1.5px solid var(--border2);border-radius:7px;font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--text);background:var(--surface2);transition:border-color .15s;width:108px;}
+.date-txt:focus{outline:none;border-color:var(--navy);background:var(--navy-light)}
+.date-txt.valid{border-color:var(--success-mid);background:var(--success-bg)}
+.date-txt.invalid{border-color:var(--danger-mid);background:var(--danger-bg)}
+.date-hint{font-size:.6rem;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.date-or{font-size:.68rem;color:var(--text3);font-weight:700;padding:0 2px}
+.sep-txt{color:var(--text3);font-size:.76rem;font-weight:700;padding-top:28px}
+.flt-apply{padding:.38rem 1rem;background:var(--navy);color:#fff;border:none;border-radius:7px;font-family:'Inter',sans-serif;font-size:.76rem;font-weight:800;cursor:pointer;transition:all .15s;align-self:flex-end;margin-bottom:0;}
 .flt-apply:hover{background:var(--navy2)}
-.flt-reset{padding:.38rem .9rem;background:var(--surface2);color:var(--text2);border:1.5px solid var(--border2);border-radius:7px;font-family:'Inter',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;transition:all .15s;}
+.flt-reset{padding:.38rem .9rem;background:var(--surface2);color:var(--text2);border:1.5px solid var(--border2);border-radius:7px;font-family:'Inter',sans-serif;font-size:.76rem;font-weight:700;cursor:pointer;transition:all .15s;align-self:flex-end;}
 .flt-reset:hover{border-color:var(--danger-mid);color:var(--danger-mid);background:var(--danger-bg)}
-.filter-badge{background:#fff3e0;color:var(--warning);border:1px solid #ffcc80;border-radius:6px;padding:3px 10px;font-size:.7rem;font-weight:800;display:none;}
+.filter-badge{background:#fff3e0;color:var(--warning);border:1px solid #ffcc80;border-radius:6px;padding:3px 10px;font-size:.7rem;font-weight:800;display:none;align-self:flex-end;}
 .filter-badge.show{display:inline-block}
 
 #dashboard{display:none}
@@ -248,14 +258,32 @@ tr:hover td{background:#f8fafc}
     <button class="compare-btn" id="compareBtn" disabled>⚡ Compare Asset vs Omni</button>
   </div>
 
-  <!-- DATE FILTER -->
+  <!-- ── DATE FILTER BAR (manual text + picker) ── -->
   <div class="date-filter-bar" id="filterBar">
     <span class="filter-lbl">🗓 Date Filter:</span>
-    <div class="date-row">
-      <input type="date" class="date-inp" id="dateFrom">
-      <span class="sep-txt">→ To</span>
-      <input type="date" class="date-inp" id="dateTo">
+
+    <!-- FROM -->
+    <div class="date-col">
+      <span class="date-col-lbl">From</span>
+      <div class="date-input-wrap">
+        <input type="text" class="date-txt" id="dateFromTxt" placeholder="dd/mm/yyyy" maxlength="10">
+        <span class="date-or">or</span>
+        <input type="date" class="date-inp" id="dateFrom">
+      </div>
+      <span class="date-hint">Type dd/mm/yyyy — auto-assigns</span>
     </div>
+
+    <!-- TO -->
+    <div class="date-col">
+      <span class="date-col-lbl">To</span>
+      <div class="date-input-wrap">
+        <input type="text" class="date-txt" id="dateToTxt" placeholder="dd/mm/yyyy" maxlength="10">
+        <span class="date-or">or</span>
+        <input type="date" class="date-inp" id="dateTo">
+      </div>
+      <span class="date-hint">Type dd/mm/yyyy — auto-assigns</span>
+    </div>
+
     <button class="flt-apply" id="applyBtn">Apply</button>
     <button class="flt-reset" id="resetBtn">✕ Reset</button>
     <span class="filter-badge" id="filterBadge">Filtered</span>
@@ -328,10 +356,11 @@ tr:hover td{background:#f8fafc}
         </div>
         <div class="btn-group">
           <button class="dl-btn" id="dlDiffBtn">⬇ Excel Report</button>
-          <button class="img-btn" onclick="capturePanel('cmpSection','MMROADWAYS_DateComparison')">📸 Image</button>
+          <!-- FIX: image button now calls captureCmpSection() instead of capturePanel() -->
+          <button class="img-btn" id="dlCmpImg">📸 Image</button>
         </div>
       </div>
-      <div class="tbl-wrap" style="max-height:360px;overflow-y:auto">
+      <div class="tbl-wrap" id="cmpTblWrap" style="max-height:360px;overflow-y:auto">
         <table>
           <thead>
             <tr>
@@ -414,6 +443,39 @@ document.getElementById('dlDashImg').addEventListener('click',function(){capture
 document.getElementById('dlCombinedImg').addEventListener('click',function(){captureCombinedRaw();});
 document.getElementById('dlCombinedWord').addEventListener('click',function(){downloadCombinedWord();});
 document.getElementById('dlCombinedPDF').addEventListener('click',function(){downloadCombinedPDF();});
+/* FIX 1: Date-wise Comparison image button */
+document.getElementById('dlCmpImg').addEventListener('click',function(){captureCmpSection();});
+
+/* ── FIX 2: Manual text date inputs ── */
+function parseTxtDate(str){
+  /* Accept dd/mm/yyyy, d/m/yyyy, dd-mm-yyyy, d-m-yyyy */
+  var s=String(str).trim();
+  var m=s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+  if(!m) return null;
+  var d=parseInt(m[1],10), mo=parseInt(m[2],10), y=parseInt(m[3],10);
+  if(mo<1||mo>12||d<1||d>31||y<1900||y>2100) return null;
+  return y+'-'+z2(mo)+'-'+z2(d); /* ISO yyyy-mm-dd */
+}
+function syncTxtToDate(txtId, dateId){
+  var txt=document.getElementById(txtId);
+  var picker=document.getElementById(dateId);
+  var iso=parseTxtDate(txt.value);
+  if(txt.value.length===0){txt.className='date-txt';picker.value='';return;}
+  if(iso){txt.classList.remove('invalid');txt.classList.add('valid');picker.value=iso;}
+  else{txt.classList.remove('valid');txt.classList.add('invalid');picker.value='';}
+}
+function syncDateToTxt(dateId, txtId){
+  var picker=document.getElementById(dateId);
+  var txt=document.getElementById(txtId);
+  if(!picker.value){txt.value='';txt.className='date-txt';return;}
+  var p=picker.value.split('-'); /* yyyy-mm-dd */
+  txt.value=p[2]+'/'+p[1]+'/'+p[0];
+  txt.classList.remove('invalid');txt.classList.add('valid');
+}
+document.getElementById('dateFromTxt').addEventListener('input',function(){syncTxtToDate('dateFromTxt','dateFrom');});
+document.getElementById('dateToTxt').addEventListener('input',function(){syncTxtToDate('dateToTxt','dateTo');});
+document.getElementById('dateFrom').addEventListener('change',function(){syncDateToTxt('dateFrom','dateFromTxt');});
+document.getElementById('dateTo').addEventListener('change',function(){syncDateToTxt('dateTo','dateToTxt');});
 
 document.querySelectorAll('.tab-btn').forEach(function(btn){
   btn.addEventListener('click',function(){
@@ -509,17 +571,21 @@ function loadFile(file,type){
 }
 
 function applyDateFilter(){
-  var from=document.getElementById('dateFrom').value, to=document.getElementById('dateTo').value;
-  if(!from&&!to){resetDateFilter();return;}
-  filterFrom=from||null; filterTo=to||null; isFiltered=true;
+  /* Priority: text box (if valid) → date picker */
+  var fromIso=parseTxtDate(document.getElementById('dateFromTxt').value)||document.getElementById('dateFrom').value||null;
+  var toIso=parseTxtDate(document.getElementById('dateToTxt').value)||document.getElementById('dateTo').value||null;
+  if(!fromIso&&!toIso){resetDateFilter();return;}
+  filterFrom=fromIso; filterTo=toIso; isFiltered=true;
   var badge=document.getElementById('filterBadge');
   badge.classList.add('show');
-  badge.textContent=(from?dispDate(from):'...')+' \u2192 '+(to?dispDate(to):'...');
+  badge.textContent=(fromIso?dispDate(fromIso):'...')+' \u2192 '+(toIso?dispDate(toIso):'...');
   rebuildAll();
 }
 function resetDateFilter(){
   filterFrom=null; filterTo=null; isFiltered=false;
   document.getElementById('dateFrom').value=''; document.getElementById('dateTo').value='';
+  document.getElementById('dateFromTxt').value=''; document.getElementById('dateFromTxt').className='date-txt';
+  document.getElementById('dateToTxt').value=''; document.getElementById('dateToTxt').className='date-txt';
   document.getElementById('filterBadge').classList.remove('show');
   rebuildAll();
 }
@@ -795,6 +861,92 @@ function capturePanel(elemId,filename){
   },350);
 }
 
+/* ============================================================
+   FIX 1: CAPTURE DATE-WISE COMPARISON SECTION
+   — Builds a dedicated off-screen clone of the FULL table
+     (all rows from cmpRows, not just the currently-visible
+     filtered tab) so the image always shows all data.
+============================================================ */
+function captureCmpSection(){
+  showToast('📸 Building Date-wise Comparison image…');
+
+  /* 1. Build a temporary full-table div (all rows, no height cap) */
+  var wrap=document.createElement('div');
+  wrap.style.cssText=[
+    'position:fixed','top:-99999px','left:0',
+    'background:#fff','padding:0','width:900px',
+    'font-family:Inter,Arial,sans-serif','font-size:12px',
+    'border:1px solid #e2e8f0','border-radius:10px','overflow:hidden'
+  ].join(';');
+
+  /* Header row */
+  var head=document.createElement('div');
+  head.style.cssText='background:#1a237e;color:#fff;padding:10px 16px;font-weight:800;font-size:14px;display:flex;justify-content:space-between;align-items:center;';
+  head.innerHTML='<span>\uD83D\uDD0D Date-wise Comparison</span><span style="font-size:11px;opacity:.8;">'+cmpRows.length+' entries</span>';
+  wrap.appendChild(head);
+
+  /* Table */
+  var tbl=document.createElement('table');
+  tbl.style.cssText='width:100%;border-collapse:collapse;';
+  var thead=document.createElement('thead');
+  thead.innerHTML='<tr style="background:#f8fafc;">'
+    +'<th style="padding:7px 10px;text-align:left;font-size:11px;font-weight:700;text-transform:uppercase;color:#475569;border-bottom:2px solid #e2e8f0;">Date</th>'
+    +'<th style="padding:7px 10px;font-size:11px;font-weight:700;text-transform:uppercase;color:#475569;border-bottom:2px solid #e2e8f0;">Asset Entries</th>'
+    +'<th style="padding:7px 10px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;color:#1a237e;border-bottom:2px solid #e2e8f0;">Asset Debit (₹)</th>'
+    +'<th style="padding:7px 10px;font-size:11px;font-weight:700;text-transform:uppercase;color:#475569;border-bottom:2px solid #e2e8f0;">Omni Txns</th>'
+    +'<th style="padding:7px 10px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;color:#0277bd;border-bottom:2px solid #e2e8f0;">Omni Debit (₹)</th>'
+    +'<th style="padding:7px 10px;text-align:right;font-size:11px;font-weight:700;text-transform:uppercase;color:#c62828;border-bottom:2px solid #e2e8f0;">Difference (₹)</th>'
+    +'<th style="padding:7px 10px;text-align:center;font-size:11px;font-weight:700;text-transform:uppercase;color:#475569;border-bottom:2px solid #e2e8f0;">Status</th>'
+    +'</tr>';
+  tbl.appendChild(thead);
+
+  var tbody=document.createElement('tbody');
+  cmpRows.forEach(function(r,i){
+    var bg=r.status==='match'?'#f0fdf4':r.status==='diff'?'#fce4ec':'#fff8e1';
+    var leftBorder=r.status==='match'?'3px solid #2e7d32':r.status==='diff'?'3px solid #c62828':'3px solid #ef6c00';
+    var diffTxt=Math.abs(r.diff)<0.01?'<span style="color:#2e7d32;font-weight:700;">0.00</span>'
+      :(r.status==='only_asset'||r.status==='only_omni')?'<span style="color:#ef6c00;font-weight:700;">—</span>'
+      :'<span style="color:#c62828;font-weight:700;">'+(r.diff>0?'+':'')+fmtAmt(r.diff)+'</span>';
+    var badge=r.status==='match'?'<span style="background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;">\u2713 MATCH</span>'
+      :r.status==='diff'?'<span style="background:#fce4ec;color:#c62828;border:1px solid #ef9a9a;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;">\u2717 DIFF</span>'
+      :r.status==='only_asset'?'<span style="background:#fff3e0;color:#e65100;border:1px solid #ffcc80;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;">\u26a0 Asset Only</span>'
+      :'<span style="background:#fff3e0;color:#e65100;border:1px solid #ffcc80;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;">\u26a0 Omni Only</span>';
+    var tr=document.createElement('tr');
+    tr.style.background=bg;
+    tr.innerHTML='<td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;border-left:'+leftBorder+';font-family:monospace;font-weight:700;">'+dispDate(r.date)+'</td>'
+      +'<td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;font-family:monospace;text-align:center;">'+(r.aCount||'—')+'</td>'
+      +'<td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;font-family:monospace;text-align:right;color:#1a237e;font-weight:700;">'+(r.aAmt?fmtAmt(r.aAmt):'—')+'</td>'
+      +'<td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;font-family:monospace;text-align:center;">'+(r.oCount||'—')+'</td>'
+      +'<td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;font-family:monospace;text-align:right;color:#0277bd;font-weight:700;">'+(r.oAmt?fmtAmt(r.oAmt):'—')+'</td>'
+      +'<td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;font-family:monospace;text-align:right;">'+diffTxt+'</td>'
+      +'<td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;text-align:center;">'+badge+'</td>';
+    tbody.appendChild(tr);
+  });
+  tbl.appendChild(tbody);
+  wrap.appendChild(tbl);
+  document.body.appendChild(wrap);
+
+  setTimeout(function(){
+    html2canvas(wrap,{
+      scale:2,
+      backgroundColor:'#ffffff',
+      useCORS:true,
+      logging:false,
+      width:wrap.offsetWidth,
+      height:wrap.scrollHeight,
+      windowWidth:wrap.offsetWidth,
+      windowHeight:wrap.scrollHeight
+    }).then(function(canvas){
+      document.body.removeChild(wrap);
+      downloadCanvasWithHeader(canvas,'MMROADWAYS_DateComparison.png','Date-wise Comparison');
+      showToast('\u2705 Date-wise Comparison image downloaded!');
+    }).catch(function(err){
+      document.body.removeChild(wrap);
+      showToast('\u274c Error: '+err.message);
+    });
+  },400);
+}
+
 function captureDashboard(){
   showToast('📸 Capturing full dashboard...');
   var el=document.getElementById('dashboard');
@@ -973,7 +1125,6 @@ function downloadCombinedPDF(){
   var doc=new jsPDF('l','mm','a4');
   var pageW=297, pageH=210, margin=10;
 
-  // ── PAGE 1: HEADER + STATS + COMPARISON ────────────────
   doc.setFillColor(26,35,126);
   doc.rect(0,0,pageW,18,'F');
   doc.setTextColor(255,255,255);
@@ -990,13 +1141,11 @@ function downloadCombinedPDF(){
   var dtW2=doc.getTextWidth(dtTxt);
   doc.text(dtTxt,pageW-margin-dtW2,12);
 
-  // Accent strip
   doc.setFillColor(229,57,53); doc.rect(0,18,74.25,2,'F');
   doc.setFillColor(255,152,0); doc.rect(74.25,18,74.25,2,'F');
   doc.setFillColor(76,175,80); doc.rect(148.5,18,74.25,2,'F');
   doc.setFillColor(26,35,126); doc.rect(222.75,18,74.25,2,'F');
 
-  // Summary stat cards
   var statsArr=[
     {lbl:'ASSET TOTAL',val:'Rs.'+fmtAmt(tA),bg:[232,234,246],fg:[26,35,126],bdr:[57,73,171]},
     {lbl:'OMNI TOTAL',val:'Rs.'+fmtAmt(tO),bg:[225,245,254],fg:[2,119,189],bdr:[2,136,209]},
@@ -1020,7 +1169,6 @@ function downloadCombinedPDF(){
     doc.text(s.val,cx+3.5,statsY+11.5);
   });
 
-  // Date-wise Comparison Section Header
   var cmpStartY=statsY+cardH+5;
   doc.setFillColor(55,71,79);
   doc.roundedRect(margin,cmpStartY,pageW-2*margin,7,1,1,'F');
@@ -1033,7 +1181,6 @@ function downloadCombinedPDF(){
   doc.setTextColor(176,190,197);
   doc.text(cmpRows.length+' date entries',pageW-margin-35,cmpStartY+5);
 
-  // Comparison table
   var cmpHead=[['Date','Asset Entries','Asset Debit (Rs.)','Omni Txns','Omni Debit (Rs.)','Difference (Rs.)','Status']];
   var cmpBody=cmpRows.map(function(r){
     var diffTxt=Math.abs(r.diff)<0.01?'0.00':(r.status==='only_asset'||r.status==='only_omni')?'--':(r.diff>0?'+':'')+fmtAmt(r.diff);
@@ -1079,10 +1226,7 @@ function downloadCombinedPDF(){
     }
   });
 
-  // ── PAGE 2: ASSET RECORDS ──────────────────────────────
   doc.addPage();
-
-  // Asset page header
   doc.setFillColor(26,35,126);
   doc.rect(0,0,pageW,14,'F');
   doc.setDrawColor(255,255,255);
@@ -1097,8 +1241,6 @@ function downloadCombinedPDF(){
   doc.setFontSize(6.5);
   doc.setTextColor(197,202,233);
   doc.text(d1.length+' Records  |  Total: Rs.'+fmtAmt(tA),pageW-margin-60,9.5);
-
-  // Accent strip
   doc.setFillColor(229,57,53); doc.rect(0,14,74.25,1.5,'F');
   doc.setFillColor(255,152,0); doc.rect(74.25,14,74.25,1.5,'F');
   doc.setFillColor(76,175,80); doc.rect(148.5,14,74.25,1.5,'F');
@@ -1118,10 +1260,7 @@ function downloadCombinedPDF(){
     margin:{left:margin,right:margin},
     styles:{fontSize:6.5,font:'helvetica',cellPadding:1.8,lineColor:[226,232,240],lineWidth:0.2},
     headStyles:{fillColor:[26,35,126],textColor:[255,255,255],fontStyle:'bold',fontSize:5.5},
-    columnStyles:{
-      4:{textColor:[26,35,126],fontStyle:'bold',halign:'right'},
-      6:{halign:'center',cellWidth:20}
-    },
+    columnStyles:{4:{textColor:[26,35,126],fontStyle:'bold',halign:'right'},6:{halign:'center',cellWidth:20}},
     didParseCell:function(data){
       if(data.section==='body'){
         var rowIdx=data.row.index;
@@ -1136,18 +1275,13 @@ function downloadCombinedPDF(){
             else data.cell.styles.textColor=[194,65,12];
             data.cell.styles.fontStyle='bold';
           }
-          if(data.column.index===4){
-            if(st==='diff') data.cell.styles.textColor=[198,40,40];
-          }
+          if(data.column.index===4&&st==='diff') data.cell.styles.textColor=[198,40,40];
         }
       }
     }
   });
 
-  // ── PAGE 3: OMNI RECORDS ───────────────────────────────
   doc.addPage();
-
-  // Omni page header
   doc.setFillColor(1,87,155);
   doc.rect(0,0,pageW,14,'F');
   doc.circle(14,7,3.5,'S');
@@ -1160,8 +1294,6 @@ function downloadCombinedPDF(){
   doc.setFontSize(6.5);
   doc.setTextColor(179,229,252);
   doc.text(d2.length+' Records  |  Total: Rs.'+fmtAmt(tO),pageW-margin-60,9.5);
-
-  // Accent strip
   doc.setFillColor(229,57,53); doc.rect(0,14,74.25,1.5,'F');
   doc.setFillColor(255,152,0); doc.rect(74.25,14,74.25,1.5,'F');
   doc.setFillColor(76,175,80); doc.rect(148.5,14,74.25,1.5,'F');
@@ -1181,10 +1313,7 @@ function downloadCombinedPDF(){
     margin:{left:margin,right:margin},
     styles:{fontSize:6.5,font:'helvetica',cellPadding:1.8,lineColor:[226,232,240],lineWidth:0.2},
     headStyles:{fillColor:[2,119,189],textColor:[255,255,255],fontStyle:'bold',fontSize:5.5},
-    columnStyles:{
-      1:{textColor:[2,119,189],fontStyle:'bold',halign:'right'},
-      3:{halign:'center',cellWidth:20}
-    },
+    columnStyles:{1:{textColor:[2,119,189],fontStyle:'bold',halign:'right'},3:{halign:'center',cellWidth:20}},
     didParseCell:function(data){
       if(data.section==='body'){
         var rowIdx=data.row.index;
@@ -1193,80 +1322,44 @@ function downloadCombinedPDF(){
           if(st==='match') data.cell.styles.fillColor=[240,253,244];
           else if(st==='diff') data.cell.styles.fillColor=[252,228,236];
           else data.cell.styles.fillColor=[255,248,225];
-          if(data.column.index===5){
+          if(data.column.index===3){
             if(st==='match') data.cell.styles.textColor=[22,101,52];
             else if(st==='diff') data.cell.styles.textColor=[153,27,27];
             else data.cell.styles.textColor=[194,65,12];
             data.cell.styles.fontStyle='bold';
           }
-          if(data.column.index===1){
-            if(st==='diff') data.cell.styles.textColor=[198,40,40];
-          }
+          if(data.column.index===1&&st==='diff') data.cell.styles.textColor=[198,40,40];
         }
       }
     }
   });
 
-  // Add legend below the Omni table
   var legY2=doc.lastAutoTable.finalY+8;
-  if(legY2>pageH-18){
-    doc.addPage();
-    legY2=14;
-  }
-
+  if(legY2>pageH-18){doc.addPage();legY2=14;}
   doc.setFillColor(248,250,252);
   doc.roundedRect(margin,legY2,pageW-2*margin,10,2,2,'F');
-  doc.setDrawColor(226,232,240);
-  doc.setLineWidth(0.2);
+  doc.setDrawColor(226,232,240);doc.setLineWidth(0.2);
   doc.roundedRect(margin,legY2,pageW-2*margin,10,2,2,'S');
-
-  doc.setTextColor(71,85,105);
-  doc.setFontSize(6.5);
-  doc.setFont('helvetica','bold');
+  doc.setTextColor(71,85,105);doc.setFontSize(6.5);doc.setFont('helvetica','bold');
   doc.text('LEGEND:',margin+4,legY2+6.5);
-
-  // Match legend
-  doc.setFillColor(220,252,231);
-  doc.roundedRect(margin+26,legY2+2.5,7,5,1,1,'F');
-  doc.setDrawColor(134,239,172);
-  doc.setLineWidth(0.2);
-  doc.roundedRect(margin+26,legY2+2.5,7,5,1,1,'S');
-  doc.setTextColor(22,101,52);
-  doc.setFontSize(6);
-  doc.text('MATCH',margin+35,legY2+6.5);
-
-  // Diff legend
-  doc.setFillColor(254,226,226);
-  doc.roundedRect(margin+58,legY2+2.5,7,5,1,1,'F');
-  doc.setDrawColor(252,165,165);
-  doc.roundedRect(margin+58,legY2+2.5,7,5,1,1,'S');
-  doc.setTextColor(153,27,27);
-  doc.text('DIFF',margin+67,legY2+6.5);
-
-  // Only legend
-  doc.setFillColor(255,247,237);
-  doc.roundedRect(margin+85,legY2+2.5,7,5,1,1,'F');
-  doc.setDrawColor(253,186,116);
-  doc.roundedRect(margin+85,legY2+2.5,7,5,1,1,'S');
-  doc.setTextColor(194,65,12);
-  doc.text('ONLY ONE FILE',margin+94,legY2+6.5);
-
-  // Footer info
-  doc.setTextColor(148,163,184);
-  doc.setFontSize(5.5);
-  doc.setFont('helvetica','normal');
+  doc.setFillColor(220,252,231);doc.roundedRect(margin+26,legY2+2.5,7,5,1,1,'F');
+  doc.setDrawColor(134,239,172);doc.setLineWidth(0.2);doc.roundedRect(margin+26,legY2+2.5,7,5,1,1,'S');
+  doc.setTextColor(22,101,52);doc.setFontSize(6);doc.text('MATCH',margin+35,legY2+6.5);
+  doc.setFillColor(254,226,226);doc.roundedRect(margin+58,legY2+2.5,7,5,1,1,'F');
+  doc.setDrawColor(252,165,165);doc.roundedRect(margin+58,legY2+2.5,7,5,1,1,'S');
+  doc.setTextColor(153,27,27);doc.text('DIFF',margin+67,legY2+6.5);
+  doc.setFillColor(255,247,237);doc.roundedRect(margin+85,legY2+2.5,7,5,1,1,'F');
+  doc.setDrawColor(253,186,116);doc.roundedRect(margin+85,legY2+2.5,7,5,1,1,'S');
+  doc.setTextColor(194,65,12);doc.text('ONLY ONE FILE',margin+94,legY2+6.5);
+  doc.setTextColor(148,163,184);doc.setFontSize(5.5);doc.setFont('helvetica','normal');
   doc.text('MM Roadways Tally Checker  |  Asset: '+d1.length+' records  |  Omni: '+d2.length+' records',margin+130,legY2+6.5);
 
-  // ── ADD FOOTERS TO ALL PAGES ───────────────────────────
   var totalPages=doc.internal.getNumberOfPages();
   for(var p=1;p<=totalPages;p++){
     doc.setPage(p);
-    doc.setDrawColor(226,232,240);
-    doc.setLineWidth(0.3);
+    doc.setDrawColor(226,232,240);doc.setLineWidth(0.3);
     doc.line(margin,pageH-8,pageW-margin,pageH-8);
-    doc.setTextColor(148,163,184);
-    doc.setFontSize(5.5);
-    doc.setFont('helvetica','normal');
+    doc.setTextColor(148,163,184);doc.setFontSize(5.5);doc.setFont('helvetica','normal');
     doc.text('MM Roadways - Tally Checker Report',margin,pageH-4);
     var pgTxt='Page '+p+' of '+totalPages;
     var pgW=doc.getTextWidth(pgTxt);
@@ -1274,11 +1367,11 @@ function downloadCombinedPDF(){
   }
 
   doc.save('MMROADWAYS_Combined_Asset_Omni_DATA.pdf');
-  showToast('✅ PDF downloaded! (Landscape A4, '+totalPages+' pages)');
+  showToast('\u2705 PDF downloaded! (Landscape A4, '+totalPages+' pages)');
 }
 
 /* ============================================================
-   MS WORD — COMBINED ASSET + OMNI (LANDSCAPE A4)
+   MS WORD — COMBINED ASSET + OMNI
 ============================================================ */
 function downloadCombinedWord(){
   showToast('📝 Generating Word document...');
@@ -1373,7 +1466,6 @@ function downloadCombinedWord(){
   });
   if(!cmpRows.length) cmpHtmlRows='<tr><td colspan="7" style="padding:18px;text-align:center;color:#94a3b8;font-family:Calibri,Arial;font-size:11px;">No comparison data</td></tr>';
 
-  // ── Summary stat cards ───────────────────────────────────
   var statsArr=[
     {lbl:'ASSET TOTAL',val:'&#8377;'+fmtAmt(tA),bg:'#e8eaf6',fg:'#1a237e',bdr:'#3949ab'},
     {lbl:'OMNI TOTAL',val:'&#8377;'+fmtAmt(tO),bg:'#e1f5fe',fg:'#0277bd',bdr:'#0288d1'},
@@ -1387,141 +1479,31 @@ function downloadCombinedWord(){
     statsHtml+='<td style="background:'+s.bg+';border-left:4px solid '+s.bdr+';border-radius:6px;padding:10px 14px;vertical-align:top;width:16%;"><div style="font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.8px;color:'+s.fg+';margin-bottom:4px;font-family:Calibri,Arial;">'+s.lbl+'</div><div style="font-size:17px;font-weight:bold;color:'+s.fg+';font-family:Consolas,Courier New,monospace;">'+s.val+'</div></td>';
   });
 
-  // ── Build full HTML doc ───────────────────────────────────
   var html=''
     +'<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'
     +'<head><meta charset="utf-8"><title>MM Roadways &#8212; Tally Report</title>'
-    +'<!--[if gte mso 9]><xml><w:WordDocument>'
-    +'<w:View>Print</w:View><w:Zoom>90</w:Zoom>'
-    +'<w:DoNotOptimizeForBrowser/>'
-    +'</w:WordDocument></xml><![endif]-->'
-    +'<style>'
-    +'@page Section1{size:841.9pt 595.3pt;mso-page-orientation:landscape;margin:14mm 12mm 14mm 12mm;}'
-    +'div.Section1{page:Section1;}'
-    +'@page{size:A4 landscape;margin:14mm 12mm;}'
-    +'body{font-family:Calibri,Arial,sans-serif;font-size:10pt;color:#0f172a;margin:0;padding:0;background:#fff;}'
-    +'table{border-collapse:collapse;width:100%;}'
-    +'th,td{font-family:Calibri,Arial,sans-serif;}'
-    +'</style>'
+    +'<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>90</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->'
+    +'<style>@page Section1{size:841.9pt 595.3pt;mso-page-orientation:landscape;margin:14mm 12mm 14mm 12mm;}div.Section1{page:Section1;}@page{size:A4 landscape;margin:14mm 12mm;}body{font-family:Calibri,Arial,sans-serif;font-size:10pt;color:#0f172a;margin:0;padding:0;background:#fff;}table{border-collapse:collapse;width:100%;}th,td{font-family:Calibri,Arial,sans-serif;}</style>'
     +'</head><body><div class="Section1">'
-
-    // ── Header bar ──────────────────────────────────────────
-    +'<table cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:0;"><tr>'
-    +'<td style="background:#1a237e;padding:13px 20px;border-radius:8px 8px 0 0;">'
-    +'<table style="width:100%;"><tr>'
-    +'<td style="color:#ffffff;font-size:20pt;font-weight:bold;font-family:Calibri,Arial;letter-spacing:-0.5px;">MM ROADWAYS</td>'
-    +'<td style="text-align:right;">'
-    +'<div style="color:#bbdefb;font-size:11pt;font-weight:bold;font-family:Calibri,Arial;">Asset DATA + Omni DATA &#8212; Combined Tally Report</div>'
-    +'<div style="color:#90caf9;font-size:8pt;font-family:Calibri,Arial;margin-top:2px;">Debit Reconciliation System &nbsp;|&nbsp; Generated: '+now+'</div>'
-    +'</td>'
-    +'</tr></table>'
-    +'</td>'
-    +'</tr></table>'
-
-    // coloured accent strip
-    +'<table cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:10px;"><tr>'
-    +'<td style="background:#e53935;height:4px;width:25%;font-size:1px;">&nbsp;</td>'
-    +'<td style="background:#ff9800;height:4px;width:25%;font-size:1px;">&nbsp;</td>'
-    +'<td style="background:#4caf50;height:4px;width:25%;font-size:1px;">&nbsp;</td>'
-    +'<td style="background:#1a237e;height:4px;width:25%;font-size:1px;">&nbsp;</td>'
-    +'</tr></table>'
-
-    // ── Summary cards row ────────────────────────────────────
-    +'<table cellpadding="0" cellspacing="8" style="width:100%;border-collapse:separate;margin-bottom:12px;">'
-    +'<tr>'+statsHtml+'</tr></table>'
-
-    // ── Section 1: Date-wise Comparison (full width) ─────────
-    +'<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:12px;">'
-    +'<div style="background:#37474f;padding:9px 16px;">'
-    +'<table style="width:100%;"><tr>'
-    +'<td style="color:#fff;font-size:13pt;font-weight:bold;font-family:Calibri,Arial;">&#128269; Date-wise Comparison</td>'
-    +'<td style="text-align:right;color:#b0bec5;font-size:9pt;font-family:Calibri,Arial;">'+cmpRows.length+' date entries</td>'
-    +'</tr></table>'
-    +'</div>'
-    +'<table style="width:100%;"><thead><tr style="background:#f8fafc;">'
-    +'<th style="padding:7px 9px;text-align:left;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #37474f;background:#eceff1;font-family:Calibri,Arial;">Date</th>'
-    +'<th style="padding:7px 9px;text-align:center;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #37474f;background:#eceff1;font-family:Calibri,Arial;">Asset Entries</th>'
-    +'<th style="padding:7px 9px;text-align:right;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #1a237e;background:#eef2ff;font-family:Calibri,Arial;">Asset Debit (&#8377;)</th>'
-    +'<th style="padding:7px 9px;text-align:center;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #37474f;background:#eceff1;font-family:Calibri,Arial;">Omni Txns</th>'
-    +'<th style="padding:7px 9px;text-align:right;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #0288d1;background:#e1f5fe;font-family:Calibri,Arial;">Omni Debit (&#8377;)</th>'
-    +'<th style="padding:7px 9px;text-align:right;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #e53935;background:#fce4ec;font-family:Calibri,Arial;">Difference (&#8377;)</th>'
-    +'<th style="padding:7px 9px;text-align:center;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #37474f;background:#eceff1;font-family:Calibri,Arial;">Status</th>'
-    +'</tr></thead>'
-    +'<tbody>'+cmpHtmlRows+'</tbody></table>'
-    +'</div>'
-
-    // ── Section 2: Asset + Omni side by side ─────────────────
+    +'<table cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:0;"><tr><td style="background:#1a237e;padding:13px 20px;border-radius:8px 8px 0 0;"><table style="width:100%;"><tr><td style="color:#ffffff;font-size:20pt;font-weight:bold;font-family:Calibri,Arial;letter-spacing:-0.5px;">MM ROADWAYS</td><td style="text-align:right;"><div style="color:#bbdefb;font-size:11pt;font-weight:bold;font-family:Calibri,Arial;">Asset DATA + Omni DATA &#8212; Combined Tally Report</div><div style="color:#90caf9;font-size:8pt;font-family:Calibri,Arial;margin-top:2px;">Debit Reconciliation System &nbsp;|&nbsp; Generated: '+now+'</div></td></tr></table></td></tr></table>'
+    +'<table cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:10px;"><tr><td style="background:#e53935;height:4px;width:25%;font-size:1px;">&nbsp;</td><td style="background:#ff9800;height:4px;width:25%;font-size:1px;">&nbsp;</td><td style="background:#4caf50;height:4px;width:25%;font-size:1px;">&nbsp;</td><td style="background:#1a237e;height:4px;width:25%;font-size:1px;">&nbsp;</td></tr></table>'
+    +'<table cellpadding="0" cellspacing="8" style="width:100%;border-collapse:separate;margin-bottom:12px;"><tr>'+statsHtml+'</tr></table>'
+    +'<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:12px;"><div style="background:#37474f;padding:9px 16px;"><table style="width:100%;"><tr><td style="color:#fff;font-size:13pt;font-weight:bold;font-family:Calibri,Arial;">&#128269; Date-wise Comparison</td><td style="text-align:right;color:#b0bec5;font-size:9pt;font-family:Calibri,Arial;">'+cmpRows.length+' date entries</td></tr></table></div>'
+    +'<table style="width:100%;"><thead><tr style="background:#f8fafc;"><th style="padding:7px 9px;text-align:left;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #37474f;background:#eceff1;font-family:Calibri,Arial;">Date</th><th style="padding:7px 9px;text-align:center;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #37474f;background:#eceff1;font-family:Calibri,Arial;">Asset Entries</th><th style="padding:7px 9px;text-align:right;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #1a237e;background:#eef2ff;font-family:Calibri,Arial;">Asset Debit (&#8377;)</th><th style="padding:7px 9px;text-align:center;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #37474f;background:#eceff1;font-family:Calibri,Arial;">Omni Txns</th><th style="padding:7px 9px;text-align:right;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #0288d1;background:#e1f5fe;font-family:Calibri,Arial;">Omni Debit (&#8377;)</th><th style="padding:7px 9px;text-align:right;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #e53935;background:#fce4ec;font-family:Calibri,Arial;">Difference (&#8377;)</th><th style="padding:7px 9px;text-align:center;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #37474f;background:#eceff1;font-family:Calibri,Arial;">Status</th></tr></thead><tbody>'+cmpHtmlRows+'</tbody></table></div>'
     +'<table cellpadding="0" cellspacing="10" style="width:100%;border-collapse:separate;margin-bottom:12px;"><tr>'
-
-    // Asset panel (55%)
-    +'<td style="width:55%;vertical-align:top;">'
-    +'<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">'
-    +'<div style="background:#1a237e;padding:9px 16px;">'
-    +'<table style="width:100%;"><tr>'
-    +'<td style="color:#fff;font-size:12pt;font-weight:bold;font-family:Calibri,Arial;">'
-    +'<span style="background:rgba(255,255,255,0.18);padding:2px 9px;border-radius:4px;margin-right:8px;">A</span>'
-    +'ASSET <span style="color:#ffd54f;">DATA</span></td>'
-    +'<td style="color:#c5cae9;font-size:9pt;text-align:right;font-family:Calibri,Arial;">'+d1.length+' Records</td>'
+    +'<td style="width:55%;vertical-align:top;"><div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;"><div style="background:#1a237e;padding:9px 16px;"><table style="width:100%;"><tr><td style="color:#fff;font-size:12pt;font-weight:bold;font-family:Calibri,Arial;"><span style="background:rgba(255,255,255,0.18);padding:2px 9px;border-radius:4px;margin-right:8px;">A</span>ASSET <span style="color:#ffd54f;">DATA</span></td><td style="color:#c5cae9;font-size:9pt;text-align:right;font-family:Calibri,Arial;">'+d1.length+' Records</td></tr></table></div><table style="width:100%;"><thead><tr><th style="'+TH_A+'">Vehicle No</th><th style="'+TH_A+'">Driver Name</th><th style="'+TH_A+'">Date</th><th style="'+TH_A+'">Source</th><th style="'+TH_A+'text-align:right;">Debit (&#8377;)</th><th style="'+TH_A+'">Note No</th><th style="'+TH_A+'text-align:center;">Status</th></tr></thead><tbody>'+assetRows+'</tbody></table></div></td>'
+    +'<td style="width:45%;vertical-align:top;"><div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;"><div style="background:#01579b;padding:9px 16px;"><table style="width:100%;"><tr><td style="color:#fff;font-size:12pt;font-weight:bold;font-family:Calibri,Arial;"><span style="background:rgba(255,255,255,0.18);padding:2px 9px;border-radius:4px;margin-right:8px;">O</span>OMNI <span style="color:#69f0ae;">DATA</span></td><td style="color:#b3e5fc;font-size:9pt;text-align:right;font-family:Calibri,Arial;">'+d2.length+' Records</td></tr></table></div><table style="width:100%;"><thead><tr><th style="'+TH_O+'">Date</th><th style="'+TH_O+'text-align:right;">Debit (&#8377;)</th><th style="'+TH_O+'">Remarks</th><th style="'+TH_O+'text-align:center;">Status</th></tr></thead><tbody>'+omniRows+'</tbody></table></div></td>'
     +'</tr></table>'
-    +'</div>'
-    +'<table style="width:100%;"><thead><tr>'
-    +'<th style="'+TH_A+'">Vehicle No</th>'
-    +'<th style="'+TH_A+'">Driver Name</th>'
-    +'<th style="'+TH_A+'">Date</th>'
-    +'<th style="'+TH_A+'">Source</th>'
-    +'<th style="'+TH_A+'text-align:right;">Debit (&#8377;)</th>'
-    +'<th style="'+TH_A+'">Note No</th>'
-    +'<th style="'+TH_A+'text-align:center;">Status</th>'
-    +'</tr></thead>'
-    +'<tbody>'+assetRows+'</tbody></table>'
-    +'</div>'
-    +'</td>'
-
-    // Omni panel (45%)
-    +'<td style="width:45%;vertical-align:top;">'
-    +'<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">'
-    +'<div style="background:#01579b;padding:9px 16px;">'
-    +'<table style="width:100%;"><tr>'
-    +'<td style="color:#fff;font-size:12pt;font-weight:bold;font-family:Calibri,Arial;">'
-    +'<span style="background:rgba(255,255,255,0.18);padding:2px 9px;border-radius:4px;margin-right:8px;">O</span>'
-    +'OMNI <span style="color:#69f0ae;">DATA</span></td>'
-    +'<td style="color:#b3e5fc;font-size:9pt;text-align:right;font-family:Calibri,Arial;">'+d2.length+' Records</td>'
-    +'</tr></table>'
-    +'</div>'
-    +'<table style="width:100%;"><thead><tr>'
-    +'<th style="'+TH_O+'">Date</th>'
-    +'<th style="'+TH_O+'text-align:right;">Debit (&#8377;)</th>'
-    +'<th style="'+TH_O+'">Remarks</th>'
-    +'<th style="'+TH_O+'text-align:center;">Status</th>'
-    +'</tr></thead>'
-    +'<tbody>'+omniRows+'</tbody></table>'
-    +'</div>'
-    +'</td>'
-
-    +'</tr></table>'
-
-    // ── Legend bar ───────────────────────────────────────────
-    +'<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:9px 16px;margin-bottom:8px;">'
-    +'<table style="width:100%;"><tr>'
-    +'<td style="font-size:9pt;font-weight:bold;color:#475569;padding-right:16px;font-family:Calibri,Arial;">LEGEND:</td>'
-    +'<td style="padding-right:16px;"><span style="background:#dcfce7;border:1px solid #86efac;padding:3px 10px;border-radius:4px;font-size:9pt;font-weight:bold;color:#166534;font-family:Calibri,Arial;">&#10003; Matched</span></td>'
-    +'<td style="padding-right:16px;"><span style="background:#fee2e2;border:1px solid #fca5a5;padding:3px 10px;border-radius:4px;font-size:9pt;font-weight:bold;color:#991b1b;font-family:Calibri,Arial;">&#10007; Amount Mismatch</span></td>'
-    +'<td><span style="background:#fff7ed;border:1px solid #fdba74;padding:3px 10px;border-radius:4px;font-size:9pt;font-weight:bold;color:#c2410c;font-family:Calibri,Arial;">&#9888; Only in One File</span></td>'
-    +'<td style="text-align:right;font-size:8pt;color:#94a3b8;font-family:Calibri,Arial;">Asset: '+d1.length+' records &nbsp;|&nbsp; Omni: '+d2.length+' records &nbsp;|&nbsp; Generated by MM Roadways Tally Checker</td>'
-    +'</tr></table>'
-    +'</div>'
+    +'<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:9px 16px;margin-bottom:8px;"><table style="width:100%;"><tr><td style="font-size:9pt;font-weight:bold;color:#475569;padding-right:16px;font-family:Calibri,Arial;">LEGEND:</td><td style="padding-right:16px;"><span style="background:#dcfce7;border:1px solid #86efac;padding:3px 10px;border-radius:4px;font-size:9pt;font-weight:bold;color:#166534;font-family:Calibri,Arial;">&#10003; Matched</span></td><td style="padding-right:16px;"><span style="background:#fee2e2;border:1px solid #fca5a5;padding:3px 10px;border-radius:4px;font-size:9pt;font-weight:bold;color:#991b1b;font-family:Calibri,Arial;">&#10007; Amount Mismatch</span></td><td><span style="background:#fff7ed;border:1px solid #fdba74;padding:3px 10px;border-radius:4px;font-size:9pt;font-weight:bold;color:#c2410c;font-family:Calibri,Arial;">&#9888; Only in One File</span></td><td style="text-align:right;font-size:8pt;color:#94a3b8;font-family:Calibri,Arial;">Asset: '+d1.length+' records &nbsp;|&nbsp; Omni: '+d2.length+' records &nbsp;|&nbsp; Generated by MM Roadways Tally Checker</td></tr></table></div>'
     +'</div></body></html>';
 
   var blob=new Blob(['\ufeff',html],{type:'application/msword'});
   var url=URL.createObjectURL(blob);
   var a=document.createElement('a');
-  a.href=url;
-  a.download='MMROADWAYS_Combined_Asset_Omni_DATA.doc';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast('\u2705 Word document downloaded! (Landscape A4)');
+  a.href=url; a.download='MMROADWAYS_Combined_Asset_Omni_DATA.doc';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  showToast('\u2705 Word document downloaded!');
 }
 
 /* ============================================================ EXCEL HELPERS */
@@ -1609,7 +1591,7 @@ function downloadRawExcel(type){
   }
 }
 
-})(); // end IIFE
+})();
 </script>
 </body>
 </html>
