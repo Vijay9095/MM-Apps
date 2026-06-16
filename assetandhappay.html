@@ -178,6 +178,8 @@ tr:hover td{background:#f8fafc}
 .word-btn:hover{background:#1565c0;color:#fff;border-color:#1565c0}
 .pdf-btn{padding:.38rem 1rem;border-radius:7px;background:#fbe9e7;border:1.5px solid #ff8a65;color:#bf360c;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap;}
 .pdf-btn:hover{background:#bf360c;color:#fff;border-color:#bf360c}
+.cmp-dl-img-btn{padding:.35rem 1rem;border-radius:7px;background:#f3e5f5;border:1.5px solid #ce93d8;color:#7b1fa2;font-size:.74rem;font-weight:800;cursor:pointer;font-family:'Inter',sans-serif;display:inline-flex;align-items:center;gap:4px;transition:all .15s;white-space:nowrap;}
+.cmp-dl-img-btn:hover{background:#7b1fa2;color:#fff;border-color:#7b1fa2}
 
 .raw-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem;flex-wrap:wrap;gap:.5rem;}
 .raw-legend{display:flex;gap:1rem;flex-wrap:wrap}
@@ -328,7 +330,8 @@ tr:hover td{background:#f8fafc}
         </div>
         <div class="btn-group">
           <button class="dl-btn" id="dlDiffBtn">⬇ Excel Report</button>
-          <button class="img-btn" onclick="capturePanel('cmpSection','MMROADWAYS_DateComparison')">📸 Image</button>
+          <button class="img-btn" onclick="captureCmpSectionWithTotals()">📸 Image</button>
+          <button class="cmp-dl-img-btn" id="dlCmpImg">⬇ Download Image</button>
         </div>
       </div>
       <div class="tbl-wrap" style="max-height:360px;overflow-y:auto">
@@ -408,6 +411,7 @@ document.getElementById('compareBtn').addEventListener('click',function(){runCom
 document.getElementById('applyBtn').addEventListener('click',function(){applyDateFilter();});
 document.getElementById('resetBtn').addEventListener('click',function(){resetDateFilter();});
 document.getElementById('dlDiffBtn').addEventListener('click',function(){downloadExcelReport();});
+document.getElementById('dlCmpImg').addEventListener('click',function(){captureCmpSectionWithTotals();});
 document.getElementById('dlRawAsset').addEventListener('click',function(){downloadRawExcel('asset');});
 document.getElementById('dlRawHappay').addEventListener('click',function(){downloadRawExcel('happay');});
 document.getElementById('dlDashImg').addEventListener('click',function(){captureDashboard();});
@@ -792,6 +796,105 @@ function capturePanel(elemId,filename){
       restoreTableWrappers(saved);
       downloadCanvasWithHeader(canvas,'MMROADWAYS_'+filename.replace('MMROADWAYS_','')+'.png',filename.replace('MMROADWAYS_','').replace(/_/g,' '));
     }).catch(function(){restoreTableWrappers(saved);});
+  },350);
+}
+
+function captureCmpSectionWithTotals(){
+  showToast('📸 Capturing Date-wise Comparison with Totals...');
+  var el=document.getElementById('cmpSection');
+  var saved=expandTableWrappers(el);
+  setTimeout(function(){
+    html2canvas(el,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,scrollY:-window.scrollY,windowHeight:el.scrollHeight+50}).then(function(canvas){
+      restoreTableWrappers(saved);
+
+      var fd=filteredData();
+      var assetTotal=fd.asset.reduce(function(s,r){return s+r.debit;},0);
+      var happayTotal=fd.happay.reduce(function(s,r){return s+r.debit;},0);
+      var grandTotal=assetTotal+happayTotal;
+      var netDiff=assetTotal-happayTotal;
+
+      var hdrH=62; // top header (MM Roadways brand)
+      var statH=80; // totals bar height
+      var footH=36; // footer
+
+      var final2=document.createElement('canvas');
+      final2.width=canvas.width;
+      final2.height=canvas.height+hdrH+statH+footH;
+      var ctx=final2.getContext('2d');
+
+      // White background
+      ctx.fillStyle='#ffffff';
+      ctx.fillRect(0,0,final2.width,final2.height);
+
+      // ---- TOP HEADER ----
+      var grad=ctx.createLinearGradient(0,0,final2.width,0);
+      grad.addColorStop(0,'#1a237e'); grad.addColorStop(0.6,'#283593'); grad.addColorStop(1,'#3949ab');
+      ctx.fillStyle=grad;
+      ctx.fillRect(0,0,final2.width,hdrH);
+      ctx.fillStyle='#ffffff'; ctx.font='bold 22px Inter, Arial, sans-serif';
+      ctx.fillText('MM ROADWAYS',20,38);
+      ctx.fillStyle='#64b5f6'; ctx.font='bold 22px Inter, Arial'; ctx.fillText('  \u25cf  ',210,38);
+      ctx.fillStyle='#c5cae9'; ctx.font='15px Inter, Arial, sans-serif';
+      ctx.fillText('Date-wise Comparison Report',280,38);
+      ctx.fillStyle='#9fa8da'; ctx.font='11px Inter, Arial';
+      var dtStr=new Date().toLocaleString('en-IN');
+      var tw=ctx.measureText(dtStr).width;
+      ctx.fillText(dtStr, final2.width-tw-18, 38);
+      // accent line
+      var lineGrad=ctx.createLinearGradient(0,0,final2.width,0);
+      lineGrad.addColorStop(0,'#e53935'); lineGrad.addColorStop(0.5,'#ff9800'); lineGrad.addColorStop(1,'#1a237e');
+      ctx.fillStyle=lineGrad; ctx.fillRect(0,hdrH-3,final2.width,3);
+
+      // ---- TOTALS BAR ----
+      var statY=hdrH+10;
+      var cards=[
+        {lbl:'ASSET TOTAL',val:'\u20b9'+fmtAmt(assetTotal),cnt:fd.asset.length+' entries',bg:'#e8eaf6',fg:'#1a237e',border:'#3949ab'},
+        {lbl:'HAPPAY TOTAL',val:'\u20b9'+fmtAmt(happayTotal),cnt:fd.happay.length+' txns',bg:'#e1f5fe',fg:'#0277bd',border:'#0288d1'},
+        {lbl:'GRAND TOTAL (A+H)',val:'\u20b9'+fmtAmt(grandTotal),cnt:'Combined',bg:'#ede7f6',fg:'#512da8',border:'#7b1fa2'},
+        {lbl:'NET DIFFERENCE',val:(netDiff>=0?'+':'')+'\u20b9'+fmtAmt(Math.abs(netDiff)),cnt:Math.abs(netDiff)<0.01?'Balanced \u2713':'Discrepancy',bg:Math.abs(netDiff)<0.01?'#e8f5e9':'#fce4ec',fg:Math.abs(netDiff)<0.01?'#2e7d32':'#c62828',border:Math.abs(netDiff)<0.01?'#43a047':'#e53935'}
+      ];
+      var pad=20;
+      var cardW=Math.floor((final2.width - pad*2 - 16*3) / 4);
+      var cardH=56;
+      cards.forEach(function(c,i){
+        var cx=pad + i*(cardW+16);
+        // card bg
+        ctx.fillStyle=c.bg;
+        ctx.beginPath();
+        if(ctx.roundRect){ctx.roundRect(cx,statY,cardW,cardH,10);ctx.fill();}
+        else{ctx.fillRect(cx,statY,cardW,cardH);}
+        // left accent bar
+        ctx.fillStyle=c.border; ctx.fillRect(cx,statY,5,cardH);
+        // label
+        ctx.fillStyle=c.fg; ctx.font='bold 9px Inter, Arial';
+        ctx.fillText(c.lbl, cx+12, statY+16);
+        // value
+        ctx.font='bold 16px monospace';
+        ctx.fillText(c.val, cx+12, statY+36);
+        // count
+        ctx.fillStyle='#666'; ctx.font='9px Inter, Arial';
+        ctx.fillText(c.cnt, cx+12, statY+50);
+      });
+
+      // ---- TABLE CONTENT ----
+      ctx.drawImage(canvas, 0, hdrH+statH);
+
+      // ---- FOOTER ----
+      var footY=hdrH+statH+canvas.height;
+      ctx.fillStyle='#f8fafc'; ctx.fillRect(0,footY,final2.width,footH);
+      ctx.fillStyle='#94a3b8'; ctx.font='10px Inter, Arial';
+      var fText='Generated by MM Roadways Tally Checker  |  Asset: '+fd.asset.length+' records  |  Happay: '+fd.happay.length+' records  |  '+new Date().toLocaleString('en-IN');
+      ctx.fillText(fText, 18, footY+22);
+
+      // download
+      var a=document.createElement('a');
+      a.download='MMROADWAYS_DateComparison.png';
+      a.href=final2.toDataURL('image/png');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('\u2705 Date-wise Comparison image downloaded!');
+    }).catch(function(){restoreTableWrappers(saved);showToast('\u274c Capture failed');});
   },350);
 }
 
