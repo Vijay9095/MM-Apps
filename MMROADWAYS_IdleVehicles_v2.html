@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MMROADWAYS – Idle Vehicles List</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{
+      --primary:#1a2a4a;
+      --accent:#c0392b;
+      --accent2:#e74c3c;
+      --bg:#f8f9fa;
+      --white:#ffffff;
+      --border:#b0bcd4;
+      --text:#111827;
+      --muted:#6b7a99;
+      --shadow:0 4px 24px rgba(26,42,74,0.10);
+      --radius:14px;
+    }
+    body{
+      font-family:'Inter',sans-serif;
+      font-weight:600;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      padding:24px 16px 56px;
+    }
+    .wrapper{max-width:1200px;margin:0 auto;}
+
+    /* TOP BAR */
+    .topbar{
+      display:flex;align-items:center;justify-content:space-between;
+      margin-bottom:22px;gap:12px;flex-wrap:wrap;
+    }
+    .logo-block{display:flex;align-items:center;gap:14px;}
+    .logo-icon{
+      width:52px;height:52px;background:var(--primary);border-radius:12px;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .brand-title{
+      font-family:'Rajdhani',sans-serif;font-size:28px;
+      color:var(--primary);letter-spacing:0.05em;line-height:1;font-weight:700;
+    }
+    .brand-sub{
+      font-size:11px;color:var(--muted);
+      letter-spacing:0.14em;text-transform:uppercase;margin-top:3px;font-weight:600;
+    }
+    .date-chip{
+      background:var(--white);border:1.5px solid var(--border);border-radius:30px;
+      padding:9px 20px;font-size:13px;color:var(--primary);
+      letter-spacing:0.03em;box-shadow:var(--shadow);font-weight:600;
+    }
+
+    /* UPLOAD ZONE */
+    .upload-zone{
+      background:var(--white);border:2.5px dashed var(--border);
+      border-radius:var(--radius);padding:44px 24px;text-align:center;
+      cursor:pointer;transition:border-color 0.2s,background 0.2s;
+      margin-bottom:28px;box-shadow:var(--shadow);
+    }
+    .upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent);background:#fff8f7;}
+    .upload-zone input[type="file"]{display:none;}
+    .upload-icon{
+      width:56px;height:56px;background:#fef0ee;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;margin:0 auto 14px;
+    }
+    .upload-zone h3{font-family:'Rajdhani',sans-serif;font-size:20px;color:var(--primary);margin-bottom:6px;font-weight:700;}
+    .upload-zone p{font-size:13px;color:var(--muted);font-weight:600;}
+    .upload-btn-row{margin-top:18px;}
+
+    /* BUTTONS */
+    .btn{
+      display:inline-flex;align-items:center;gap:8px;padding:10px 22px;
+      border-radius:8px;font-size:13px;cursor:pointer;border:none;
+      transition:all 0.18s;letter-spacing:0.03em;font-family:'Inter',sans-serif;font-weight:700;
+    }
+    .btn-primary{background:var(--accent);color:#fff;}
+    .btn-primary:hover{background:var(--accent2);transform:translateY(-1px);}
+    .btn-outline{background:var(--white);color:var(--primary);border:1.5px solid var(--border);}
+    .btn-outline:hover{border-color:var(--accent);color:var(--accent);}
+
+    /* TABLE SECTION */
+    #table-section{display:none;}
+    .table-card{
+      background:var(--white);border-radius:var(--radius);
+      box-shadow:var(--shadow);overflow:hidden;
+      border:1.5px solid var(--border);
+    }
+    #capture-area{background:#fff;}
+
+    /* HEADER */
+    .cap-header{
+      background:var(--primary);padding:20px 28px;
+      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+    }
+    .cap-logo-row{display:flex;align-items:center;gap:14px;}
+    .cap-logo-box{
+      width:48px;height:48px;background:rgba(255,255,255,0.13);border-radius:10px;
+      display:flex;align-items:center;justify-content:center;
+    }
+    .cap-brand{font-family:'Rajdhani',sans-serif;font-size:26px;color:#fff;letter-spacing:0.06em;font-weight:700;}
+    .cap-sub{font-size:11px;color:rgba(255,255,255,0.55);letter-spacing:0.12em;text-transform:uppercase;font-weight:600;}
+    .cap-date-block{text-align:right;}
+    .cap-date-label{font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:0.1em;text-transform:uppercase;font-weight:600;}
+    .cap-date-val{font-family:'Rajdhani',sans-serif;font-size:20px;color:#fff;font-weight:700;}
+
+    .cap-title-strip{
+      background:var(--accent);padding:11px 28px;
+      font-family:'Rajdhani',sans-serif;font-size:16px;color:#fff;
+      letter-spacing:0.14em;text-transform:uppercase;font-weight:700;
+    }
+
+    /* STATS BAR */
+    .stats-bar{
+      background:#fff;padding:14px 28px;
+      display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+      border-bottom:1.5px solid var(--border);
+    }
+    .stats-label{
+      font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--muted);
+      text-transform:uppercase;letter-spacing:0.08em;font-weight:700;
+    }
+    .stat-chip{
+      border-radius:8px;padding:8px 18px;text-align:center;
+      border:1.5px solid;display:inline-block;
+    }
+    .stat-num{font-family:'Rajdhani',sans-serif;font-size:22px;line-height:1;font-weight:700;}
+    .stat-lbl{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;margin-top:2px;font-weight:700;}
+
+    /* ACTION BAR */
+    .action-bar{
+      padding:12px 28px;display:flex;align-items:center;
+      justify-content:space-between;flex-wrap:wrap;gap:10px;
+      border-bottom:1.5px solid var(--border);background:#fff;
+    }
+    .search-box{
+      display:flex;align-items:center;gap:8px;background:var(--bg);
+      border:1.5px solid var(--border);border-radius:8px;padding:7px 14px;width:280px;
+    }
+    .search-box input{
+      border:none;background:transparent;outline:none;
+      font-size:13px;font-family:'Inter',sans-serif;color:var(--text);width:100%;font-weight:600;
+    }
+    .count-label{font-size:12px;color:var(--muted);font-weight:600;}
+
+    /* FILTER BUTTONS */
+    .filter-bar{
+      display:flex;gap:6px;flex-wrap:wrap;align-items:center;
+    }
+    .filter-btn{
+      padding:5px 14px;border-radius:20px;font-size:12px;cursor:pointer;
+      border:1.5px solid transparent;font-weight:700;transition:all 0.15s;background:var(--bg);
+      color:var(--muted);border-color:var(--border);font-family:'Inter',sans-serif;
+    }
+    .filter-btn:hover{border-color:var(--primary);color:var(--primary);}
+    .filter-btn.active-all{background:var(--primary);color:#fff;border-color:var(--primary);}
+    .filter-btn.active-moving{background:#dcfce7;color:#14532d;border-color:#4ade80;}
+    .filter-btn.active-accident{background:#fee2e2;color:#991b1b;border-color:#f87171;}
+    .filter-btn.active-workshop{background:#fefce8;color:#78350f;border-color:#fde047;}
+
+    /* TABLE */
+    .table-scroll{overflow-x:auto;}
+    table{
+      width:100%;border-collapse:collapse;font-size:13.5px;
+      table-layout:fixed;
+    }
+    table,th,td{border:1.5px solid #b0bcd4 !important;}
+    col.col-num{width:46px;}
+    col.col-vehicle{width:140px;}
+    col.col-driver{width:160px;}
+    col.col-idle{width:115px;}
+    col.col-address{width:auto;}
+    col.col-status{width:130px;}
+
+    thead tr{background:var(--primary);}
+    thead th{
+      padding:13px 14px;text-align:center;
+      font-family:'Rajdhani',sans-serif;font-size:14px;color:#fff;
+      letter-spacing:0.08em;text-transform:uppercase;
+      cursor:pointer;user-select:none;white-space:nowrap;
+      border-color:#3a5080 !important;font-weight:700;
+    }
+    thead th:hover{background:#243a63;}
+    thead th.sorted{background:var(--accent);}
+    .sort-icon{margin-left:5px;font-size:12px;opacity:0.7;}
+    thead th.sorted .sort-icon{opacity:1;}
+
+    tbody tr{transition:background 0.1s;}
+    tbody tr:nth-child(even){background:#f9fafb;}
+    tbody tr:hover{background:#e8eef8;}
+    tbody td{
+      padding:11px 14px;text-align:center;
+      color:var(--text);vertical-align:middle;
+      font-size:13.5px;white-space:normal;word-break:break-word;font-weight:600;
+    }
+    .td-num{color:var(--primary);font-size:13px;white-space:nowrap;}
+    .td-vehicle{
+      font-family:'Rajdhani',sans-serif;font-size:15px;
+      color:var(--primary);letter-spacing:0.04em;text-align:left !important;font-weight:700;
+    }
+    .td-driver{color:var(--text);text-align:left !important;}
+    .td-address{
+      color:var(--text);text-align:left !important;
+      white-space:normal !important;word-break:break-word !important;
+      line-height:1.5;
+    }
+
+    /* IDLE BADGE */
+    .idle-badge{
+      display:inline-block;padding:5px 14px;border-radius:20px;
+      font-size:13px;letter-spacing:0.03em;border:1.5px solid transparent;white-space:nowrap;font-weight:700;
+    }
+    .idle-high{background:#fee2e2;color:#991b1b;border-color:#fca5a5;}
+    .idle-mid{background:#fff3cd;color:#78350f;border-color:#fcd34d;}
+    .idle-low{background:#dcfce7;color:#14532d;border-color:#86efac;}
+
+    /* STATUS BADGE — exact status from Excel */
+    .status-badge{
+      display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;
+      font-size:12px;letter-spacing:0.06em;text-transform:uppercase;
+      border:1.5px solid transparent;white-space:nowrap;font-weight:700;
+    }
+    .status-dot{
+      width:7px;height:7px;border-radius:50%;flex-shrink:0;
+    }
+    /* Moving = Green */
+    .status-moving{
+      background:#dcfce7;color:#14532d;border-color:#4ade80;
+    }
+    .status-moving .status-dot{background:#16a34a;}
+    /* Accident = Red */
+    .status-accident{
+      background:#fee2e2;color:#991b1b;border-color:#f87171;
+    }
+    .status-accident .status-dot{background:#dc2626;}
+    /* Workshop = Yellow */
+    .status-workshop{
+      background:#fefce8;color:#78350f;border-color:#fde047;
+    }
+    .status-workshop .status-dot{background:#ca8a04;}
+    /* Fallback for other status values */
+    .status-other{
+      background:#f1f5f9;color:#334155;border-color:#cbd5e1;
+    }
+    .status-other .status-dot{background:#64748b;}
+
+    /* FOOTER */
+    .table-footer{
+      padding:12px 28px;border-top:1.5px solid var(--border);
+      display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
+      background:#fff;
+    }
+    .footer-info{font-size:12px;color:var(--muted);font-weight:600;}
+    .empty-state{padding:60px 24px;text-align:center;color:var(--muted);font-size:14px;}
+
+    @media(max-width:640px){
+      .topbar,.cap-header,.action-bar{flex-direction:column;align-items:flex-start;}
+      .search-box{width:100%;}
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="logo-block">
+      <div class="logo-icon">
+        <svg viewBox="0 0 32 32" fill="none" width="32" height="32">
+          <rect x="2" y="12" width="28" height="13" rx="3" fill="#c0392b"/>
+          <rect x="4" y="7" width="17" height="8" rx="2" fill="white" opacity="0.92"/>
+          <circle cx="9" cy="25" r="3.2" fill="white"/>
+          <circle cx="23" cy="25" r="3.2" fill="white"/>
+          <rect x="21" y="15" width="7" height="5.5" rx="1" fill="white" opacity="0.8"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-title">MMROADWAYS</div>
+        <div class="brand-sub">Fleet Management System</div>
+      </div>
+    </div>
+    <div class="date-chip">Today: <span id="today-date"></span></div>
+  </div>
+
+  <!-- UPLOAD ZONE -->
+  <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+    <div class="upload-icon">
+      <svg viewBox="0 0 26 26" fill="none" width="28" height="28">
+        <path d="M13 4v13M7 10l6-6 6 6" stroke="#c0392b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M3 20h20" stroke="#c0392b" stroke-width="2.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <h3>Upload Excel File</h3>
+    <p>Drag &amp; drop your .xlsx / .xls file here, or click to browse</p>
+    <div class="upload-btn-row">
+      <span class="btn btn-primary">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v9M3 5l4-4 4 4" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 11h12" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>
+        Choose File
+      </span>
+    </div>
+    <input type="file" id="file-input" accept=".xlsx,.xls,.csv"/>
+  </div>
+
+  <!-- TABLE SECTION -->
+  <div id="table-section">
+    <div class="table-card">
+      <div id="capture-area">
+
+        <!-- HEADER -->
+        <div class="cap-header">
+          <div class="cap-logo-row">
+            <div class="cap-logo-box">
+              <svg viewBox="0 0 32 32" fill="none" width="30" height="30">
+                <rect x="2" y="12" width="28" height="13" rx="3" fill="#c0392b"/>
+                <rect x="4" y="7" width="17" height="8" rx="2" fill="white" opacity="0.92"/>
+                <circle cx="9" cy="25" r="3.2" fill="white"/>
+                <circle cx="23" cy="25" r="3.2" fill="white"/>
+                <rect x="21" y="15" width="7" height="5.5" rx="1" fill="white" opacity="0.8"/>
+              </svg>
+            </div>
+            <div>
+              <div class="cap-brand">MMROADWAYS</div>
+              <div class="cap-sub">Fleet Management System</div>
+            </div>
+          </div>
+          <div class="cap-date-block">
+            <div class="cap-date-label">Generated On</div>
+            <div class="cap-date-val" id="cap-date"></div>
+          </div>
+        </div>
+
+        <div class="cap-title-strip">&#9679;&nbsp;&nbsp;IDLE VEHICLES LIST&nbsp;&nbsp;&#9679;</div>
+
+        <!-- STATS BAR -->
+        <div class="stats-bar" id="stats-bar">
+          <div class="stats-label">Fleet Overview —</div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;" id="stat-chips"></div>
+        </div>
+
+        <!-- ACTION BAR -->
+        <div class="action-bar" id="action-bar-ui">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div class="search-box">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="#8a96ae" stroke-width="1.6"/><path d="M10 10l2.5 2.5" stroke="#8a96ae" stroke-width="1.6" stroke-linecap="round"/></svg>
+              <input type="text" id="search-input" placeholder="Search vehicles, drivers, address…" oninput="applyFilters()"/>
+            </div>
+            <div class="filter-bar" id="filter-bar"></div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <span class="count-label" id="count-label"></span>
+            <button class="btn btn-outline" onclick="resetUpload()">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 6.5A5.5 5.5 0 0112 6.5" stroke="#1a2a4a" stroke-width="1.6" stroke-linecap="round"/><path d="M1 3v3.5H4.5" stroke="#1a2a4a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              New File
+            </button>
+            <button class="btn btn-primary" onclick="downloadImage()">
+              <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1v8M3 6.5l3.5 3.5 3.5-3.5" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M1 11h11" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
+              Download Image
+            </button>
+          </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-scroll" id="table-scroll-wrap">
+          <table id="main-table">
+            <colgroup>
+              <col class="col-num"/>
+              <col class="col-vehicle"/>
+              <col class="col-driver"/>
+              <col class="col-idle"/>
+              <col class="col-address"/>
+              <col class="col-status"/>
+            </colgroup>
+            <thead>
+              <tr>
+                <th style="width:46px">#</th>
+                <th onclick="sortTable('vehicle')" id="th-vehicle">Vehicle<span class="sort-icon">↕</span></th>
+                <th onclick="sortTable('driver')"  id="th-driver">Drivers<span class="sort-icon">↕</span></th>
+                <th onclick="sortTable('idle')"    id="th-idle" class="sorted">Idle Days<span class="sort-icon">↓</span></th>
+                <th onclick="sortTable('address')" id="th-address">Address<span class="sort-icon">↕</span></th>
+                <th onclick="sortTable('status')"  id="th-status">Status<span class="sort-icon">↕</span></th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="table-footer">
+          <div class="footer-info">MMROADWAYS — Idle Vehicles Report</div>
+          <div class="footer-info" id="footer-date"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const today = new Date();
+  const fmt = today.toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+  document.getElementById('today-date').textContent = fmt;
+  document.getElementById('cap-date').textContent   = fmt;
+  document.getElementById('footer-date').textContent = fmt;
+
+  let allRows    = [];
+  let sortKey    = 'idle';
+  let sortDir    = -1;
+  let activeFilter = 'all';
+
+  /* ── drag & drop ── */
+  const zone = document.getElementById('upload-zone');
+  zone.addEventListener('dragover',  e=>{ e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', ()=>zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e=>{
+    e.preventDefault(); zone.classList.remove('drag-over');
+    if(e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+  });
+  document.getElementById('file-input').addEventListener('change', e=>{
+    if(e.target.files[0]) processFile(e.target.files[0]);
+  });
+
+  function processFile(file){
+    const reader = new FileReader();
+    reader.onload = e=>{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data,{type:'array'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(ws,{defval:''});
+      if(!json.length){ alert('No data found in the file.'); return; }
+      parseData(json);
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function findCol(keys, candidates){
+    for(const c of candidates){
+      const found = keys.find(k=>k.trim().toLowerCase().includes(c.toLowerCase()));
+      if(found) return found;
+    }
+    return null;
+  }
+
+  function parseData(json){
+    const keys = Object.keys(json[0]);
+    const vehicleCol = findCol(keys,['vehicle','veh','truck','bus','reg','number','no']);
+    const driverCol  = findCol(keys,['driver','name','operator','emp']);
+    const idleCol    = findCol(keys,['idle','days','idledays','idle days']);
+    const addressCol = findCol(keys,['address','location','place','area','city']);
+    const statusCol  = findCol(keys,['status','state','condition']);
+
+    allRows = json.map(row=>{
+      const idle = idleCol ? parseFloat(row[idleCol])||0 : 0;
+      const rawStatus = statusCol ? String(row[statusCol]||'').trim() : '';
+      return {
+        vehicle: vehicleCol ? String(row[vehicleCol]||'—') : '—',
+        driver:  driverCol  ? String(row[driverCol] ||'—') : '—',
+        idle,
+        address: addressCol ? String(row[addressCol]||'—') : '—',
+        status:  rawStatus || '—',
+      };
+    });
+
+    sortKey='idle'; sortDir=-1; activeFilter='all';
+    buildFilterButtons();
+    applyFilters();
+    updateStats(allRows);
+    document.getElementById('table-section').style.display='block';
+    document.getElementById('upload-zone').style.display='none';
+  }
+
+  /* ── status badge ── */
+  function getStatusBadge(s){
+    const sl = String(s).toLowerCase().trim();
+    let cls, label;
+    if(sl.includes('moving')){
+      cls='status-moving'; label='Moving';
+    } else if(sl.includes('accident')){
+      cls='status-accident'; label='Accident';
+    } else if(sl.includes('workshop')||sl.includes('work shop')){
+      cls='status-workshop'; label='Workshop';
+    } else {
+      cls='status-other'; label=s||'—';
+    }
+    return `<span class="status-badge ${cls}"><span class="status-dot"></span>${label}</span>`;
+  }
+
+  /* ── idle badge ── */
+  function getIdleBadge(d){
+    const cls = d>=10?'idle-high':d>=5?'idle-mid':'idle-low';
+    return `<span class="idle-badge ${cls}">${d} day${d!==1?'s':''}</span>`;
+  }
+
+  /* ── filter buttons ── */
+  function buildFilterButtons(){
+    const statuses = [...new Set(allRows.map(r=>r.status.trim()))].filter(Boolean);
+    const bar = document.getElementById('filter-bar');
+
+    const allBtn = makeFilterBtn('All','all','active-all');
+    bar.innerHTML='';
+    bar.appendChild(allBtn);
+
+    statuses.forEach(s=>{
+      const sl = s.toLowerCase();
+      let activeCls = 'active-all';
+      if(sl.includes('moving'))   activeCls='active-moving';
+      else if(sl.includes('accident')) activeCls='active-accident';
+      else if(sl.includes('workshop')) activeCls='active-workshop';
+      bar.appendChild(makeFilterBtn(s,s,activeCls));
+    });
+  }
+
+  function makeFilterBtn(label,val,activeCls){
+    const btn = document.createElement('button');
+    btn.className='filter-btn'+(val==='all'?' active-all':'');
+    btn.textContent=label;
+    btn.dataset.val=val;
+    btn.dataset.activeCls=activeCls;
+    btn.onclick=()=>{
+      activeFilter=val;
+      document.querySelectorAll('.filter-btn').forEach(b=>{
+        b.className='filter-btn';
+        if(b.dataset.val===val) b.classList.add(b.dataset.activeCls);
+      });
+      applyFilters();
+    };
+    return btn;
+  }
+
+  /* ── apply search + filter ── */
+  function applyFilters(){
+    const q = document.getElementById('search-input').value.trim().toLowerCase();
+    let rows = allRows;
+    if(activeFilter!=='all'){
+      rows = rows.filter(r=>r.status.trim().toLowerCase()===activeFilter.toLowerCase());
+    }
+    if(q){
+      rows = rows.filter(r=>
+        r.vehicle.toLowerCase().includes(q)||
+        r.driver.toLowerCase().includes(q)||
+        r.address.toLowerCase().includes(q)||
+        r.status.toLowerCase().includes(q)
+      );
+    }
+    renderTable(rows);
+  }
+
+  /* ── render ── */
+  function renderTable(rows){
+    const sorted=[...rows].sort((a,b)=>{
+      let va=a[sortKey], vb=b[sortKey];
+      if(typeof va==='string') va=va.toLowerCase();
+      if(typeof vb==='string') vb=vb.toLowerCase();
+      return va<vb?sortDir:va>vb?-sortDir:0;
+    });
+
+    const tbody=document.getElementById('table-body');
+    if(!sorted.length){
+      tbody.innerHTML=`<tr><td colspan="6"><div class="empty-state">No matching records found.</div></td></tr>`;
+      document.getElementById('count-label').textContent='0 vehicles';
+      return;
+    }
+
+    tbody.innerHTML=sorted.map((r,i)=>`
+      <tr>
+        <td class="td-num">${i+1}</td>
+        <td class="td-vehicle">${esc(r.vehicle)}</td>
+        <td class="td-driver">${esc(r.driver)}</td>
+        <td>${getIdleBadge(r.idle)}</td>
+        <td class="td-address">${esc(r.address)}</td>
+        <td>${getStatusBadge(r.status)}</td>
+      </tr>
+    `).join('');
+
+    document.getElementById('count-label').textContent=
+      `Showing ${sorted.length} of ${allRows.length} vehicles`;
+  }
+
+  /* ── stats ── */
+  function updateStats(rows){
+    const total=rows.length;
+    const moving=rows.filter(r=>r.status.toLowerCase().includes('moving')).length;
+    const accident=rows.filter(r=>r.status.toLowerCase().includes('accident')).length;
+    const workshop=rows.filter(r=>r.status.toLowerCase().includes('workshop')).length;
+    const maxIdle=rows.reduce((m,r)=>Math.max(m,r.idle),0);
+
+    document.getElementById('stat-chips').innerHTML=`
+      <div class="stat-chip" style="background:#f8fafc;border-color:#b0bcd4;">
+        <div class="stat-num" style="color:#1a2a4a;">${total}</div>
+        <div class="stat-lbl" style="color:#6b7a99;">Total</div>
+      </div>
+      <div class="stat-chip" style="background:#dcfce7;border-color:#4ade80;">
+        <div class="stat-num" style="color:#14532d;">${moving}</div>
+        <div class="stat-lbl" style="color:#14532d;">Moving</div>
+      </div>
+      <div class="stat-chip" style="background:#fee2e2;border-color:#f87171;">
+        <div class="stat-num" style="color:#991b1b;">${accident}</div>
+        <div class="stat-lbl" style="color:#991b1b;">Accident</div>
+      </div>
+      <div class="stat-chip" style="background:#fefce8;border-color:#fde047;">
+        <div class="stat-num" style="color:#78350f;">${workshop}</div>
+        <div class="stat-lbl" style="color:#78350f;">Workshop</div>
+      </div>
+      <div class="stat-chip" style="background:#f8fafc;border-color:#b0bcd4;">
+        <div class="stat-num" style="color:#1a2a4a;">${maxIdle}</div>
+        <div class="stat-lbl" style="color:#6b7a99;">Max Days</div>
+      </div>
+    `;
+  }
+
+  /* ── sort ── */
+  function sortTable(key){
+    if(sortKey===key) sortDir*=-1;
+    else{ sortKey=key; sortDir=key==='idle'?-1:1; }
+    ['vehicle','driver','idle','address','status'].forEach(k=>{
+      const el=document.getElementById('th-'+k);
+      el.classList.toggle('sorted',k===sortKey);
+      el.querySelector('.sort-icon').textContent=
+        k===sortKey?(sortDir===-1?'↓':'↑'):'↕';
+    });
+    applyFilters();
+  }
+
+  function resetUpload(){
+    document.getElementById('table-section').style.display='none';
+    document.getElementById('upload-zone').style.display='';
+    document.getElementById('file-input').value='';
+    document.getElementById('filter-bar').innerHTML='';
+    allRows=[];
+  }
+
+  function esc(str){
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ── download ── */
+  async function downloadImage(){
+    const bar   = document.getElementById('action-bar-ui');
+    const wrap  = document.getElementById('table-scroll-wrap');
+    const table = document.getElementById('main-table');
+
+    bar.style.display='none';
+    const prevWrapOverflow=wrap.style.overflowX;
+    const prevTableLayout=table.style.tableLayout;
+    const prevWrapWidth=wrap.style.width;
+    wrap.style.overflowX='visible';
+    table.style.tableLayout='auto';
+    wrap.style.width='max-content';
+
+    const addressCells=table.querySelectorAll('.td-address');
+    const prevStyles=[];
+    addressCells.forEach(td=>{
+      prevStyles.push({ws:td.style.whiteSpace,mw:td.style.maxWidth,ov:td.style.overflow});
+      td.style.whiteSpace='normal';
+      td.style.maxWidth='none';
+      td.style.overflow='visible';
+    });
+
+    const el=document.getElementById('capture-area');
+    const prevElWidth=el.style.width;
+    el.style.width='max-content';
+
+    try{
+      await new Promise(r=>setTimeout(r,120));
+      const canvas=await html2canvas(el,{
+        scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,
+        windowWidth:el.scrollWidth+60,width:el.scrollWidth,
+      });
+      const link=document.createElement('a');
+      link.download=`MMROADWAYS_IdleVehicles_${today.toISOString().slice(0,10)}.png`;
+      link.href=canvas.toDataURL('image/png');
+      link.click();
+    } finally {
+      bar.style.display='';
+      wrap.style.overflowX=prevWrapOverflow;
+      table.style.tableLayout=prevTableLayout;
+      wrap.style.width=prevWrapWidth;
+      el.style.width=prevElWidth;
+      addressCells.forEach((td,i)=>{
+        td.style.whiteSpace=prevStyles[i].ws;
+        td.style.maxWidth=prevStyles[i].mw;
+        td.style.overflow=prevStyles[i].ov;
+      });
+    }
+  }
+</script>
+</body>
+</html>
