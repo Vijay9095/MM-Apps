@@ -249,6 +249,16 @@
   tbody tr.ok-row { background: #f0fdf4; border-left: 4px solid var(--success); }
   tbody tr.ok-row:hover { background: #dcfce7; }
 
+  /* Explicit rule to satisfy table.table-bordered.dataTable (specificity 0,2,1)
+     used for the Asset SVF (date-wise totalled) table so borders always render
+     even if an external DataTables stylesheet is later added to the page. */
+  table.table-bordered.dataTable,
+  table.table-bordered.dataTable th,
+  table.table-bordered.dataTable td {
+    border: 1px solid var(--border);
+  }
+  table.table-bordered.dataTable { border-collapse: collapse; }
+
   .diff-badge {
     background: var(--danger-light); border: 1.5px solid rgba(220,38,38,0.3);
     color: var(--danger); padding: 3px 10px; border-radius: 6px;
@@ -339,6 +349,9 @@
     </button>
     <button class="tab-btn" onclick="switchTab('happay')">
       <span class="tab-dot"></span> Happay vs Asset Happay
+    </button>
+    <button class="tab-btn" onclick="switchTab('svf')">
+      <span class="tab-dot"></span> SVF vs Asset SVF
     </button>
   </div>
 
@@ -502,6 +515,67 @@
       </div>
     </div>
   </div>
+
+  <!-- ===================== PANEL 4: SVF ===================== -->
+  <div id="panel-svf" class="panel">
+    <div class="upload-grid">
+      <!-- SVF image upload with live preview -->
+      <div class="upload-card">
+        <div class="card-label">Type 7</div>
+        <div class="card-title">SVF Original Statement</div>
+        <div class="columns-hint">
+          <strong>📋 Upload Type</strong>
+          Upload image — preview shown below. Enter total amount manually.
+        </div>
+        <div class="upload-zone" id="zone-svf" ondragover="onDrag(event,this)" ondragleave="offDrag(this)" ondrop="onDrop(event,'svf')">
+          <input type="file" id="input-svf" accept="image/*,.jpg,.jpeg,.png,.gif,.webp" onchange="handleFile(this,'svf')">
+          <div class="upload-icon">🖼️</div>
+          <div class="upload-text"><span>Click to upload</span> or drag & drop</div>
+          <div class="upload-sub">JPG · PNG · WEBP · GIF</div>
+        </div>
+        <div class="file-badge" id="badge-svf">✅ <span id="fname-svf"></span></div>
+
+        <!-- Live Image Preview -->
+        <div class="image-preview-wrap" id="preview-wrap-svf">
+          <div class="image-preview-label">
+            <span>🖼️ SVF Statement Preview</span>
+            <button class="img-change-btn" onclick="document.getElementById('input-svf').click()">🔄 Change Image</button>
+          </div>
+          <img id="preview-img-svf" src="" alt="SVF Statement Preview">
+        </div>
+
+        <div class="manual-entry">
+          <label>Manual Total Amount (₹)</label>
+          <input type="number" id="svf-manual-amount" placeholder="Enter total amount...">
+        </div>
+      </div>
+
+      <div class="upload-card">
+        <div class="card-label">Type 8</div>
+        <div class="card-title">Asset SVF</div>
+        <div class="columns-hint">
+          <strong>📋 Required Columns</strong>
+          Vehicle No · Driver Name · Payment Date · Fuel Station · Fuel Ltr · Cost Pert Ltr · Fuel Amount
+          <br><strong style="margin-top:6px;">📌 Note</strong>
+          Rows with the <u>same Payment Date</u> are auto-totalled into a single date-wise row (Fuel Ltr & Fuel Amount summed) — not shown per individual row.
+        </div>
+        <div class="upload-zone" id="zone-asset-svf" ondragover="onDrag(event,this)" ondragleave="offDrag(this)" ondrop="onDrop(event,'asset-svf')">
+          <input type="file" accept=".xlsx,.xls,.csv" onchange="handleFile(this,'asset-svf')">
+          <div class="upload-icon">📁</div>
+          <div class="upload-text"><span>Click to upload</span> or drag & drop</div>
+          <div class="upload-sub">Excel / CSV</div>
+        </div>
+        <div class="file-badge" id="badge-asset-svf">✅ <span id="fname-asset-svf"></span></div>
+      </div>
+    </div>
+    <button class="compare-btn" onclick="compareSVF()">⚡ Compare SVF vs Asset SVF</button>
+    <div class="results-section" id="results-svf">
+      <div class="empty-state">
+        <div class="big-icon">📂</div>
+        <p>Upload Asset SVF file, enter manual amount & click Compare</p>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- SheetJS -->
@@ -512,13 +586,13 @@
 <script>
 // ─── State ───────────────────────────────────────────────
 const fileData = {};
-// Store base64 of uploaded images for Omni & Happay
-const uploadedImages = { omni: null, happay: null };
+// Store base64 of uploaded images for Omni, Happay & SVF
+const uploadedImages = { omni: null, happay: null, svf: null };
 
 // ─── Tab switching ────────────────────────────────────────
 function switchTab(id) {
   document.querySelectorAll('.tab-btn').forEach((b,i) => {
-    const ids = ['iocl','omni','happay'];
+    const ids = ['iocl','omni','happay','svf'];
     b.classList.toggle('active', ids[i] === id);
   });
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
@@ -543,8 +617,8 @@ function processFile(file, key) {
   document.getElementById('fname-'+key).textContent = file.name;
   document.getElementById('badge-'+key).classList.add('show');
 
-  // Image upload handling for Omni & Happay
-  if ((key === 'omni' || key === 'happay') && file.type.startsWith('image/')) {
+  // Image upload handling for Omni, Happay & SVF
+  if ((key === 'omni' || key === 'happay' || key === 'svf') && file.type.startsWith('image/')) {
     const reader = new FileReader();
     reader.onload = (e) => {
       const b64 = e.target.result; // full data URL
@@ -562,7 +636,7 @@ function processFile(file, key) {
 
   // Excel / CSV
   if (file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.pdf')) {
-    // Non-image types for omni/happay (edge case)
+    // Non-image types for omni/happay/svf (edge case)
     fileData[key] = { type: 'image', name: file.name };
     return;
   }
@@ -584,7 +658,8 @@ function processFile(file, key) {
 function getCurrentPanel() {
   if (document.getElementById('panel-iocl').classList.contains('active')) return 'iocl';
   if (document.getElementById('panel-omni').classList.contains('active')) return 'omni';
-  return 'happay';
+  if (document.getElementById('panel-happay').classList.contains('active')) return 'happay';
+  return 'svf';
 }
 
 // ─── Utilities ───────────────────────────────────────────
@@ -617,6 +692,93 @@ function findCol(row, candidates) {
 function getVal(row, candidates) {
   const col = findCol(row, candidates);
   return col !== null ? row[col] : '';
+}
+
+// ─── Date helpers (used for SVF same-date totalling) ─────
+// Converts ANY incoming date value (real Date object, "01/06/2026",
+// "2026-06-01", "1-Jun-2026", Excel serial number, etc.) into one
+// canonical yyyy-mm-dd key so that rows for the same calendar date
+// always merge together, no matter how the source file formatted them.
+// IMPORTANT: All dates are normalized to UTC internally and read back using
+// getUTC*() getters everywhere (never getFullYear/getMonth/getDate or
+// toLocaleDateString, which read the LOCAL browser timezone and can shift
+// the calendar date backward by one day). SheetJS builds date cells with
+// cellDates:true using Date.UTC(...) under the hood, so UTC getters are the
+// only way to get back the exact date that was in the Excel file.
+function toDateObj(val) {
+  if (val instanceof Date && !isNaN(val)) return val;
+
+  if (typeof val === 'number' && !isNaN(val)) {
+    // Excel serial date fallback (in case cellDates:true missed it).
+    // This already yields a UTC-midnight instant, matching SheetJS's own conversion.
+    const d = new Date(Math.round((val - 25569) * 86400 * 1000));
+    if (!isNaN(d)) return d;
+  }
+
+  if (typeof val === 'string') {
+    const s = val.trim();
+    if (!s) return null;
+
+    // Strip a trailing time component, e.g. "20/06/2026 12:12 PM",
+    // "17/06/2026 07:51 PM", "2026-06-01 14:05:00" — Payment Date only
+    // needs the calendar date; the time is ignored so every row displays
+    // consistently, whether or not the source cell had a time stamp.
+    const dateOnly = s.replace(/[\s,T]+\d{1,2}:\d{2}(:\d{2})?\s*(AM|PM|am|pm)?\s*$/, '').trim();
+
+    // dd/mm/yyyy or mm/dd/yyyy (slash/dash separated, ambiguous order)
+    let m = dateOnly.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if (m) {
+      let [, a, b, y] = m;
+      if (y.length === 2) y = '20' + y;
+      a = Number(a); b = Number(b); y = Number(y);
+      let day, month;
+      if (a > 12 && b <= 12) { day = a; month = b; }        // unambiguous: first can only be a day
+      else if (b > 12 && a <= 12) { day = b; month = a; }   // unambiguous: second can only be a day
+      else { month = a; day = b; }                           // ambiguous (both <=12): assume mm/dd/yyyy
+      if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+        const dt = new Date(Date.UTC(y, month - 1, day));
+        if (!isNaN(dt)) return dt;
+      }
+    }
+
+    // yyyy-mm-dd or yyyy/mm/dd (unambiguous, ISO order)
+    m = dateOnly.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+    if (m) {
+      const [, y, mo, d] = m;
+      const dt = new Date(Date.UTC(Number(y), Number(mo) - 1, Number(d)));
+      if (!isNaN(dt)) return dt;
+    }
+
+    // Fallback: let JS try (handles "1-Jun-2026", "Jun 1 2026", etc.), then
+    // re-anchor the parsed y/m/d to UTC midnight so downstream UTC getters work.
+    const parsed = new Date(dateOnly);
+    if (!isNaN(parsed)) {
+      const dt = new Date(Date.UTC(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()));
+      if (!isNaN(dt)) return dt;
+    }
+  }
+
+  return null;
+}
+
+function normalizeDateKey(val) {
+  const d = toDateObj(val);
+  if (d) {
+    return d.getUTCFullYear() + '-' + String(d.getUTCMonth()+1).padStart(2,'0') + '-' + String(d.getUTCDate()).padStart(2,'0');
+  }
+  if (val === '' || val === null || val === undefined) return '__blank__';
+  return String(val).trim().toLowerCase();
+}
+
+function formatDateDisplay(val) {
+  const d = toDateObj(val);
+  if (d) {
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const year = d.getUTCFullYear();
+    return `${day}/${month}/${year}`; // dd/mm/yyyy, timezone-safe
+  }
+  return val;
 }
 
 // ─── Download as Image ───────────────────────────────────
@@ -702,13 +864,15 @@ function compareIOCL() {
   let assetTotal = 0;
   const assetRows = asset.rows.map(r => {
     const vehicleNo = getVal(r, ['VehicleNo','Vehicle No','vehicle_no','vehicleno']);
-    const payDate = getVal(r, ['PaymentDate','Payment Date','paymentdate','paydate']);
+    const payDateRaw = getVal(r, ['PaymentDate','Payment Date','paymentdate','paydate']);
     const fuelLtr = getVal(r, ['FuelLtr','Fuel Ltr','fuelltr','fuelliter','Fuel Liter']);
     const costPer = getVal(r, ['CostPertLtr','Cost Pert Ltr','CostPerLtr','Cost Per Ltr','costperltr']);
     const fuelAmt = parseAmt(getVal(r, ['FuelAmount','Fuel Amount','fuelamount','amount','Amount']));
     if (!isNaN(fuelAmt)) assetTotal += fuelAmt;
-    return { vehicleNo, payDate, fuelLtr, costPer, fuelAmt };
+    const dObj = toDateObj(payDateRaw);
+    return { vehicleNo, payDate: formatDateDisplay(payDateRaw), payDateSort: dObj ? dObj.getTime() : -Infinity, fuelLtr, costPer, fuelAmt };
   });
+  assetRows.sort((a, b) => a.payDateSort - b.payDateSort);
 
   const diff = Math.abs(ioclTotal - assetTotal);
   const matched = diff < 0.01;
@@ -731,7 +895,7 @@ function compareIOCL() {
       const qty = getVal(r,['Quantity','quantity','qty','Qty']);
       const amt = parseAmt(getVal(r,['Amount','amount','AMOUNT']));
       return {
-        cells: [i+1, txDate, txType, rsp, qty,
+        cells: [i+1, formatDateDisplay(txDate), txType, rsp, qty,
           isNaN(amt)?'-':`<span style="color:#1d4ed8;font-weight:700;font-family:'Fira Code',monospace">${fmt(amt)}</span>`],
         highlight: false
       };
@@ -772,19 +936,21 @@ function compareHappay() {
   compareManualVsAsset('happay', manualAmt, asset.rows, 'results-happay', 'Happay Original', 'Asset Happay', 'Happay_vs_AssetHappay_Report');
 }
 
-// ─── Shared: Manual vs Asset ──────────────────────────────
+// ─── Shared: Manual vs Asset (Omni / Happay) ──────────────
 function compareManualVsAsset(type, manualAmt, rows, resultId, label1, label2, downloadName) {
   let assetTotal = 0;
   const processed = rows.map(r => {
     const vehicleNo = getVal(r, ['VehicleNo','Vehicle No','vehicleno']);
     const driverName = getVal(r, ['DriverName','Driver Name','drivername']);
-    const payDate = getVal(r, ['PaymentDate','Payment Date','paymentdate']);
+    const payDateRaw = getVal(r, ['PaymentDate','Payment Date','paymentdate']);
     const paySource = getVal(r, ['PaymentSource','Payment Source','paymentsource']);
     const totalAmt = parseAmt(getVal(r, ['TotalAmount','Total Amount','totalamount','amount','Amount']));
     const createdBy = getVal(r, ['CreatedBy','Created By','createdby']);
     if (!isNaN(totalAmt)) assetTotal += totalAmt;
-    return { vehicleNo, driverName, payDate, paySource, totalAmt, createdBy };
+    const dObj = toDateObj(payDateRaw);
+    return { vehicleNo, driverName, payDate: formatDateDisplay(payDateRaw), payDateSort: dObj ? dObj.getTime() : -Infinity, paySource, totalAmt, createdBy };
   });
+  processed.sort((a, b) => a.payDateSort - b.payDateSort);
 
   const diff = Math.abs(manualAmt - assetTotal);
   const matched = diff < 0.01;
@@ -826,6 +992,115 @@ function compareManualVsAsset(type, manualAmt, rows, resultId, label1, label2, d
 
   html += `</div>`;
   document.getElementById(resultId).innerHTML = html;
+}
+
+// ─── COMPARE 4: SVF (with same-Payment-Date totalling) ────
+function compareSVF() {
+  const manualAmt = parseFloat(document.getElementById('svf-manual-amount').value);
+  const asset = fileData['asset-svf'];
+  if (isNaN(manualAmt)) { showAlert('results-svf','error','Please enter the manual total amount from SVF Original Statement.'); return; }
+  if (!asset || asset.type !== 'excel') { showAlert('results-svf','error','Please upload the Asset SVF Excel file.'); return; }
+
+  // Parse raw rows
+  const rawRows = asset.rows.map(r => {
+    const vehicleNo = getVal(r, ['VehicleNo','Vehicle No','vehicleno']);
+    const driverName = getVal(r, ['DriverName','Driver Name','drivername']);
+    const payDate = getVal(r, ['PaymentDate','Payment Date','paymentdate']);
+    const fuelStation = getVal(r, ['FuelStation','Fuel Station','fuelstation']);
+    const fuelLtr = parseAmt(getVal(r, ['FuelLtr','Fuel Ltr','fuelltr','Fuel Liter']));
+    const costPer = getVal(r, ['CostPertLtr','Cost Pert Ltr','CostPerLtr','Cost Per Ltr','costperltr']);
+    const fuelAmt = parseAmt(getVal(r, ['FuelAmount','Fuel Amount','fuelamount','amount','Amount']));
+    return { vehicleNo, driverName, payDate, fuelStation, fuelLtr, costPer, fuelAmt };
+  });
+
+  // Same Payment Date rows get totalled into a single row (Fuel Ltr & Fuel Amount summed)
+  const grouped = groupByPaymentDate(rawRows);
+
+  let assetTotal = 0;
+  grouped.forEach(g => { if (!isNaN(g.fuelAmt)) assetTotal += g.fuelAmt; });
+
+  const diff = Math.abs(manualAmt - assetTotal);
+  const matched = diff < 0.01;
+
+  const imgB64 = uploadedImages['svf'];
+  const imgLabel = 'SVF Original — Original Statement';
+
+  let html = buildResultsHTML({
+    matched, diff,
+    left: { label: 'SVF Original (Manual)', value: manualAmt, color: '#d97706', sub: 'Manually entered', bgColor: '#fef3c7' },
+    right: { label: 'Asset SVF Total', value: assetTotal, color: '#16a34a', sub: `${grouped.length} date-wise records (from ${rawRows.length} rows)`, bgColor: '#dcfce7' },
+    downloadId: 'results-svf',
+    downloadName: 'SVF_vs_AssetSVF_Report',
+    imageB64: imgB64,
+    imageLabel: imgLabel
+  });
+
+  if (!matched) {
+    html += `<div class="alert error">⚠️ Amounts do not match! Manual: ${fmt(manualAmt)} vs Asset SVF: ${fmt(assetTotal)} — Difference: ${fmt(diff)}</div>`;
+  } else {
+    html += `<div class="alert info">✅ Amounts match perfectly! Both show ${fmt(manualAmt)}</div>`;
+  }
+
+  html += buildTableSVF(
+    '📁 Asset SVF Records (Same-Date Totalled)',
+    ['#','Payment Date','Fuel Ltr','Cost Pert Ltr','Fuel Amount','Status'],
+    '#312e81',
+    grouped.map((g,i) => ({
+      cells: [
+        i+1, g.payDate,
+        isNaN(g.fuelLtr)?'-':g.fuelLtr.toFixed(2),
+        g.costPer,
+        isNaN(g.fuelAmt)?'-':`<span style="color:#16a34a;font-weight:700;font-family:'Fira Code',monospace">${fmt(g.fuelAmt)}</span>`,
+        i===0 ? (!matched ? `<span class="diff-badge">⚠️ Diff: ${fmt(diff)}</span>` : '<span class="match-badge">✅ OK</span>') : ''
+      ],
+      highlight: !matched
+    }))
+  );
+
+  html += `</div>`;
+  document.getElementById('results-svf').innerHTML = html;
+}
+
+// Groups Asset SVF rows that share the same Payment Date into a single row,
+// summing Fuel Ltr & Fuel Amount. Vehicle No / Driver Name / Fuel Station /
+// Cost Pert Ltr are combined as a unique, comma-separated list.
+function groupByPaymentDate(rows) {
+  const map = {};
+  const order = [];
+  rows.forEach(r => {
+    const key = normalizeDateKey(r.payDate);
+    if (!map[key]) {
+      map[key] = {
+        payDate: formatDateDisplay(r.payDate),
+        vehicleNos: new Set(), driverNames: new Set(), fuelStations: new Set(), costPerLtrs: new Set(),
+        fuelLtr: 0, fuelAmt: 0, count: 0
+      };
+      order.push(key);
+    }
+    const g = map[key];
+    if (r.vehicleNo !== '' && r.vehicleNo !== undefined && r.vehicleNo !== null) g.vehicleNos.add(String(r.vehicleNo));
+    if (r.driverName !== '' && r.driverName !== undefined && r.driverName !== null) g.driverNames.add(String(r.driverName));
+    if (r.fuelStation !== '' && r.fuelStation !== undefined && r.fuelStation !== null) g.fuelStations.add(String(r.fuelStation));
+    if (r.costPer !== '' && r.costPer !== undefined && r.costPer !== null) g.costPerLtrs.add(String(r.costPer));
+    if (!isNaN(r.fuelLtr)) g.fuelLtr += r.fuelLtr;
+    if (!isNaN(r.fuelAmt)) g.fuelAmt += r.fuelAmt;
+    g.count += 1;
+  });
+  // Sort by actual calendar date order (oldest → newest), like the reference image
+  order.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+  return order.map(key => {
+    const g = map[key];
+    return {
+      payDate: g.payDate,
+      count: g.count,
+      vehicleNo: Array.from(g.vehicleNos).join(', '),
+      driverName: Array.from(g.driverNames).join(', '),
+      fuelStation: Array.from(g.fuelStations).join(', '),
+      costPer: Array.from(g.costPerLtrs).join(', '),
+      fuelLtr: g.fuelLtr,
+      fuelAmt: g.fuelAmt
+    };
+  });
 }
 
 // ─── HTML Builders ────────────────────────────────────────
@@ -890,6 +1165,31 @@ function buildTable(title, headers, headerBg, rows) {
       </div>
       <div class="table-wrap">
         <table>
+          <thead style="background:linear-gradient(135deg,${headerBg},#312e81);">
+            <tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr>
+          </thead>
+          <tbody>`;
+
+  rows.forEach(r => {
+    html += `<tr class="${r.highlight ? 'highlight' : 'ok-row'}">
+      ${r.cells.map((c,i) => `<td${i===0?' style="color:#9ca3af;font-weight:600"':''}>${c}</td>`).join('')}
+    </tr>`;
+  });
+
+  html += `</tbody></table></div></div>`;
+  return html;
+}
+
+// Same as buildTable but renders the <table> with classes "table-bordered dataTable"
+// (selector specificity 0,2,1) — used specifically for the Asset SVF table.
+function buildTableSVF(title, headers, headerBg, rows) {
+  let html = `
+    <div style="margin-bottom:24px;">
+      <div class="section-head">${title}
+        ${rows.some(r=>r.highlight) ? '<span class="diff-badge">⚠️ Mismatch Detected</span>' : '<span class="match-badge">✅ Matched</span>'}
+      </div>
+      <div class="table-wrap">
+        <table class="table-bordered dataTable">
           <thead style="background:linear-gradient(135deg,${headerBg},#312e81);">
             <tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr>
           </thead>
