@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FuelCheck — Transaction Comparator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{--bg:#f0f4f8;--surface:#fff;--surface2:#f7f9fc;--border:#e2e8f0;--border2:#cbd5e1;--accent:#2563eb;--accent-light:#eff6ff;--accent2:#0891b2;--accent2-light:#ecfeff;--success:#059669;--success-light:#ecfdf5;--danger:#dc2626;--danger-light:#fef2f2;--warning:#d97706;--warning-light:#fffbeb;--text:#1e293b;--text2:#64748b;--text3:#94a3b8;--shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-height:100vh;font-size:14px}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;height:58px;display:flex;align-items:center;position:sticky;top:0;z-index:300;box-shadow:var(--shadow)}
+.logo{display:flex;align-items:center;gap:.6rem}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#2563eb,#0891b2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem}
+.logo-text{font-size:1.15rem;font-weight:800;color:var(--text)}.logo-text span{color:var(--accent)}
+.logo-sub{font-size:.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:1px}
+.main{padding:1.5rem 2rem;max-width:1500px;margin:0 auto}
+.upload-section{background:var(--surface);border-radius:14px;padding:1.4rem;box-shadow:var(--shadow);margin-bottom:1.2rem;border:1px solid var(--border)}
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.upload-card{border:2px dashed var(--border2);border-radius:10px;padding:1.1rem;background:var(--surface2);transition:all .2s}
+.upload-card.loaded{border-style:solid}
+.upload-card.f1.loaded{border-color:var(--accent);background:var(--accent-light)}
+.upload-card.f2.loaded{border-color:var(--accent2);background:var(--accent2-light)}
+.card-head{display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem}
+.card-num{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800}
+.f1 .card-num{background:var(--accent-light);color:var(--accent)}
+.f2 .card-num{background:var(--accent2-light);color:var(--accent2)}
+.card-title{font-weight:700;font-size:.88rem}
+.col-tags{display:flex;flex-wrap:wrap;gap:.25rem;margin-bottom:.9rem}
+.col-tag{font-family:'JetBrains Mono',monospace;font-size:.62rem;background:var(--surface);border:1px solid var(--border);border-radius:4px;padding:2px 5px;color:var(--text2)}
+.pick-btn{padding:.42rem .9rem;border-radius:7px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text2);font-size:.78rem;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Nunito',sans-serif;display:inline-flex;align-items:center;gap:.3rem}
+.f1 .pick-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+.f2 .pick-btn:hover{border-color:var(--accent2);color:var(--accent2);background:var(--accent2-light)}
+.file-status{margin-top:.55rem;font-size:.76rem;font-weight:700;min-height:1.1em}
+.f1.loaded .file-status{color:var(--accent)}
+.f2.loaded .file-status{color:var(--accent2)}
+#file1Input,#file2Input{display:none}
+.compare-btn{width:100%;padding:.78rem;background:linear-gradient(135deg,#2563eb,#0891b2);color:#fff;border:none;border-radius:10px;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:800;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.compare-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(37,99,235,.3)}
+.compare-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.date-filter-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:.9rem 1.2rem;box-shadow:var(--shadow);margin-bottom:1.2rem;display:none;align-items:center;gap:1rem;flex-wrap:wrap}
+.date-filter-bar.show{display:flex}
+.filter-lbl{font-weight:800;font-size:.8rem;color:var(--text2);white-space:nowrap}
+.date-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.date-inp{padding:.38rem .7rem;border:1.5px solid var(--border2);border-radius:7px;font-family:'Nunito',sans-serif;font-size:.8rem;color:var(--text);background:var(--surface2);cursor:pointer;transition:border-color .15s}
+.date-inp:focus{outline:none;border-color:var(--accent);background:var(--accent-light)}
+.sep-txt{color:var(--text3);font-size:.78rem;font-weight:700}
+.flt-apply{padding:.38rem 1rem;background:var(--accent);color:#fff;border:none;border-radius:7px;font-family:'Nunito',sans-serif;font-size:.78rem;font-weight:800;cursor:pointer;transition:all .15s}
+.flt-apply:hover{background:#1d4ed8}
+.flt-reset{padding:.38rem .9rem;background:var(--surface2);color:var(--text2);border:1.5px solid var(--border2);border-radius:7px;font-family:'Nunito',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .15s}
+.flt-reset:hover{border-color:var(--danger);color:var(--danger);background:var(--danger-light)}
+.filter-badge{background:var(--warning-light);color:var(--warning);border:1px solid #fde68a;border-radius:6px;padding:3px 10px;font-size:.72rem;font-weight:800;display:none}
+.filter-badge.show{display:inline-block}
+#dashboard{display:none}
+.sec-title{font-size:.78rem;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:.85rem;display:flex;align-items:center;gap:.5rem}
+.sec-title::after{content:'';flex:1;height:1px;background:var(--border)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.85rem;margin-bottom:1.5rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:.95rem 1.05rem;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 10px 10px}
+.sc-blue::after{background:var(--accent)}.sc-cyan::after{background:var(--accent2)}
+.sc-red::after{background:var(--danger)}.sc-green::after{background:var(--success)}.sc-amber::after{background:var(--warning)}
+.stat-lbl{font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:.25rem}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:500;color:var(--text);line-height:1.15}
+.stat-sub{font-size:.68rem;color:var(--text3);margin-top:.2rem}
+.chart-section{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:1.2rem 1.4rem;box-shadow:var(--shadow);margin-bottom:1.5rem;display:none}
+.chart-section.show{display:block}
+.chart-title-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem}
+.chart-legend{display:flex;gap:1rem;flex-wrap:wrap}
+.cleg{display:flex;align-items:center;gap:.35rem;font-size:.75rem;font-weight:700;color:var(--text2)}
+.cleg-dot{width:12px;height:12px;border-radius:3px}
+.day-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.4rem}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow)}
+.panel-head{padding:.65rem 1rem;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:.8rem}
+.ph1{background:var(--accent-light);color:var(--accent)}
+.ph2{background:var(--accent2-light);color:var(--accent2)}
+.ph-plain{background:var(--surface2);color:var(--text2)}
+.total-badge{font-family:'JetBrains Mono',monospace;font-size:.78rem;padding:2px 8px;border-radius:20px}
+.tb1{background:rgba(37,99,235,.12);color:var(--accent)}
+.tb2{background:rgba(8,145,178,.12);color:var(--accent2)}
+.tbl-wrap{max-height:260px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:.77rem}
+th{background:var(--surface2);padding:.48rem .8rem;text-align:left;font-size:.64rem;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--text2);position:sticky;top:0;z-index:2;border-bottom:1px solid var(--border)}
+td{padding:.42rem .8rem;border-bottom:1px solid var(--border);font-family:'JetBrains Mono',monospace}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8fafc}
+.raw-diff-row td{background:#fff7ed !important}
+.raw-diff-row td:first-child{border-left:3px solid var(--warning)}
+.raw-mismatch-row td{background:#fef2f2 !important}
+.raw-mismatch-row td:first-child{border-left:3px solid var(--danger)}
+.diff-flag{display:inline-flex;align-items:center;gap:3px;background:#fee2e2;color:var(--danger);border-radius:4px;padding:1px 6px;font-size:.65rem;font-weight:800;font-family:'Nunito',sans-serif;margin-left:4px;vertical-align:middle}
+.warn-flag{display:inline-flex;align-items:center;gap:3px;background:#ffedd5;color:#c2410c;border-radius:4px;padding:1px 6px;font-size:.65rem;font-weight:800;font-family:'Nunito',sans-serif;margin-left:4px;vertical-align:middle}
+.cmp-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:1.4rem}
+.cmp-head{padding:.85rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.row-match td{background:#f0fdf4}
+.row-match td:first-child{border-left:3px solid var(--success)}
+.row-diff td{background:#fff5f5}
+.row-diff td:first-child{border-left:3px solid var(--danger)}
+.badge{display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:5px;font-size:.65rem;font-weight:800;font-family:'Nunito',sans-serif}
+.b-match{background:#dcfce7;color:var(--success)}
+.b-diff{background:#fee2e2;color:var(--danger)}
+.diff-ok{color:var(--success);font-weight:700}
+.diff-bad{color:var(--danger);font-weight:700}
+.c-blue{color:var(--accent)}.c-cyan{color:var(--accent2)}
+.tab-bar{display:flex;gap:.4rem;flex:1;flex-wrap:wrap;margin:0}
+.tab-btn{padding:.32rem .8rem;border-radius:6px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-size:.75rem;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Nunito',sans-serif}
+.tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tab-btn.tab-diff.active{background:var(--danger);border-color:var(--danger)}
+.tab-btn.tab-ok.active{background:var(--success);border-color:var(--success)}
+.count-chip{display:inline-block;padding:0 6px;border-radius:9px;font-size:.66rem;font-weight:800;margin-left:2px}
+.chip-b{background:var(--accent-light);color:var(--accent)}
+.chip-g{background:#dcfce7;color:var(--success)}
+.chip-r{background:#fee2e2;color:var(--danger)}
+.dl-btn{padding:.35rem .9rem;border-radius:7px;background:var(--success-light);border:1.5px solid #6ee7b7;color:var(--success);font-size:.75rem;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;display:inline-flex;align-items:center;gap:.3rem;transition:all .15s;white-space:nowrap}
+.dl-btn:hover{background:var(--success);color:#fff;border-color:var(--success)}
+.img-dl-btn{padding:.35rem 1rem;border-radius:7px;background:#fdf4ff;border:1.5px solid #d8b4fe;color:#7c3aed;font-size:.75rem;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;display:inline-flex;align-items:center;gap:.3rem;transition:all .15s;white-space:nowrap}
+.img-dl-btn:hover{background:#7c3aed;color:#fff;border-color:#7c3aed}
+.img-dl-btn:disabled{opacity:.5;cursor:wait}
+.pdf-dl-btn{padding:.35rem 1rem;border-radius:7px;background:#fff1f2;border:1.5px solid #fda4af;color:#e11d48;font-size:.75rem;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;display:inline-flex;align-items:center;gap:.3rem;transition:all .15s;white-space:nowrap}
+.pdf-dl-btn:hover{background:#e11d48;color:#fff;border-color:#e11d48}
+.pdf-dl-btn:disabled{opacity:.5;cursor:wait}
+.chart-dl-btn{padding:.35rem 1rem;border-radius:7px;background:#eff6ff;border:1.5px solid #93c5fd;color:var(--accent);font-size:.75rem;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;display:inline-flex;align-items:center;gap:.3rem;transition:all .15s}
+.chart-dl-btn:hover{background:var(--accent);color:#fff;border-color:var(--accent)}
+.raw-legend{display:flex;gap:1rem;margin-bottom:.6rem;flex-wrap:wrap}
+.rl{display:flex;align-items:center;gap:.35rem;font-size:.72rem;font-weight:700;color:var(--text2)}
+.rl-box{width:12px;height:12px;border-radius:3px}
+.raw-section-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:.6rem}
+.raw-section-btns{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.raw-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.empty{text-align:center;padding:1.8rem;color:var(--text3);font-size:.8rem}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--surface2)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+@media(max-width:780px){.upload-grid,.day-grid,.raw-grid{grid-template-columns:1fr}.main{padding:1rem}header{padding:0 1rem}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">
+    <div class="logo-icon">⛽</div>
+    <div>
+      <div class="logo-text">Fuel<span>Check</span></div>
+      <div class="logo-sub">Transaction Comparison System</div>
+    </div>
+  </div>
+</header>
+
+<div class="main">
+  <input type="file" id="file1Input" accept=".xlsx,.xls,.csv">
+  <input type="file" id="file2Input" accept=".xlsx,.xls,.csv">
+
+  <div class="upload-section">
+    <div class="upload-grid">
+      <div class="upload-card f1" id="card1">
+        <div class="card-head"><div class="card-num">1</div><div class="card-title">Asset (File 1)</div></div>
+        <div class="col-tags">
+          <span class="col-tag">Vehicle No</span><span class="col-tag">Payment Date</span>
+          <span class="col-tag">Fuel Ltr</span><span class="col-tag">Cost Per Ltr</span><span class="col-tag">Fuel Amount</span>
+        </div>
+        <button class="pick-btn" id="btn1">📂 Choose Asset File</button>
+        <div class="file-status" id="status1"></div>
+      </div>
+      <div class="upload-card f2" id="card2">
+        <div class="card-head"><div class="card-num">2</div><div class="card-title">VEER FUEL (File 2)</div></div>
+        <div class="col-tags">
+          <span class="col-tag">Txn Date</span><span class="col-tag">Merchant Name</span>
+          <span class="col-tag">RSP</span><span class="col-tag">Quantity</span><span class="col-tag">Amount</span>
+        </div>
+        <button class="pick-btn" id="btn2">📂 Choose VEER FUEL File</button>
+        <div class="file-status" id="status2"></div>
+      </div>
+    </div>
+    <button class="compare-btn" id="compareBtn" disabled>⚡ Compare Files</button>
+  </div>
+
+  <div class="date-filter-bar" id="filterBar">
+    <span class="filter-lbl">🗓 Date Filter:</span>
+    <div class="date-row">
+      <input type="date" class="date-inp" id="dateFrom">
+      <span class="sep-txt">→ To</span>
+      <input type="date" class="date-inp" id="dateTo">
+    </div>
+    <button class="flt-apply" id="applyBtn">Apply Filter</button>
+    <button class="flt-reset" id="resetBtn">✕ Reset</button>
+    <span class="filter-badge" id="filterBadge">Filtered</span>
+  </div>
+
+  <div id="dashboard">
+    <div class="sec-title">📊 Overview</div>
+    <div class="stats-grid" id="statsGrid"></div>
+
+    <div class="chart-section" id="chartSection">
+      <div class="chart-title-row">
+        <div class="sec-title" style="margin:0;flex:1">📈 Date-wise Amount Comparison (Bar Chart)</div>
+        <div class="chart-legend">
+          <div class="cleg"><div class="cleg-dot" style="background:#3b82f6"></div>Asset Amount</div>
+          <div class="cleg"><div class="cleg-dot" style="background:#06b6d4"></div>VEER FUEL Amount</div>
+          <div class="cleg"><div class="cleg-dot" style="background:#f97316"></div>Difference</div>
+        </div>
+        <button class="chart-dl-btn" id="dlChartBtn">⬇ Download Chart (PNG)</button>
+      </div>
+      <div style="position:relative;height:420px"><canvas id="barChart"></canvas></div>
+    </div>
+
+    <div class="sec-title">📅 Per Day Summary</div>
+    <div class="day-grid">
+      <div class="panel">
+        <div class="panel-head ph1"><span>Asset — Per Day</span><span class="total-badge tb1" id="badge1">Rs.0</span></div>
+        <div class="tbl-wrap">
+          <table id="dt1"><thead><tr><th>Date</th><th>Entries</th><th>Fuel (L)</th><th>Amount</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head ph2"><span>VEER FUEL — Per Day</span><span class="total-badge tb2" id="badge2">Rs.0</span></div>
+        <div class="tbl-wrap">
+          <table id="dt2"><thead><tr><th>Date</th><th>Txns</th><th>Qty</th><th>Amount</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- DATE-WISE COMPARISON with Image Download -->
+    <div class="sec-title">🔍 Date-wise Comparison</div>
+    <div class="cmp-section">
+      <div class="cmp-head">
+        <div class="tab-bar">
+          <button class="tab-btn active" data-f="all">All <span class="count-chip chip-b" id="cntAll">0</span></button>
+          <button class="tab-btn tab-ok" data-f="match">✓ Match <span class="count-chip chip-g" id="cntMatch">0</span></button>
+          <button class="tab-btn tab-diff" data-f="diff">✗ Difference <span class="count-chip chip-r" id="cntDiff">0</span></button>
+        </div>
+        <!-- NEW: Image download button for date-wise comparison -->
+        <button class="img-dl-btn" id="dlCmpImageBtn">🖼 Download Image (PNG)</button>
+        <button class="dl-btn" id="dlDiffBtn">⬇ Download Differences (Excel)</button>
+      </div>
+      <div class="tbl-wrap" style="max-height:360px" id="cmpTableWrap">
+        <table id="cmpTable">
+          <thead><tr><th>Date</th><th>Asset Entries</th><th>Asset Amount (Rs.)</th><th>VEER FUEL Txns</th><th>VEER FUEL Amount (Rs.)</th><th>Difference</th><th>Status</th></tr></thead>
+          <tbody id="cmpBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- RAW DATA SECTION -->
+    <div class="raw-section-header">
+      <div class="sec-title" style="margin:0;flex:1">📋 All Records (Differences Highlighted)</div>
+      <div class="raw-section-btns">
+        <button class="img-dl-btn" id="dlRawImageBtn">🖼 Download Image (PNG)</button>
+        <button class="pdf-dl-btn" id="dlRawPdfBtn">📄 Download PDF</button>
+      </div>
+    </div>
+    <div class="raw-legend">
+      <div class="rl"><div class="rl-box" style="background:#fef2f2;border:2px solid #dc2626"></div> Amount Mismatch</div>
+      <div class="rl"><div class="rl-box" style="background:#fff7ed;border:2px solid #f97316"></div> Date only in one file</div>
+      <div class="rl"><div class="rl-box" style="background:#f0fdf4;border:2px solid #059669"></div> Matching</div>
+    </div>
+    <div class="raw-grid">
+      <div class="panel">
+        <div class="panel-head ph-plain">
+          <span>Asset — All Records</span>
+          <button class="dl-btn" id="dlRaw1">⬇ Excel</button>
+        </div>
+        <div class="tbl-wrap" style="max-height:420px">
+          <table id="raw1"><thead><tr><th>Vehicle No</th><th>Date</th><th>Fuel (L)</th><th>Rate/L</th><th>Amount</th><th>Status</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head ph-plain">
+          <span>VEER FUEL — All Records</span>
+          <button class="dl-btn" id="dlRaw2">⬇ Excel</button>
+        </div>
+        <div class="tbl-wrap" style="max-height:420px">
+          <table id="raw2"><thead><tr><th>Date</th><th>Merchant</th><th>RSP</th><th>Qty</th><th>Amount</th><th>Status</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden snapshot container -->
+<div id="snapContainer" style="position:fixed;left:-9999px;top:0;width:1400px;background:#fff;z-index:-1"></div>
+
+<script>
+/* ── STATE ── */
+var data1=[],data2=[];
+var cmpRows=[];
+var activeFilter='all';
+var filterFrom=null,filterTo=null,isFiltered=false;
+var barChartInst=null;
+var lastRow1Status=[],lastRow2Status=[],lastD1=[],lastD2=[];
+
+/* ── WIRE-UP ── */
+document.getElementById('btn1').addEventListener('click',function(e){e.preventDefault();document.getElementById('file1Input').click();});
+document.getElementById('btn2').addEventListener('click',function(e){e.preventDefault();document.getElementById('file2Input').click();});
+document.getElementById('file1Input').addEventListener('change',function(){if(this.files[0])loadFile(this.files[0],1);});
+document.getElementById('file2Input').addEventListener('change',function(){if(this.files[0])loadFile(this.files[0],2);});
+document.getElementById('compareBtn').addEventListener('click',function(){runCompare();});
+document.getElementById('applyBtn').addEventListener('click',function(){applyDateFilter();});
+document.getElementById('resetBtn').addEventListener('click',function(){resetDateFilter();});
+document.getElementById('dlDiffBtn').addEventListener('click',function(){downloadDiffExcel();});
+document.getElementById('dlRaw1').addEventListener('click',function(){downloadRawExcel(1);});
+document.getElementById('dlRaw2').addEventListener('click',function(){downloadRawExcel(2);});
+document.getElementById('dlRawImageBtn').addEventListener('click',function(){downloadCombinedImage();});
+document.getElementById('dlRawPdfBtn').addEventListener('click',function(){downloadCombinedPDF();});
+document.getElementById('dlCmpImageBtn').addEventListener('click',function(){downloadCmpImage();});
+document.querySelectorAll('.tab-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+    this.classList.add('active');activeFilter=this.getAttribute('data-f');renderCmpTable();
+  });
+});
+
+/* ── HELPERS ── */
+function parseDate(v){
+  if(v===null||v===undefined||v==='') return null;
+  if(typeof v==='number'){var d=new Date(Math.round((v-25569)*86400000));return isoDate(d);}
+  var s=String(v).trim(),m;
+  m=s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);if(m) return m[3]+'-'+z(m[2])+'-'+z(m[1]);
+  m=s.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);if(m) return m[1]+'-'+z(m[2])+'-'+z(m[3]);
+  var d=new Date(s);if(!isNaN(d)) return isoDate(d);return null;
+}
+function isoDate(d){return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate());}
+function z(n){return String(n).padStart(2,'0');}
+function dd(iso){if(!iso) return '';var p=iso.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
+function toN(v){if(v===undefined||v===null||v==='') return 0;return parseFloat(String(v).replace(/[^0-9.\-]/g,''))||0;}
+function fmt(n){return 'Rs.'+Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtN(n){return Number(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function findCol(row,cands){
+  var keys=Object.keys(row);
+  for(var i=0;i<cands.length;i++){
+    var c=cands[i].toLowerCase().replace(/[\s_\-]/g,'').replace(/[^a-z0-9]/g,'');
+    var f=keys.find(function(k){var kn=k.toLowerCase().replace(/[\s_\-]/g,'').replace(/[^a-z0-9]/g,'');return kn===c||kn.includes(c)||c.includes(kn);});
+    if(f) return f;
+  }return null;
+}
+function processFile1(raw){
+  return raw.map(function(row){
+    var dc=findCol(row,['Payment Date','PaymentDate','Date']);
+    var vc=findCol(row,['Vehicle No','VehicleNo','Vehicle']);
+    var fc=findCol(row,['Fuel Ltr','FuelLtr','Fuel Litre','Litre','Ltr']);
+    var rc=findCol(row,['Cost Pert Ltr','Cost Per Ltr','CostPerLtr','Rate']);
+    var ac=findCol(row,['Fuel Amount','FuelAmount','Amount']);
+    return{vehicleNo:vc?String(row[vc]).trim():'',date:parseDate(dc?row[dc]:''),fuelLtr:toN(fc?row[fc]:0),costPerLtr:toN(rc?row[rc]:0),amount:toN(ac?row[ac]:0)};
+  }).filter(function(r){return r.date;});
+}
+function processFile2(raw){
+  return raw.map(function(row){
+    var dc=findCol(row,['Txn Date','TxnDate','Date','Transaction Date']);
+    var mc=findCol(row,['Merchant Name','MerchantName','Merchant']);
+    var rc=findCol(row,['RSP','Rsp']);
+    var qc=findCol(row,['Quantity','Qty','Ltr','Litre']);
+    var ac=findCol(row,['Amount','Amt']);
+    return{date:parseDate(dc?row[dc]:''),merchant:mc?String(row[mc]).trim():'',rsp:toN(rc?row[rc]:0),quantity:toN(qc?row[qc]:0),amount:toN(ac?row[ac]:0)};
+  }).filter(function(r){return r.date;});
+}
+function loadFile(file,num){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var wb=XLSX.read(e.target.result,{type:'binary'});
+    var ws=wb.Sheets[wb.SheetNames[0]];
+    var raw=XLSX.utils.sheet_to_json(ws,{defval:''});
+    if(num===1){data1=processFile1(raw);document.getElementById('card1').classList.add('loaded');document.getElementById('status1').textContent='✓ '+file.name+' ('+data1.length+' records)';}
+    else{data2=processFile2(raw);document.getElementById('card2').classList.add('loaded');document.getElementById('status2').textContent='✓ '+file.name+' ('+data2.length+' records)';}
+    if(data1.length&&data2.length) document.getElementById('compareBtn').disabled=false;
+  };
+  reader.readAsBinaryString(file);
+}
+function applyDateFilter(){
+  var from=document.getElementById('dateFrom').value,to=document.getElementById('dateTo').value;
+  if(!from&&!to){resetDateFilter();return;}
+  filterFrom=from||null;filterTo=to||null;isFiltered=true;
+  var badge=document.getElementById('filterBadge');badge.classList.add('show');
+  badge.textContent=(from?dd(from):'...')+' -> '+(to?dd(to):'...');rebuildAll();
+}
+function resetDateFilter(){
+  filterFrom=null;filterTo=null;isFiltered=false;
+  document.getElementById('dateFrom').value='';document.getElementById('dateTo').value='';
+  document.getElementById('filterBadge').classList.remove('show');rebuildAll();
+}
+function filteredData(){
+  if(!isFiltered) return{d1:data1,d2:data2};
+  return{
+    d1:data1.filter(function(r){return(!filterFrom||r.date>=filterFrom)&&(!filterTo||r.date<=filterTo);}),
+    d2:data2.filter(function(r){return(!filterFrom||r.date>=filterFrom)&&(!filterTo||r.date<=filterTo);})
+  };
+}
+function runCompare(){
+  document.getElementById('dashboard').style.display='block';
+  document.getElementById('filterBar').classList.add('show');
+  rebuildAll();
+  document.getElementById('dashboard').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function rebuildAll(){
+  var fd=filteredData();
+  buildStats(fd.d1,fd.d2);buildDayTables(fd.d1,fd.d2);buildCmpRows(fd.d1,fd.d2);
+  renderCmpTable();buildRawTables(fd.d1,fd.d2);buildBarChart(fd.d1,fd.d2);
+}
+function groupByDate(data){
+  var map={};
+  data.forEach(function(r){
+    if(!r.date) return;
+    if(!map[r.date]) map[r.date]={entries:[],total:0,qty:0};
+    map[r.date].entries.push(r);map[r.date].total+=r.amount||0;map[r.date].qty+=(r.fuelLtr||r.quantity||0);
+  });return map;
+}
+function buildStats(d1,d2){
+  var t1=d1.reduce(function(s,r){return s+r.amount;},0);
+  var t2=d2.reduce(function(s,r){return s+r.amount;},0);
+  var diff=t1-t2;
+  var g1=groupByDate(d1);var g2=groupByDate(d2);
+  var days1=Math.max(Object.keys(g1).length,1);var days2=Math.max(Object.keys(g2).length,1);
+  var h='';
+  h+=sc('sc-blue','Asset Total Amount',fmt(t1),d1.length+' transactions');
+  h+=sc('sc-cyan','VEER FUEL Total Amount',fmt(t2),d2.length+' transactions');
+  h+=sc(Math.abs(diff)<0.01?'sc-green':'sc-red','Overall Difference',(diff>=0?'+':'')+fmt(diff),Math.abs(diff)<0.01?'Files balance':'Discrepancy found');
+  h+=sc('sc-blue','Avg Daily — Asset',fmt(t1/days1),'per active day');
+  h+=sc('sc-cyan','Avg Daily — VEER FUEL',fmt(t2/days2),'per active day');
+  h+=sc('sc-amber','Total Fuel (Ltr)',d1.reduce(function(s,r){return s+r.fuelLtr;},0).toFixed(1)+' L','from Asset');
+  document.getElementById('statsGrid').innerHTML=h;
+}
+function sc(cls,lbl,val,sub){return '<div class="stat-card '+cls+'"><div class="stat-lbl">'+lbl+'</div><div class="stat-val">'+val+'</div><div class="stat-sub">'+sub+'</div></div>';}
+function buildBarChart(d1,d2){
+  var g1=groupByDate(d1);var g2=groupByDate(d2);
+  var allDates={};
+  Object.keys(g1).forEach(function(d){allDates[d]=1;});Object.keys(g2).forEach(function(d){allDates[d]=1;});
+  var dates=Object.keys(allDates).sort();
+  var section=document.getElementById('chartSection');
+  if(!dates.length){section.classList.remove('show');return;}section.classList.add('show');
+  var labels=dates.map(function(d){return dd(d);});
+  var f1Vals=dates.map(function(d){return g1[d]?parseFloat(g1[d].total.toFixed(2)):0;});
+  var f2Vals=dates.map(function(d){return g2[d]?parseFloat(g2[d].total.toFixed(2)):0;});
+  var diffVals=dates.map(function(d,i){return parseFloat(Math.abs(f1Vals[i]-f2Vals[i]).toFixed(2));});
+  if(barChartInst){barChartInst.destroy();barChartInst=null;}
+  if(window.ChartDataLabels) Chart.register(ChartDataLabels);
+  function shortAmt(v){if(v===0) return '';if(v>=100000) return 'Rs.'+(v/100000).toFixed(1)+'L';if(v>=1000) return 'Rs.'+(v/1000).toFixed(1)+'K';return 'Rs.'+v.toFixed(0);}
+  var ctx=document.getElementById('barChart').getContext('2d');
+  barChartInst=new Chart(ctx,{type:'bar',data:{labels:labels,datasets:[
+    {label:'Asset Amount (Rs.)',data:f1Vals,backgroundColor:'rgba(59,130,246,0.78)',borderColor:'rgba(37,99,235,1)',borderWidth:1.5,borderRadius:5,borderSkipped:false},
+    {label:'VEER FUEL Amount (Rs.)',data:f2Vals,backgroundColor:'rgba(6,182,212,0.78)',borderColor:'rgba(8,145,178,1)',borderWidth:1.5,borderRadius:5,borderSkipped:false},
+    {label:'Difference (Rs.)',data:diffVals,backgroundColor:'rgba(249,115,22,0.82)',borderColor:'rgba(234,88,12,1)',borderWidth:1.5,borderRadius:5,borderSkipped:false}
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},layout:{padding:{top:32}},
+    plugins:{legend:{display:true,position:'top',labels:{color:'#475569',font:{size:12,weight:'700',family:'Nunito'},padding:18,usePointStyle:true,pointStyleWidth:12}},
+      tooltip:{backgroundColor:'rgba(15,23,42,0.93)',titleColor:'#f1f5f9',bodyColor:'#cbd5e1',padding:14,cornerRadius:10,callbacks:{label:function(c){if(c.raw===0) return null;return '  '+c.dataset.label+': Rs.'+Number(c.raw).toLocaleString('en-IN',{minimumFractionDigits:2});}}},
+      datalabels:window.ChartDataLabels?{display:function(ctx){return ctx.dataset.data[ctx.dataIndex]>0;},anchor:'end',align:'end',offset:2,formatter:function(value){return shortAmt(value);},font:{size:10,weight:'700',family:'JetBrains Mono'},color:function(ctx){var colors=['#1d4ed8','#0e7490','#c2410c'];return colors[ctx.datasetIndex]||'#334155';},rotation:dates.length>8?-60:0}:false},
+    scales:{x:{grid:{color:'rgba(226,232,240,0.5)'},ticks:{color:'#64748b',font:{size:11,family:'JetBrains Mono'},maxRotation:dates.length>6?45:0}},
+      y:{grid:{color:'rgba(226,232,240,0.5)'},ticks:{color:'#64748b',font:{size:11,family:'Nunito'},callback:function(v){if(v>=100000) return 'Rs.'+(v/100000).toFixed(0)+'L';if(v>=1000) return 'Rs.'+(v/1000).toFixed(0)+'K';return 'Rs.'+v;}}}}}});
+  document.getElementById('dlChartBtn').onclick=function(){
+    var orig=document.getElementById('barChart');var tempCanvas=document.createElement('canvas');
+    tempCanvas.width=orig.width;tempCanvas.height=orig.height;
+    var tctx=tempCanvas.getContext('2d');tctx.fillStyle='#ffffff';tctx.fillRect(0,0,tempCanvas.width,tempCanvas.height);tctx.drawImage(orig,0,0);
+    var link=document.createElement('a');link.download='FuelCheck_Chart.png';link.href=tempCanvas.toDataURL('image/png');link.click();
+  };
+}
+function buildDayTables(d1,d2){
+  var g1=groupByDate(d1);var tb1=document.querySelector('#dt1 tbody');tb1.innerHTML='';var t1=0;
+  Object.keys(g1).sort().forEach(function(d){var g=g1[d];t1+=g.total;tb1.innerHTML+='<tr><td>'+dd(d)+'</td><td>'+g.entries.length+'</td><td>'+g.qty.toFixed(2)+'</td><td class="c-blue">'+fmt(g.total)+'</td></tr>';});
+  if(!Object.keys(g1).length) tb1.innerHTML='<tr><td colspan="4" class="empty">No data</td></tr>';
+  document.getElementById('badge1').textContent=fmt(t1);
+  var g2=groupByDate(d2);var tb2=document.querySelector('#dt2 tbody');tb2.innerHTML='';var t2=0;
+  Object.keys(g2).sort().forEach(function(d){var g=g2[d];t2+=g.total;tb2.innerHTML+='<tr><td>'+dd(d)+'</td><td>'+g.entries.length+'</td><td>'+g.qty.toFixed(2)+'</td><td class="c-cyan">'+fmt(g.total)+'</td></tr>';});
+  if(!Object.keys(g2).length) tb2.innerHTML='<tr><td colspan="4" class="empty">No data</td></tr>';
+  document.getElementById('badge2').textContent=fmt(t2);
+}
+function buildCmpRows(d1,d2){
+  var g1=groupByDate(d1);var g2=groupByDate(d2);var allDates={};
+  Object.keys(g1).forEach(function(d){allDates[d]=1;});Object.keys(g2).forEach(function(d){allDates[d]=1;});
+  cmpRows=[];
+  Object.keys(allDates).sort().forEach(function(d){
+    var f1=g1[d]||{entries:[],total:0,qty:0};var f2=g2[d]||{entries:[],total:0,qty:0};
+    var diff=f1.total-f2.total;
+    cmpRows.push({date:d,f1Count:f1.entries.length,f1Amt:f1.total,f2Count:f2.entries.length,f2Amt:f2.total,diff:diff,status:Math.abs(diff)<0.01?'match':'diff'});
+  });
+  var all=cmpRows.length;var match=cmpRows.filter(function(r){return r.status==='match';}).length;
+  document.getElementById('cntAll').textContent=all;document.getElementById('cntMatch').textContent=match;document.getElementById('cntDiff').textContent=all-match;
+}
+function renderCmpTable(){
+  var rows=cmpRows;
+  if(activeFilter==='match') rows=rows.filter(function(r){return r.status==='match';});
+  if(activeFilter==='diff')  rows=rows.filter(function(r){return r.status==='diff';});
+  var tb=document.getElementById('cmpBody');
+  if(!rows.length){tb.innerHTML='<tr><td colspan="7" class="empty">No records found</td></tr>';return;}
+  tb.innerHTML=rows.map(function(r){
+    var cls=r.status==='match'?'row-match':'row-diff';
+    var badge=r.status==='match'?'<span class="badge b-match">✓ MATCH</span>':'<span class="badge b-diff">✗ DIFF</span>';
+    var dh=Math.abs(r.diff)<0.01?'<span class="diff-ok">0.00</span>':'<span class="diff-bad">'+(r.diff>0?'+':'')+fmtN(r.diff)+'</span>';
+    return '<tr class="'+cls+'"><td>'+dd(r.date)+'</td><td>'+r.f1Count+'</td><td class="c-blue">'+fmtN(r.f1Amt)+'</td><td>'+r.f2Count+'</td><td class="c-cyan">'+fmtN(r.f2Amt)+'</td><td>'+dh+'</td><td>'+badge+'</td></tr>';
+  }).join('');
+}
+function computeStatuses(d1,d2){
+  var g1=groupByDate(d1);var g2=groupByDate(d2);
+  function makeFreq(grp){var map={};Object.keys(grp).forEach(function(dt){var freq={};grp[dt].entries.forEach(function(r){var key=Math.round(r.amount*100);freq[key]=(freq[key]||0)+1;});map[dt]=freq;});return map;}
+  var f2Used=JSON.parse(JSON.stringify(makeFreq(g2)));
+  var row1Status=d1.map(function(r){
+    if(!g2[r.date]) return 'only1';var key=Math.round(r.amount*100);
+    if(f2Used[r.date]&&f2Used[r.date][key]>0){f2Used[r.date][key]--;return 'match';}return 'diff';
+  });
+  var f1Used=JSON.parse(JSON.stringify(makeFreq(g1)));
+  var row2Status=d2.map(function(r){
+    if(!g1[r.date]) return 'only2';var key=Math.round(r.amount*100);
+    if(f1Used[r.date]&&f1Used[r.date][key]>0){f1Used[r.date][key]--;return 'match';}return 'diff';
+  });
+  return{row1Status:row1Status,row2Status:row2Status};
+}
+function buildRawTables(d1,d2){
+  var statuses=computeStatuses(d1,d2);
+  lastRow1Status=statuses.row1Status;lastRow2Status=statuses.row2Status;lastD1=d1;lastD2=d2;
+  var tb1=document.querySelector('#raw1 tbody');tb1.innerHTML='';
+  d1.forEach(function(r,i){
+    var st=lastRow1Status[i];var rowCls='',amtCls='c-blue',flag='';
+    if(st==='diff'){rowCls='raw-mismatch-row';amtCls='diff-amount';flag='<span class="diff-flag">✗ DIFF</span>';}
+    else if(st==='only1'){rowCls='raw-diff-row';flag='<span class="warn-flag">Only Asset</span>';}
+    tb1.innerHTML+='<tr class="'+rowCls+'"><td>'+r.vehicleNo+'</td><td>'+dd(r.date)+'</td><td>'+r.fuelLtr.toFixed(2)+'</td><td>'+fmtN(r.costPerLtr)+'</td><td class="'+amtCls+'">'+fmtN(r.amount)+flag+'</td><td>'+statusBadgeRaw(st,'Asset')+'</td></tr>';
+  });
+  if(!d1.length) tb1.innerHTML='<tr><td colspan="6" class="empty">No data</td></tr>';
+  var tb2=document.querySelector('#raw2 tbody');tb2.innerHTML='';
+  d2.forEach(function(r,i){
+    var st=lastRow2Status[i];var rowCls='',amtCls='c-cyan',flag='';
+    if(st==='diff'){rowCls='raw-mismatch-row';amtCls='diff-amount';flag='<span class="diff-flag">✗ DIFF</span>';}
+    else if(st==='only2'){rowCls='raw-diff-row';flag='<span class="warn-flag">Only VEER FUEL</span>';}
+    tb2.innerHTML+='<tr class="'+rowCls+'"><td>'+dd(r.date)+'</td><td>'+r.merchant+'</td><td>'+r.rsp.toFixed(2)+'</td><td>'+r.quantity.toFixed(2)+'</td><td class="'+amtCls+'">'+fmtN(r.amount)+flag+'</td><td>'+statusBadgeRaw(st,'VEER')+'</td></tr>';
+  });
+  if(!d2.length) tb2.innerHTML='<tr><td colspan="6" class="empty">No data</td></tr>';
+}
+function statusBadgeRaw(st,name){
+  if(st==='match') return '<span class="badge b-match">✓</span>';
+  if(st==='diff')  return '<span class="badge b-diff">✗ DIFF</span>';
+  return '<span style="display:inline-flex;align-items:center;padding:2px 6px;border-radius:5px;font-size:.65rem;font-weight:800;background:#ffedd5;color:#c2410c;">Only '+name+'</span>';
+}
+
+/* ================================================================
+   NEW: DATE-WISE COMPARISON IMAGE DOWNLOAD
+================================================================ */
+function downloadCmpImage(){
+  var btn=document.getElementById('dlCmpImageBtn');
+  if(!cmpRows.length){alert('No comparison data. Please compare files first.');return;}
+  btn.disabled=true;btn.textContent='⏳ Generating...';
+
+  var rows=cmpRows;
+  if(activeFilter==='match') rows=rows.filter(function(r){return r.status==='match';});
+  if(activeFilter==='diff')  rows=rows.filter(function(r){return r.status==='diff';});
+
+  var now=new Date();var dateStr=dd(isoDate(now));
+  var totalMatch=cmpRows.filter(function(r){return r.status==='match';}).length;
+  var totalDiff=cmpRows.filter(function(r){return r.status==='diff';}).length;
+  var t1=lastD1.reduce(function(s,r){return s+r.amount;},0);
+  var t2=lastD2.reduce(function(s,r){return s+r.amount;},0);
+  var overallDiff=t1-t2;
+
+  var filterLabel='';
+  if(isFiltered){filterLabel=' (Filtered)';}
+  var activeLabel=activeFilter==='all'?'All Dates':activeFilter==='match'?'Matching Only':'Differences Only';
+
+  var trs=rows.map(function(r){
+    var bg=r.status==='match'?'#f0fdf4':'#fef2f2';
+    var lft=r.status==='match'?'#059669':'#dc2626';
+    var badge=r.status==='match'?
+      '<span style="background:#dcfce7;color:#059669;padding:2px 8px;border-radius:5px;font-size:9px;font-weight:800;font-family:Nunito,sans-serif">✓ MATCH</span>':
+      '<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:5px;font-size:9px;font-weight:800;font-family:Nunito,sans-serif">✗ DIFF</span>';
+    var diffTxt=Math.abs(r.diff)<0.01?
+      '<span style="color:#059669;font-weight:700">0.00</span>':
+      '<span style="color:#dc2626;font-weight:700">'+(r.diff>0?'+':'')+fmtN(r.diff)+'</span>';
+    return '<tr style="background:'+bg+'">'
+      +'<td style="border-left:3px solid '+lft+';padding:6px 10px;font-family:monospace;font-size:10px;border-bottom:1px solid #e8f0f8;font-weight:700">'+dd(r.date)+'</td>'
+      +'<td style="padding:6px 10px;font-family:monospace;font-size:10px;border-bottom:1px solid #e8f0f8;text-align:center">'+r.f1Count+'</td>'
+      +'<td style="padding:6px 10px;font-family:monospace;font-size:10px;border-bottom:1px solid #e8f0f8;color:#2563eb;font-weight:600">'+fmtN(r.f1Amt)+'</td>'
+      +'<td style="padding:6px 10px;font-family:monospace;font-size:10px;border-bottom:1px solid #e8f0f8;text-align:center">'+r.f2Count+'</td>'
+      +'<td style="padding:6px 10px;font-family:monospace;font-size:10px;border-bottom:1px solid #e8f0f8;color:#0891b2;font-weight:600">'+fmtN(r.f2Amt)+'</td>'
+      +'<td style="padding:6px 10px;font-family:monospace;font-size:10px;border-bottom:1px solid #e8f0f8">'+diffTxt+'</td>'
+      +'<td style="padding:6px 10px;border-bottom:1px solid #e8f0f8">'+badge+'</td>'
+      +'</tr>';
+  }).join('');
+
+  var html='<div style="background:#fff;padding:24px;font-family:Nunito,sans-serif;width:1400px">'
+    // Header
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;padding-bottom:14px;border-bottom:3px solid #e2e8f0">'
+    +'<div style="display:flex;align-items:center;gap:10px">'
+    +'<div style="width:36px;height:36px;background:linear-gradient(135deg,#2563eb,#0891b2);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px">⛽</div>'
+    +'<div><div style="font-size:17px;font-weight:800;color:#1e293b">FuelCheck — Date-wise Comparison'+filterLabel+'</div>'
+    +'<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px;margin-top:2px">Asset vs VEER FUEL | View: '+activeLabel+'</div></div>'
+    +'</div>'
+    +'<div style="text-align:right;font-size:10px;color:#64748b">Generated - Vignesh: '+dateStr+'<br>'
+    +'<span style="color:#2563eb;font-weight:700">Total Dates: '+cmpRows.length+'</span></div>'
+    +'</div>'
+    // Summary boxes
+    +'<div style="display:flex;gap:12px;margin-bottom:18px;flex-wrap:wrap">'
+    +'<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:10px 18px;flex:1;min-width:160px">'
+    +'<div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#3b82f6;margin-bottom:4px">Asset Total</div>'
+    +'<div style="font-size:15px;font-weight:800;color:#1e293b;font-family:monospace">Rs.'+fmtN(t1)+'</div>'
+    +'<div style="font-size:9px;color:#93c5fd;margin-top:2px">'+lastD1.length+' transactions</div>'
+    +'</div>'
+    +'<div style="background:#ecfeff;border:1px solid #a5f3fc;border-radius:10px;padding:10px 18px;flex:1;min-width:160px">'
+    +'<div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#0891b2;margin-bottom:4px">VEER FUEL Total</div>'
+    +'<div style="font-size:15px;font-weight:800;color:#1e293b;font-family:monospace">Rs.'+fmtN(t2)+'</div>'
+    +'<div style="font-size:9px;color:#67e8f9;margin-top:2px">'+lastD2.length+' transactions</div>'
+    +'</div>'
+    +'<div style="background:'+(Math.abs(overallDiff)<0.01?'#ecfdf5':'#fef2f2')+';border:1px solid '+(Math.abs(overallDiff)<0.01?'#6ee7b7':'#fca5a5')+';border-radius:10px;padding:10px 18px;flex:1;min-width:160px">'
+    +'<div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:'+(Math.abs(overallDiff)<0.01?'#059669':'#dc2626')+';margin-bottom:4px">Overall Difference</div>'
+    +'<div style="font-size:15px;font-weight:800;color:#1e293b;font-family:monospace">'+(overallDiff>=0?'+':'')+fmtN(overallDiff)+'</div>'
+    +'<div style="font-size:9px;color:#94a3b8;margin-top:2px">'+(Math.abs(overallDiff)<0.01?'Balanced':'Discrepancy found')+'</div>'
+    +'</div>'
+    +'<div style="background:#dcfce7;border:1px solid #86efac;border-radius:10px;padding:10px 18px;flex:1;min-width:160px">'
+    +'<div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#059669;margin-bottom:4px">Matching Dates</div>'
+    +'<div style="font-size:15px;font-weight:800;color:#1e293b;font-family:monospace">'+totalMatch+' / '+cmpRows.length+'</div>'
+    +'<div style="font-size:9px;color:#86efac;margin-top:2px">'+totalDiff+' differences found</div>'
+    +'</div>'
+    +'</div>'
+    // Legend
+    +'<div style="display:flex;gap:16px;margin-bottom:12px">'
+    +'<div style="display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:#64748b">'
+    +'<div style="width:14px;height:14px;background:#f0fdf4;border:2px solid #059669;border-radius:3px"></div>Match — Amounts Balanced</div>'
+    +'<div style="display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;color:#64748b">'
+    +'<div style="width:14px;height:14px;background:#fef2f2;border:2px solid #dc2626;border-radius:3px"></div>Difference — Amount Mismatch</div>'
+    +'</div>'
+    // Table
+    +'<div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">'
+    +'<table style="width:100%;border-collapse:collapse">'
+    +'<thead><tr style="background:linear-gradient(135deg,#1e3a8a,#0c4a6e)">'
+    +'<th style="padding:9px 10px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#e2e8f0;border-right:1px solid rgba(255,255,255,.1)">Date</th>'
+    +'<th style="padding:9px 10px;text-align:center;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#bfdbfe;border-right:1px solid rgba(255,255,255,.1)">Asset Entries</th>'
+    +'<th style="padding:9px 10px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#93c5fd;border-right:1px solid rgba(255,255,255,.1)">Asset Amount (Rs.)</th>'
+    +'<th style="padding:9px 10px;text-align:center;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#a5f3fc;border-right:1px solid rgba(255,255,255,.1)">VEER FUEL Txns</th>'
+    +'<th style="padding:9px 10px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#67e8f9;border-right:1px solid rgba(255,255,255,.1)">VEER FUEL Amount (Rs.)</th>'
+    +'<th style="padding:9px 10px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#fca5a5;border-right:1px solid rgba(255,255,255,.1)">Difference</th>'
+    +'<th style="padding:9px 10px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:#d1fae5">Status</th>'
+    +'</tr></thead>'
+    +'<tbody>'+trs+'</tbody>'
+    +'</table>'
+    +'</div>'
+    +'<div style="margin-top:12px;font-size:9px;color:#94a3b8;text-align:right">FuelCheck Transaction Comparator — Date-wise Comparison | '+dateStr+'</div>'
+    +'</div>';
+
+  var snap=document.getElementById('snapContainer');
+  snap.innerHTML=html;snap.style.left='-9999px';snap.style.position='fixed';snap.style.top='0';snap.style.width='1400px';snap.style.background='#fff';
+  setTimeout(function(){
+    html2canvas(snap,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,width:1400,windowWidth:1400}).then(function(canvas){
+      var link=document.createElement('a');
+      link.download='FuelCheck_DatewiseComparison_'+now.getFullYear()+z(now.getMonth()+1)+z(now.getDate())+'.png';
+      link.href=canvas.toDataURL('image/png');link.click();
+      snap.innerHTML='';btn.disabled=false;btn.textContent='🖼 Download Image (PNG)';
+    }).catch(function(err){alert('Image failed: '+err.message);btn.disabled=false;btn.textContent='🖼 Download Image (PNG)';});
+  },300);
+}
+
+/* ================================================================
+   BUILD SNAP HTML (for All Records Image)
+================================================================ */
+function buildSnapHTML(){
+  var d1=lastD1,d2=lastD2;
+  var now=new Date();var dateStr=dd(isoDate(now));
+  var d1match=lastRow1Status.filter(function(s){return s==='match';}).length;
+  var d1diff=lastRow1Status.filter(function(s){return s==='diff';}).length;
+  var d1only=lastRow1Status.filter(function(s){return s==='only1';}).length;
+  var d2match=lastRow2Status.filter(function(s){return s==='match';}).length;
+  var d2diff=lastRow2Status.filter(function(s){return s==='diff';}).length;
+  var d2only=lastRow2Status.filter(function(s){return s==='only2';}).length;
+
+  function snapBadge(st,fn){
+    if(st==='match') return '<span style="background:#dcfce7;color:#059669;padding:1px 5px;border-radius:4px;font-size:8px;font-weight:800">Match</span>';
+    if(st==='diff')  return '<span style="background:#fee2e2;color:#dc2626;padding:1px 5px;border-radius:4px;font-size:8px;font-weight:800">Diff</span>';
+    return '<span style="background:#ffedd5;color:#c2410c;padding:1px 5px;border-radius:4px;font-size:8px;font-weight:800">Only '+fn+'</span>';
+  }
+  function rowCls(st){if(st==='match') return '#f0fdf4';if(st==='diff') return '#fef2f2';return '#fff7ed';}
+  function rowBorder(st){if(st==='match') return '#059669';if(st==='diff') return '#dc2626';return '#f97316';}
+
+  var rows1='';
+  d1.forEach(function(r,i){
+    var st=lastRow1Status[i];
+    var amtStyle=st==='diff'?'color:#dc2626;font-weight:700':st==='only1'?'color:#d97706;font-weight:700':'color:#2563eb';
+    rows1+='<tr style="background:'+rowCls(st)+'">'
+      +'<td style="border-left:3px solid '+rowBorder(st)+';padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9">'+r.vehicleNo+'</td>'
+      +'<td style="padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9">'+dd(r.date)+'</td>'
+      +'<td style="padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9">'+r.fuelLtr.toFixed(2)+'</td>'
+      +'<td style="padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9">'+fmtN(r.costPerLtr)+'</td>'
+      +'<td style="padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9;'+amtStyle+'">'+fmtN(r.amount)+'</td>'
+      +'<td style="padding:4px 7px;border-bottom:1px solid #f1f5f9">'+snapBadge(st,'Asset')+'</td>'
+      +'</tr>';
+  });
+  if(!d1.length) rows1='<tr><td colspan="6" style="text-align:center;padding:12px;color:#94a3b8">No data</td></tr>';
+
+  var rows2='';
+  d2.forEach(function(r,i){
+    var st=lastRow2Status[i];
+    var amtStyle=st==='diff'?'color:#dc2626;font-weight:700':st==='only2'?'color:#d97706;font-weight:700':'color:#0891b2';
+    rows2+='<tr style="background:'+rowCls(st)+'">'
+      +'<td style="border-left:3px solid '+rowBorder(st)+';padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9">'+dd(r.date)+'</td>'
+      +'<td style="padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+r.merchant+'</td>'
+      +'<td style="padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9">'+r.rsp.toFixed(2)+'</td>'
+      +'<td style="padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9">'+r.quantity.toFixed(2)+'</td>'
+      +'<td style="padding:4px 7px;font-family:monospace;font-size:9px;border-bottom:1px solid #f1f5f9;'+amtStyle+'">'+fmtN(r.amount)+'</td>'
+      +'<td style="padding:4px 7px;border-bottom:1px solid #f1f5f9">'+snapBadge(st,'VEER')+'</td>'
+      +'</tr>';
+  });
+  if(!d2.length) rows2='<tr><td colspan="6" style="text-align:center;padding:12px;color:#94a3b8">No data</td></tr>';
+
+  return {html:
+    '<div style="background:#fff;padding:20px;font-family:Nunito,sans-serif">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid #e2e8f0">'
+    +'<div style="display:flex;align-items:center;gap:8px">'
+    +'<div style="width:28px;height:28px;background:linear-gradient(135deg,#2563eb,#0891b2);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px">⛽</div>'
+    +'<div><div style="font-size:14px;font-weight:800;color:#1e293b">FuelCheck — All Records Comparison</div>'
+    +'<div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:.8px">Asset vs VEER FUEL Transaction Report</div></div>'
+    +'</div>'
+    +'<div style="font-size:10px;color:#64748b;text-align:right">Generated - Vignesh: '+dateStr+'<br>Asset: '+d1.length+' records | VEER FUEL: '+d2.length+' records</div>'
+    +'</div>'
+    +'<div style="display:flex;gap:14px;margin-bottom:12px;flex-wrap:wrap">'
+    +'<div style="display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:#64748b"><div style="width:10px;height:10px;background:#f0fdf4;border:1.5px solid #059669;border-radius:2px"></div>Match</div>'
+    +'<div style="display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:#64748b"><div style="width:10px;height:10px;background:#fef2f2;border:1.5px solid #dc2626;border-radius:2px"></div>Amount Mismatch</div>'
+    +'<div style="display:flex;align-items:center;gap:5px;font-size:10px;font-weight:700;color:#64748b"><div style="width:10px;height:10px;background:#fff7ed;border:1.5px solid #f97316;border-radius:2px"></div>Only in one file</div>'
+    +'</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">'
+    +'<span style="background:#dcfce7;color:#059669;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">Asset ✓ '+d1match+' Match</span>'
+    +'<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">Asset ✗ '+d1diff+' Diff</span>'
+    +(d1only>0?'<span style="background:#ffedd5;color:#c2410c;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">Asset Only '+d1only+'</span>':'')
+    +'<span style="background:#cffafe;color:#0891b2;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">VEER FUEL ✓ '+d2match+' Match</span>'
+    +'<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">VEER FUEL ✗ '+d2diff+' Diff</span>'
+    +(d2only>0?'<span style="background:#ffedd5;color:#c2410c;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:800">VEER FUEL Only '+d2only+'</span>':'')
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">'
+    +'<div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">'
+    +'<div style="padding:8px 12px;font-size:11px;font-weight:800;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;background:#eff6ff;color:#2563eb">'
+    +'<span>Asset — Internal Records</span><span style="font-family:monospace;font-size:9px;background:rgba(37,99,235,.12);padding:2px 7px;border-radius:10px">'+d1.length+' records</span></div>'
+    +'<table style="width:100%;border-collapse:collapse"><thead><tr>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Vehicle No</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Date</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Fuel (L)</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Rate/L</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Amount (Rs.)</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Status</th>'
+    +'</tr></thead><tbody>'+rows1+'</tbody></table></div>'
+    +'<div style="border:1px solid #e2e8f0;border-radius:10px;overflow:hidden">'
+    +'<div style="padding:8px 12px;font-size:11px;font-weight:800;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;background:#ecfeff;color:#0891b2">'
+    +'<span>VEER FUEL — Transactions</span><span style="font-family:monospace;font-size:9px;background:rgba(8,145,178,.12);padding:2px 7px;border-radius:10px">'+d2.length+' records</span></div>'
+    +'<table style="width:100%;border-collapse:collapse"><thead><tr>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Date</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Merchant</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">RSP</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Qty</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Amount (Rs.)</th>'
+    +'<th style="background:#f7f9fc;padding:5px 7px;text-align:left;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:#64748b;border-bottom:1px solid #e2e8f0">Status</th>'
+    +'</tr></thead><tbody>'+rows2+'</tbody></table></div>'
+    +'</div>'
+    +'<div style="margin-top:12px;font-size:9px;color:#94a3b8;text-align:right">FuelCheck Transaction Comparator — Asset vs VEER FUEL | '+dateStr+'</div>'
+    +'</div>',
+    dateStr:dateStr
+  };
+}
+
+/* ================================================================
+   DOWNLOAD COMBINED IMAGE (PNG) — All Records
+================================================================ */
+function downloadCombinedImage(){
+  var btn=document.getElementById('dlRawImageBtn');
+  if(!lastD1.length&&!lastD2.length){alert('No data to export. Please compare files first.');return;}
+  btn.disabled=true;btn.textContent='⏳ Generating...';
+  var snap=document.getElementById('snapContainer');
+  var built=buildSnapHTML();
+  snap.innerHTML=built.html;snap.style.left='-9999px';snap.style.position='fixed';snap.style.top='0';snap.style.width='1400px';snap.style.background='#fff';
+  setTimeout(function(){
+    html2canvas(snap,{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,width:1400,windowWidth:1400}).then(function(canvas){
+      var link=document.createElement('a');
+      var now=new Date();
+      link.download='FuelCheck_AllRecords_'+now.getFullYear()+z(now.getMonth()+1)+z(now.getDate())+'.png';
+      link.href=canvas.toDataURL('image/png');link.click();
+      snap.innerHTML='';btn.disabled=false;btn.textContent='🖼 Download Image (PNG)';
+    }).catch(function(err){alert('Image failed: '+err.message);btn.disabled=false;btn.textContent='🖼 Download Image (PNG)';});
+  },300);
+}
+
+/* ================================================================
+   IMPROVED PDF DOWNLOAD — Clean, User-Friendly, Multi-page
+   Uses jsPDF table rendering for crisp text (no blurry screenshots)
+================================================================ */
+function downloadCombinedPDF(){
+  var btn=document.getElementById('dlRawPdfBtn');
+  if(!lastD1.length&&!lastD2.length){alert('No data to export. Please compare files first.');return;}
+  btn.disabled=true;btn.textContent='⏳ Generating PDF...';
+
+  var d1=lastD1,d2=lastD2;
+  var now=new Date();
+  var dateStr=dd(isoDate(now));
+  var d1match=lastRow1Status.filter(function(s){return s==='match';}).length;
+  var d1diff=lastRow1Status.filter(function(s){return s==='diff';}).length;
+  var d1only=lastRow1Status.filter(function(s){return s==='only1';}).length;
+  var d2match=lastRow2Status.filter(function(s){return s==='match';}).length;
+  var d2diff=lastRow2Status.filter(function(s){return s==='diff';}).length;
+  var d2only=lastRow2Status.filter(function(s){return s==='only2';}).length;
+  var t1=d1.reduce(function(s,r){return s+r.amount;},0);
+  var t2=d2.reduce(function(s,r){return s+r.amount;},0);
+  var overallDiff=t1-t2;
+
+  var jsPDF=window.jspdf.jsPDF;
+  var doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  var PW=297,PH=210,M=12;
+  var pageNum=1;
+
+  /* ── Shared helpers ── */
+  function drawPageHeader(title,subtitle){
+    doc.setFillColor(15,40,100);doc.rect(0,0,PW,16,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(11);doc.setFont('helvetica','bold');
+    doc.text('⛽  FuelCheck — MM Roadways',M,10.5);
+    doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(160,185,255);
+    doc.text(title,M,14.5);
+    doc.setTextColor(160,185,255);doc.text('Generated - Vignesh: '+dateStr+'   |   Page '+pageNum,PW-M,14.5,{align:'right'});
+  }
+  function drawPageFooter(){
+    doc.setFillColor(248,250,252);doc.rect(0,PH-7,PW,7,'F');
+    doc.setDrawColor(226,232,240);doc.setLineWidth(0.2);doc.line(0,PH-7,PW,PH-7);
+    doc.setTextColor(148,163,184);doc.setFontSize(6.5);doc.setFont('helvetica','normal');
+    doc.text('FuelCheck Transaction Comparator  |  Asset vs VEER FUEL  |  Confidential',M,PH-2.5);
+    doc.text(dateStr+'  |  Page '+pageNum,PW-M,PH-2.5,{align:'right'});
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     PAGE 1 — COVER / SUMMARY
+  ───────────────────────────────────────────────────────────── */
+  drawPageHeader('Transaction Comparison Report','');
+
+  /* Title block */
+  doc.setFillColor(239,246,255);doc.roundedRect(M,20,PW-2*M,18,3,3,'F');
+  doc.setDrawColor(191,219,254);doc.setLineWidth(0.4);doc.roundedRect(M,20,PW-2*M,18,3,3,'S');
+  doc.setTextColor(30,41,59);doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text('FuelCheck — Transaction Comparison Report',PW/2,30,{align:'center'});
+  doc.setFontSize(8);doc.setFont('helvetica','normal');doc.setTextColor(100,116,139);
+  doc.text('Asset (File 1)  vs  VEER FUEL (File 2)  |  All Transactions Summary',PW/2,35.5,{align:'center'});
+
+  /* KPI boxes */
+  var kpis=[
+    {lbl:'Asset Total',val:'Rs.'+fmtN(t1),sub:d1.length+' records',bg:[239,246,255],bd:[147,197,253],vc:[30,64,175]},
+    {lbl:'VEER FUEL Total',val:'Rs.'+fmtN(t2),sub:d2.length+' records',bg:[236,254,255],bd:[103,232,249],vc:[14,116,144]},
+    {lbl:'Difference',val:(overallDiff>=0?'+':'')+fmtN(overallDiff),sub:Math.abs(overallDiff)<0.01?'Balanced':'Discrepancy',bg:Math.abs(overallDiff)<0.01?[240,253,244]:[254,242,242],bd:Math.abs(overallDiff)<0.01?[134,239,172]:[252,165,165],vc:Math.abs(overallDiff)<0.01?[5,150,105]:[220,38,38]},
+    {lbl:'Total Fuel',val:d1.reduce(function(s,r){return s+r.fuelLtr;},0).toFixed(1)+' L',sub:'from Asset file',bg:[255,251,235],bd:[253,211,77],vc:[146,64,14]}
+  ];
+  var kx=M,ky=42,kw=(PW-2*M-9)/4,kh=20;
+  kpis.forEach(function(k,i){
+    doc.setFillColor(k.bg[0],k.bg[1],k.bg[2]);doc.roundedRect(kx,ky,kw,kh,2,2,'F');
+    doc.setDrawColor(k.bd[0],k.bd[1],k.bd[2]);doc.setLineWidth(0.3);doc.roundedRect(kx,ky,kw,kh,2,2,'S');
+    doc.setTextColor(100,116,139);doc.setFontSize(6.5);doc.setFont('helvetica','bold');
+    doc.text(k.lbl.toUpperCase(),kx+4,ky+5.5);
+    doc.setTextColor(k.vc[0],k.vc[1],k.vc[2]);doc.setFontSize(11);doc.setFont('helvetica','bold');
+    doc.text(k.val,kx+4,ky+13);
+    doc.setTextColor(148,163,184);doc.setFontSize(6);doc.setFont('helvetica','normal');
+    doc.text(k.sub,kx+4,ky+18);
+    kx+=kw+3;
+  });
+
+  /* Status summary table */
+  var sy=66;
+  doc.setTextColor(30,41,59);doc.setFontSize(9);doc.setFont('helvetica','bold');
+  doc.text('Record Status Summary',M,sy);sy+=4;
+
+  var colW=[55,28,28,28,28,28];var colX=M;var rh=8;
+  var hdrs=['Source','Total','✓ Match','✗ Diff','Only Here','Match %'];
+  /* Header */
+  doc.setFillColor(15,40,100);
+  colW.forEach(function(w,i){doc.rect(colX+colW.slice(0,i).reduce(function(a,b){return a+b;},0),sy,w,rh,'F');});
+  doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont('helvetica','bold');
+  var cx=M;
+  hdrs.forEach(function(h,i){doc.text(h,cx+2,sy+5.2);cx+=colW[i];});
+  sy+=rh;
+
+  var sRows=[
+    {src:'Asset (File 1)',tot:d1.length,m:d1match,df:d1diff,on:d1only,bg:[239,246,255]},
+    {src:'VEER FUEL (File 2)',tot:d2.length,m:d2match,df:d2diff,on:d2only,bg:[236,254,255]}
+  ];
+  sRows.forEach(function(row){
+    doc.setFillColor(row.bg[0],row.bg[1],row.bg[2]);
+    cx=M;colW.forEach(function(w,i){doc.rect(cx+colW.slice(0,i).reduce(function(a,b){return a+b;},0),sy,w,rh,'F');});
+    doc.setDrawColor(226,232,240);doc.setLineWidth(0.1);
+    cx=M;colW.forEach(function(w,i){doc.rect(cx+colW.slice(0,i).reduce(function(a,b){return a+b;},0),sy,w,rh,'S');});
+    cx=M;
+    var cells=[row.src,row.tot,row.m,row.df,row.on,row.tot>0?(row.m/row.tot*100).toFixed(1)+'%':'0%'];
+    doc.setTextColor(30,41,59);doc.setFontSize(7.5);doc.setFont('helvetica','normal');
+    cells.forEach(function(cell,i){
+      if(i===2){doc.setTextColor(5,150,105);doc.setFont('helvetica','bold');}
+      else if(i===3&&row.df>0){doc.setTextColor(220,38,38);doc.setFont('helvetica','bold');}
+      else{doc.setTextColor(30,41,59);doc.setFont('helvetica','normal');}
+      doc.text(String(cell),cx+2,sy+5.2);cx+=colW[i];
+    });
+    sy+=rh;
+  });
+
+  /* Date-wise summary (mini) */
+  sy+=6;
+  doc.setTextColor(30,41,59);doc.setFontSize(9);doc.setFont('helvetica','bold');
+  doc.text('Date-wise Comparison Summary',M,sy);sy+=4;
+
+  var dcols=[30,22,30,22,30,24,22];var dhdrs=['Date','Asset Cnt','Asset Amt (Rs.)','VEER Cnt','VEER Amt (Rs.)','Diff (Rs.)','Status'];
+  /* header */
+  doc.setFillColor(30,58,138);
+  var dcx=M;dcols.forEach(function(w){doc.rect(dcx,sy,w,7,'F');dcx+=w;});
+  dcx=M;doc.setTextColor(255,255,255);doc.setFontSize(6.5);doc.setFont('helvetica','bold');
+  dhdrs.forEach(function(h,i){doc.text(h,dcx+1.5,sy+4.8);dcx+=dcols[i];});sy+=7;
+
+  var rowsShown=0;var maxDateRows=Math.min(cmpRows.length,Math.floor((PH-sy-12)/6.5));
+  cmpRows.slice(0,maxDateRows).forEach(function(r,ri){
+    var bg=r.status==='match'?[240,253,244]:[254,242,242];
+    doc.setFillColor(bg[0],bg[1],bg[2]);
+    dcx=M;dcols.forEach(function(w){doc.rect(dcx,sy,w,6.5,'F');dcx+=w;});
+    doc.setDrawColor(226,232,240);doc.setLineWidth(0.08);
+    dcx=M;dcols.forEach(function(w){doc.rect(dcx,sy,w,6.5,'S');dcx+=w;});
+    /* left accent */
+    doc.setFillColor(r.status==='match'?5:220,r.status==='match'?150:38,r.status==='match'?105:38);
+    doc.rect(M,sy,1.5,6.5,'F');
+    dcx=M+1.5;
+    var diffDisp=(Math.abs(r.diff)<0.01?'0.00':(r.diff>0?'+':'')+fmtN(r.diff));
+    var cells=[dd(r.date),r.f1Count,fmtN(r.f1Amt),r.f2Count,fmtN(r.f2Amt),diffDisp,r.status==='match'?'MATCH':'DIFF'];
+    cells.forEach(function(cell,i){
+      if(i===6){doc.setTextColor(r.status==='match'?5:220,r.status==='match'?150:38,r.status==='match'?105:38);doc.setFont('helvetica','bold');}
+      else if(i===5&&Math.abs(r.diff)>=0.01){doc.setTextColor(220,38,38);doc.setFont('helvetica','bold');}
+      else{doc.setTextColor(30,41,59);doc.setFont('helvetica','normal');}
+      doc.setFontSize(6.5);
+      doc.text(String(cell),dcx+1,sy+4.3);dcx+=dcols[i];
+    });
+    sy+=6.5;rowsShown++;
+  });
+  if(cmpRows.length>maxDateRows){
+    doc.setTextColor(148,163,184);doc.setFontSize(6.5);doc.setFont('helvetica','italic');
+    doc.text('... and '+(cmpRows.length-maxDateRows)+' more dates (see following pages for all records)',M,sy+5);
+  }
+
+  /* Legend */
+  sy=PH-18;
+  doc.setTextColor(30,41,59);doc.setFontSize(7.5);doc.setFont('helvetica','bold');doc.text('Color Legend:',M,sy);sy+=4;
+  var legends=[
+    {bg:[240,253,244],bd:[5,150,105],lbl:'Green — Amount matches between Asset & VEER FUEL'},
+    {bg:[254,242,242],bd:[220,38,38],lbl:'Red — Amount mismatch (difference found)'},
+    {bg:[255,247,237],bd:[249,115,22],lbl:'Orange — Date exists only in one file'}
+  ];
+  var lx=M;
+  legends.forEach(function(lg){
+    doc.setFillColor(lg.bg[0],lg.bg[1],lg.bg[2]);doc.rect(lx,sy-3.5,4,4,'F');
+    doc.setDrawColor(lg.bd[0],lg.bd[1],lg.bd[2]);doc.setLineWidth(0.5);doc.rect(lx,sy-3.5,4,4,'S');
+    doc.setDrawColor(226,232,240);doc.setLineWidth(0.1);
+    doc.setTextColor(100,116,139);doc.setFontSize(7);doc.setFont('helvetica','normal');
+    doc.text(lg.lbl,lx+6,sy);lx+=90;
+  });
+
+  drawPageFooter();
+
+  /* ─────────────────────────────────────────────────────────────
+     PAGES 2+ — ASSET RECORDS (pure jsPDF text, no screenshot)
+  ───────────────────────────────────────────────────────────── */
+  function drawDataPages(title,headerColor,colHeaders,colWidths,dataRows,rowStatuses,sourceLabel){
+    var ROWS_PER_PAGE=Math.floor((PH-16-7-16)/6.8); /* header16 + footer7 + table-header16 */
+    var totalPages=Math.ceil(dataRows.length/ROWS_PER_PAGE);
+
+    for(var pg=0;pg<Math.max(totalPages,1);pg++){
+      doc.addPage();pageNum++;
+      drawPageHeader(title,'');
+
+      /* Section header */
+      doc.setFillColor(headerColor[0],headerColor[1],headerColor[2]);
+      doc.roundedRect(M,18,PW-2*M,10,2,2,'F');
+      doc.setTextColor(255,255,255);doc.setFontSize(9);doc.setFont('helvetica','bold');
+      doc.text(title+' — '+dataRows.length+' Records Total',M+4,24.5);
+      doc.setFontSize(7);doc.setFont('helvetica','normal');doc.setTextColor(200,220,255);
+      doc.text('Page '+(pg+1)+' of '+Math.max(totalPages,1)+'  |  Rows '+(pg*ROWS_PER_PAGE+1)+' – '+Math.min((pg+1)*ROWS_PER_PAGE,dataRows.length),PW-M,24.5,{align:'right'});
+
+      /* Table header */
+      var ty=31;
+      doc.setFillColor(headerColor[0]+20,headerColor[1]+20,headerColor[2]+30);
+      var tcx=M;colWidths.forEach(function(w){doc.rect(tcx,ty,w,7.5,'F');tcx+=w;});
+      tcx=M;doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont('helvetica','bold');
+      colHeaders.forEach(function(h,i){doc.text(h,tcx+1.5,ty+5);tcx+=colWidths[i];});
+      ty+=7.5;
+
+      /* Data rows */
+      var slice=dataRows.slice(pg*ROWS_PER_PAGE,(pg+1)*ROWS_PER_PAGE);
+      slice.forEach(function(cells,ri){
+        var st=rowStatuses[pg*ROWS_PER_PAGE+ri];
+        var bg=st==='match'?[240,253,244]:st==='diff'?[254,242,242]:[255,247,237];
+        var accent=st==='match'?[5,150,105]:st==='diff'?[220,38,38]:[249,115,22];
+        /* row bg */
+        doc.setFillColor(bg[0],bg[1],bg[2]);
+        tcx=M;colWidths.forEach(function(w){doc.rect(tcx,ty,w,6.8,'F');tcx+=w;});
+        /* subtle grid lines */
+        doc.setDrawColor(220,230,240);doc.setLineWidth(0.08);
+        tcx=M;colWidths.forEach(function(w){doc.rect(tcx,ty,w,6.8,'S');tcx+=w;});
+        /* left accent bar */
+        doc.setFillColor(accent[0],accent[1],accent[2]);doc.rect(M,ty,1.8,6.8,'F');
+        /* Cells */
+        tcx=M+1.8;
+        cells.forEach(function(cell,ci){
+          var isAmtCol=(ci===cells.length-2);
+          if(isAmtCol&&st==='diff'){doc.setTextColor(220,38,38);doc.setFont('helvetica','bold');}
+          else if(isAmtCol&&st==='only'+sourceLabel){doc.setTextColor(217,119,6);doc.setFont('helvetica','bold');}
+          else if(ci===cells.length-1){
+            /* Status column */
+            doc.setTextColor(accent[0],accent[1],accent[2]);doc.setFont('helvetica','bold');
+          }
+          else{doc.setTextColor(30,41,59);doc.setFont('helvetica','normal');}
+          doc.setFontSize(7);
+          var cellText=String(cell);
+          /* truncate merchant names */
+          if(ci===1&&sourceLabel==='2'&&cellText.length>22) cellText=cellText.substring(0,22)+'...';
+          doc.text(cellText,tcx+0.5,ty+4.5);
+          tcx+=colWidths[ci];
+        });
+        ty+=6.8;
+      });
+
+      /* Totals row */
+      if(pg===totalPages-1||dataRows.length===0){
+        doc.setFillColor(30,41,59);
+        tcx=M;colWidths.forEach(function(w){doc.rect(tcx,ty,w,7,'F');tcx+=w;});
+        doc.setTextColor(255,255,255);doc.setFontSize(7);doc.setFont('helvetica','bold');
+        var amtTotal=dataRows.reduce(function(s,r){return s+parseFloat(String(r[r.length-2]).replace(/,/g,''));},0);
+        doc.text('TOTAL — '+dataRows.length+' records',M+3,ty+4.8);
+        /* find amount column position */
+        var amtColX=M;colWidths.slice(0,-2).forEach(function(w){amtColX+=w;});
+        doc.text('Rs.'+fmtN(amtTotal),amtColX+2,ty+4.8);
+        doc.setTextColor(134,239,172);
+        doc.text(sourceLabel==='1'?d1match+' Match | '+d1diff+' Diff':d2match+' Match | '+d2diff+' Diff',PW-M-2,ty+4.8,{align:'right'});
+      }
+
+      drawPageFooter();
+    }
+  }
+
+  /* Build data arrays */
+  var asset_data=d1.map(function(r){return [r.vehicleNo,dd(r.date),r.fuelLtr.toFixed(2),fmtN(r.costPerLtr),fmtN(r.amount),lastRow1Status[d1.indexOf(r)]==='match'?'MATCH':lastRow1Status[d1.indexOf(r)]==='diff'?'DIFF':'ONLY ASSET'];});
+  var asset_st=lastRow1Status;
+
+  var veer_data=d2.map(function(r){return [dd(r.date),r.merchant,r.rsp.toFixed(2),r.quantity.toFixed(2),fmtN(r.amount),lastRow2Status[d2.indexOf(r)]==='match'?'MATCH':lastRow2Status[d2.indexOf(r)]==='diff'?'DIFF':'ONLY VEER FUEL'];});
+  var veer_st=lastRow2Status;
+
+  drawDataPages(
+    'Asset — Internal Records',
+    [30,64,175],
+    ['Vehicle No','Date','Fuel (L)','Rate/L','Amount (Rs.)','Status'],
+    [44,26,18,24,32,26],
+    asset_data,asset_st,'1'
+  );
+
+  drawDataPages(
+    'VEER FUEL — Transaction Records',
+    [12,74,110],
+    ['Date','Merchant Name','RSP','Quantity','Amount (Rs.)','Status'],
+    [26,58,18,18,32,26],
+    veer_data,veer_st,'2'
+  );
+
+  /* Save */
+  var fname='FuelCheck_AllRecords_'+now.getFullYear()+z(now.getMonth()+1)+z(now.getDate())+'.pdf';
+  doc.save(fname);
+  btn.disabled=false;btn.textContent='📄 Download PDF';
+}
+
+/* ================================================================
+   EXCEL DOWNLOADS
+================================================================ */
+function xlsColor(rgb){return{patternType:'solid',fgColor:{rgb:rgb}};}
+function applyStyles(ws,rows,cols,headerBg,evenBg,oddBg){
+  for(var c=0;c<cols;c++){var cell=XLSX.utils.encode_cell({r:0,c:c});if(!ws[cell]) continue;ws[cell].s={fill:xlsColor(headerBg),font:{bold:true,color:{rgb:'FFFFFF'},sz:11},alignment:{horizontal:'center',wrapText:true}};}
+  for(var r=1;r<rows;r++){for(var c=0;c<cols;c++){var cell=XLSX.utils.encode_cell({r:r,c:c});if(!ws[cell]) continue;ws[cell].s={fill:xlsColor(r%2===0?evenBg:oddBg),border:{bottom:{style:'thin',color:{rgb:'E2E8F0'}}}};}}
+}
+function downloadDiffExcel(){
+  var diffRows=cmpRows.filter(function(r){return r.status==='diff';});
+  if(!diffRows.length){alert('No differences found!');return;}
+  var wb=XLSX.utils.book_new();
+  var s1=[['Date','Asset Entries','Asset Amount (Rs.)','VEER FUEL Txns','VEER FUEL Amount (Rs.)','Difference (Rs.)','Status']];
+  diffRows.forEach(function(r){s1.push([dd(r.date),r.f1Count,parseFloat(r.f1Amt.toFixed(2)),r.f2Count,parseFloat(r.f2Amt.toFixed(2)),parseFloat(r.diff.toFixed(2)),'DIFFERENCE']);});
+  var ws1=XLSX.utils.aoa_to_sheet(s1);ws1['!cols']=[{wch:14},{wch:13},{wch:22},{wch:14},{wch:22},{wch:18},{wch:14}];
+  applyStyles(ws1,s1.length,7,'1E3A8A','FFF1F2','FEE2E2');
+  XLSX.utils.book_append_sheet(wb,ws1,'Differences Summary');
+  var diffDates=diffRows.map(function(r){return r.date;});
+  var f1d=data1.filter(function(r){return diffDates.indexOf(r.date)!==-1;});
+  var s2=[['Vehicle No','Date','Fuel (Ltr)','Cost Per Ltr (Rs.)','Fuel Amount (Rs.)']];
+  f1d.forEach(function(r){s2.push([r.vehicleNo,dd(r.date),parseFloat(r.fuelLtr.toFixed(2)),parseFloat(r.costPerLtr.toFixed(2)),parseFloat(r.amount.toFixed(2))]);});
+  var ws2=XLSX.utils.aoa_to_sheet(s2);ws2['!cols']=[{wch:14},{wch:14},{wch:12},{wch:16},{wch:18}];
+  applyStyles(ws2,s2.length,5,'1E40AF','EFF6FF','DBEAFE');
+  XLSX.utils.book_append_sheet(wb,ws2,'Asset - Diff Records');
+  var f2d=data2.filter(function(r){return diffDates.indexOf(r.date)!==-1;});
+  var s3=[['Date','Merchant Name','RSP','Quantity','Amount (Rs.)']];
+  f2d.forEach(function(r){s3.push([dd(r.date),r.merchant,parseFloat(r.rsp.toFixed(2)),parseFloat(r.quantity.toFixed(2)),parseFloat(r.amount.toFixed(2))]);});
+  var ws3=XLSX.utils.aoa_to_sheet(s3);ws3['!cols']=[{wch:14},{wch:26},{wch:10},{wch:12},{wch:18}];
+  applyStyles(ws3,s3.length,5,'0C4A6E','ECFEFF','CFFAFE');
+  XLSX.utils.book_append_sheet(wb,ws3,'VEER FUEL - Diff Records');
+  XLSX.writeFile(wb,'FuelCheck_Differences.xlsx');
+}
+function downloadRawExcel(num){
+  var wb=XLSX.utils.book_new();
+  var g1=groupByDate(data1);var g2=groupByDate(data2);
+  function makeFreq(grp){var map={};Object.keys(grp).forEach(function(dt){var freq={};grp[dt].entries.forEach(function(r){var k=Math.round(r.amount*100);freq[k]=(freq[k]||0)+1;});map[dt]=freq;});return map;}
+  if(num===1){
+    var f2freq=JSON.parse(JSON.stringify(makeFreq(g2)));
+    var rows=[['Vehicle No','Date','Fuel (Ltr)','Cost Per Ltr (Rs.)','Fuel Amount (Rs.)','Status']];var rowStatus=[];
+    data1.forEach(function(r){
+      var st;if(!g2[r.date]) st='only1';
+      else{var k=Math.round(r.amount*100);if(f2freq[r.date]&&f2freq[r.date][k]>0){f2freq[r.date][k]--;st='match';}else st='diff';}
+      var lbl=st==='match'?'MATCH':st==='diff'?'DIFFERENCE':'ONLY IN ASSET';
+      rows.push([r.vehicleNo,dd(r.date),parseFloat(r.fuelLtr.toFixed(2)),parseFloat(r.costPerLtr.toFixed(2)),parseFloat(r.amount.toFixed(2)),lbl]);rowStatus.push(st);
+    });
+    var ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:14},{wch:14},{wch:12},{wch:16},{wch:18},{wch:18}];
+    ['A','B','C','D','E','F'].forEach(function(col){var cell=col+'1';if(ws[cell])ws[cell].s={fill:xlsColor('1E40AF'),font:{bold:true,color:{rgb:'FFFFFF'},sz:11},alignment:{horizontal:'center'}};});
+    rowStatus.forEach(function(st,i){var bg=st==='match'?'F0FDF4':st==='diff'?'FEF2F2':'FFF7ED';['A','B','C','D','E','F'].forEach(function(col){var cell=col+(i+2);if(ws[cell])ws[cell].s={fill:xlsColor(bg),border:{bottom:{style:'thin',color:{rgb:'E2E8F0'}}}};});});
+    XLSX.utils.book_append_sheet(wb,ws,'Asset Records');XLSX.writeFile(wb,'Asset_Records.xlsx');
+  } else {
+    var f1freq=JSON.parse(JSON.stringify(makeFreq(g1)));
+    var rows=[['Date','Merchant Name','RSP','Quantity','Amount (Rs.)','Status']];var rowStatus=[];
+    data2.forEach(function(r){
+      var st;if(!g1[r.date]) st='only2';
+      else{var k=Math.round(r.amount*100);if(f1freq[r.date]&&f1freq[r.date][k]>0){f1freq[r.date][k]--;st='match';}else st='diff';}
+      var lbl=st==='match'?'MATCH':st==='diff'?'DIFFERENCE':'ONLY IN VEER FUEL';
+      rows.push([dd(r.date),r.merchant,parseFloat(r.rsp.toFixed(2)),parseFloat(r.quantity.toFixed(2)),parseFloat(r.amount.toFixed(2)),lbl]);rowStatus.push(st);
+    });
+    var ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:14},{wch:26},{wch:10},{wch:12},{wch:18},{wch:18}];
+    ['A','B','C','D','E','F'].forEach(function(col){var cell=col+'1';if(ws[cell])ws[cell].s={fill:xlsColor('0C4A6E'),font:{bold:true,color:{rgb:'FFFFFF'},sz:11},alignment:{horizontal:'center'}};});
+    rowStatus.forEach(function(st,i){var bg=st==='match'?'ECFEFF':st==='diff'?'FEF2F2':'FFF7ED';['A','B','C','D','E','F'].forEach(function(col){var cell=col+(i+2);if(ws[cell])ws[cell].s={fill:xlsColor(bg),border:{bottom:{style:'thin',color:{rgb:'E2E8F0'}}}};});});
+    XLSX.utils.book_append_sheet(wb,ws,'VEER FUEL Records');XLSX.writeFile(wb,'VEER_FUEL_Records.xlsx');
+  }
+}
+</script>
+</body>
+</html>
