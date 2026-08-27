@@ -118,6 +118,7 @@ header{
 .stat-card.sc-navy{border-bottom-color:var(--navy)} .stat-card.sc-blue{border-bottom-color:#0288d1}
 .stat-card.sc-green{border-bottom-color:var(--success-mid)} .stat-card.sc-red{border-bottom-color:var(--danger-mid)}
 .stat-card.sc-amber{border-bottom-color:var(--warning-mid)}
+.stat-card.sc-darkgreen{border-bottom-color:#1b5e20}
 .stat-lbl{font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--text3);margin-bottom:5px}
 .stat-val{font-family:'JetBrains Mono',monospace;font-size:1.2rem;font-weight:600;color:var(--text);line-height:1.2}
 .stat-sub{font-size:.66rem;color:var(--text3);margin-top:4px}
@@ -160,6 +161,11 @@ tr:hover td{background:#f8fafc}
 .diff-ok{color:var(--success-mid);font-weight:700}
 .diff-bad{color:var(--danger-mid);font-weight:700}
 .diff-warn{color:var(--warning);font-weight:700}
+
+/* Ref No matching highlight — dark green */
+.refno-hit{background:#1b5e20;color:#fff;font-weight:800;padding:2px 7px;border-radius:4px;display:inline-block;}
+.refno-badge{display:inline-flex;align-items:center;gap:2px;background:#1b5e20;color:#fff;border-radius:4px;padding:1px 6px;font-size:.6rem;font-weight:800;font-family:'Inter',sans-serif;margin-left:4px;vertical-align:middle;}
+.remarks-refhit{background:#1b5e20;color:#fff;font-weight:700;padding:2px 6px;border-radius:4px;}
 
 .tab-bar{display:flex;gap:5px;flex:1;flex-wrap:wrap}
 .tab-btn{padding:.3rem .82rem;border-radius:6px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-size:.74rem;font-weight:800;cursor:pointer;transition:all .15s;font-family:'Inter',sans-serif;}
@@ -241,7 +247,7 @@ tr:hover td{background:#f8fafc}
         <div class="card-head"><div class="card-num asset-num">A</div><div class="card-title">Asset Data</div></div>
         <div class="col-tags">
           <span class="col-tag">Vehicle No</span><span class="col-tag">Driver Name</span>
-          <span class="col-tag">Payment Date</span><span class="col-tag">Payment Source</span><span class="col-tag">Debit</span><span class="col-tag">Note No</span>
+          <span class="col-tag">Payment Date</span><span class="col-tag">Payment Source</span><span class="col-tag">Debit</span><span class="col-tag">Note No</span><span class="col-tag">Ref No</span>
         </div>
         <button class="pick-btn" id="assetBtn">📂 Choose Asset File</button>
         <div class="file-status" id="assetStatus">No file chosen</div>
@@ -385,6 +391,7 @@ tr:hover td{background:#f8fafc}
       <div class="rl"><div class="rl-box" style="background:#fce4ec;border:2px solid #c62828"></div>Amount Mismatch</div>
       <div class="rl"><div class="rl-box" style="background:#fff8e1;border:2px solid #ef6c00"></div>Only in One File</div>
       <div class="rl"><div class="rl-box" style="background:#f0fdf4;border:2px solid #2e7d32"></div>Matched</div>
+      <div class="rl"><div class="rl-box" style="background:#1b5e20;border:2px solid #1b5e20"></div>Ref No Matched</div>
     </div>
     <div class="raw-grid" id="rawGrid">
       <div class="panel" id="rawAssetPanel">
@@ -397,7 +404,7 @@ tr:hover td{background:#f8fafc}
         </div>
         <div class="tbl-wrap" style="max-height:420px;overflow-y:auto">
           <table id="rawAsset">
-            <thead><tr><th>Vehicle No</th><th>Driver Name</th><th>Date</th><th>Payment Source</th><th>Debit (₹)</th><th>Note No</th><th>Status</th></tr></thead>
+            <thead><tr><th>Vehicle No</th><th>Driver Name</th><th>Date</th><th>Payment Source</th><th>Debit (₹)</th><th>Note No</th><th>Ref No</th><th>Status</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -520,6 +527,41 @@ function escHtml(s){
     .replace(/'/g,'&#39;');
 }
 
+/* ── REF NO MATCHING HELPERS ── */
+function normalizeRef(s){
+  if(!s) return '';
+  return String(s).trim().toUpperCase().replace(/\s+/g,' ');
+}
+function extractRefFromRemarks(remarks){
+  if(!remarks) return '';
+  var parts=String(remarks).split('/');
+  var last=parts[parts.length-1];
+  return normalizeRef(last);
+}
+function buildRefMatches(d1,d2){
+  /* d1 = asset rows, d2 = omni rows. One-to-one consumption matching. */
+  var omniByRef={};
+  d2.forEach(function(r,j){
+    var ref=extractRefFromRemarks(r.remarks);
+    if(!ref) return;
+    if(!omniByRef[ref]) omniByRef[ref]=[];
+    omniByRef[ref].push(j);
+  });
+  var assetMatch=new Array(d1.length).fill(false);
+  var omniMatch=new Array(d2.length).fill(false);
+  d1.forEach(function(r,i){
+    var ref=normalizeRef(r.refNo);
+    if(!ref) return;
+    var queue=omniByRef[ref];
+    if(queue&&queue.length){
+      var j=queue.shift();
+      assetMatch[i]=true;
+      omniMatch[j]=true;
+    }
+  });
+  return{assetMatch:assetMatch,omniMatch:omniMatch};
+}
+
 function findCol(row,cands){
   var keys=Object.keys(row);
   for(var i=0;i<cands.length;i++){
@@ -538,7 +580,8 @@ function processAsset(raw){
     var sourceCol=findCol(row,['Payment Source','PaymentSource','Source','source']);
     var debitCol=findCol(row,['Debit','debit','Amount','amount']);
     var noteNoCol=findCol(row,['Note No','NoteNo','Note Number','NoteNumber','Note','note no','noteno']);
-    return{vehicleNo:vehicleCol?String(row[vehicleCol]).trim():'',driverName:driverCol?String(row[driverCol]).trim():'',date:parseDate(dateCol?row[dateCol]:''),paymentSource:sourceCol?String(row[sourceCol]).trim():'',debit:toN(debitCol?row[debitCol]:0),noteNo:noteNoCol?String(row[noteNoCol]).trim():''};
+    var refNoCol=findCol(row,['Ref No','RefNo','Reference No','ReferenceNo','Reference Number','Ref Number','Ref','ref no','refno']);
+    return{vehicleNo:vehicleCol?String(row[vehicleCol]).trim():'',driverName:driverCol?String(row[driverCol]).trim():'',date:parseDate(dateCol?row[dateCol]:''),paymentSource:sourceCol?String(row[sourceCol]).trim():'',debit:toN(debitCol?row[debitCol]:0),noteNo:noteNoCol?String(row[noteNoCol]).trim():'',refNo:refNoCol?String(row[refNoCol]).trim():''};
   }).filter(function(r){return r.date;});
 }
 function processOmni(raw){
@@ -637,6 +680,9 @@ function buildStats(d1,d2){
   h+=sc('sc-blue','Avg Daily Omni',fmtRs(t2/days2),'per active day');
   var diffDates=Object.keys(g1).filter(function(d){return !g2[d]||Math.abs((g1[d].total||0)-(g2[d].total||0))>0.01;}).length;
   h+=sc(diffDates>0?'sc-amber':'sc-green','Diff Dates',diffDates,diffDates>0?'dates with mismatch':'all dates match');
+  var refM=buildRefMatches(d1,d2);
+  var refCount=refM.assetMatch.filter(function(v){return v;}).length;
+  h+=sc('sc-darkgreen','Ref No Matched',refCount,refCount+' of '+d1.length+' asset rows');
   document.getElementById('statsGrid').innerHTML=h;
 }
 function sc(cls,lbl,val,sub){
@@ -765,20 +811,23 @@ function buildRawTables(d1,d2){
     if(f1Used[r.date]&&f1Used[r.date][k]>0){f1Used[r.date][k]--;return 'match';}
     return 'diff';
   });
+  var refM=buildRefMatches(d1,d2);
   var tbA=document.querySelector('#rawAsset tbody');tbA.innerHTML='';
   d1.forEach(function(r,i){
     var st=assetStatus[i],rowCls=st==='match'?'row-match':st==='diff'?'row-diff':'row-only';
     var flag=st==='diff'?'<span class="diff-flag">\u2717 DIFF</span>':st==='only_asset'?'<span class="warn-flag">\u26a0 Only Asset</span>':'';
     var stBadge=st==='match'?'<span class="badge b-match">\u2713</span>':st==='diff'?'<span class="badge b-diff">\u2717 DIFF</span>':'<span class="badge b-only">\u26a0 Only</span>';
-    tbA.innerHTML+='<tr class="'+rowCls+'"><td>'+escHtml(r.vehicleNo)+'</td><td>'+escHtml(r.driverName)+'</td><td>'+dispDate(r.date)+'</td><td>'+escHtml(r.paymentSource)+'</td><td class="c-navy">'+fmtAmt(r.debit)+flag+'</td><td>'+escHtml(r.noteNo)+'</td><td>'+stBadge+'</td></tr>';
+    var refCell=refM.assetMatch[i]?'<span class="refno-hit">'+escHtml(r.refNo)+'</span><span class="refno-badge">\u2713 REF</span>':escHtml(r.refNo);
+    tbA.innerHTML+='<tr class="'+rowCls+'"><td>'+escHtml(r.vehicleNo)+'</td><td>'+escHtml(r.driverName)+'</td><td>'+dispDate(r.date)+'</td><td>'+escHtml(r.paymentSource)+'</td><td class="c-navy">'+fmtAmt(r.debit)+flag+'</td><td>'+escHtml(r.noteNo)+'</td><td>'+refCell+'</td><td>'+stBadge+'</td></tr>';
   });
-  if(!d1.length) tbA.innerHTML='<tr><td colspan="7" class="empty">No data</td></tr>';
+  if(!d1.length) tbA.innerHTML='<tr><td colspan="8" class="empty">No data</td></tr>';
   var tbO=document.querySelector('#rawOmni tbody');tbO.innerHTML='';
   d2.forEach(function(r,i){
     var st=omniStatus[i],rowCls=st==='match'?'row-match':st==='diff'?'row-diff':'row-only';
     var flag=st==='diff'?'<span class="diff-flag">\u2717 DIFF</span>':st==='only_omni'?'<span class="warn-flag">\u26a0 Only Omni</span>':'';
     var stBadge=st==='match'?'<span class="badge b-match">\u2713</span>':st==='diff'?'<span class="badge b-diff">\u2717 DIFF</span>':'<span class="badge b-only">\u26a0 Only</span>';
-    tbO.innerHTML+='<tr class="'+rowCls+'"><td>'+dispDate(r.date)+'</td><td class="c-blue">'+fmtAmt(r.debit)+flag+'</td><td>'+escHtml(r.remarks)+'</td><td>'+stBadge+'</td></tr>';
+    var remCell=refM.omniMatch[i]?'<span class="remarks-refhit">'+escHtml(r.remarks)+'</span><span class="refno-badge">\u2713 REF</span>':escHtml(r.remarks);
+    tbO.innerHTML+='<tr class="'+rowCls+'"><td>'+dispDate(r.date)+'</td><td class="c-blue">'+fmtAmt(r.debit)+flag+'</td><td>'+remCell+'</td><td>'+stBadge+'</td></tr>';
   });
   if(!d2.length) tbO.innerHTML='<tr><td colspan="4" class="empty">No data</td></tr>';
 }
@@ -1054,14 +1103,14 @@ function captureCombinedRaw(){
       ctx.save(); ctx.strokeStyle='#cbd5e1'; ctx.lineWidth=2; ctx.setLineDash([8,4]);
       ctx.beginPath(); ctx.moveTo(pad+cA.width+gap/2, lbY); ctx.lineTo(pad+cA.width+gap/2, tblY+Math.max(cA.height,cO.height)); ctx.stroke(); ctx.restore();
       var legY=tblY+Math.max(cA.height,cO.height)+14;
-      var legItems=[{bg:'#e8f5e9',border:'#2e7d32',label:'\u2713 Matched'},{bg:'#fce4ec',border:'#c62828',label:'\u2717 Amount Mismatch'},{bg:'#fff8e1',border:'#ef6c00',label:'\u26a0 Only in One File'}];
+      var legItems=[{bg:'#e8f5e9',border:'#2e7d32',label:'\u2713 Matched'},{bg:'#fce4ec',border:'#c62828',label:'\u2717 Amount Mismatch'},{bg:'#fff8e1',border:'#ef6c00',label:'\u26a0 Only in One File'},{bg:'#1b5e20',border:'#1b5e20',label:'\u2713 Ref No Matched'}];
       var legX=pad;
       legItems.forEach(function(item){
         ctx.fillStyle=item.bg; ctx.strokeStyle=item.border; ctx.lineWidth=2;
         if(ctx.roundRect){ctx.beginPath();ctx.roundRect(legX,legY,16,16,3);ctx.fill();ctx.stroke();}
         else{ctx.fillRect(legX,legY,16,16);ctx.strokeRect(legX,legY,16,16);}
         ctx.fillStyle='#475569'; ctx.font='bold 12px Inter, Arial'; ctx.fillText(item.label,legX+22,legY+13);
-        legX+=160;
+        legX+=170;
       });
       var ftY=legY+30;
       ctx.fillStyle='#94a3b8'; ctx.font='11px Inter, Arial';
@@ -1112,6 +1161,8 @@ function downloadCombinedPDF(){
     if(f1Used[r.date]&&f1Used[r.date][k]>0){f1Used[r.date][k]--;return 'match';}
     return 'diff';
   });
+
+  var refM=buildRefMatches(d1,d2);
 
   var tA=d1.reduce(function(s,r){return s+r.debit;},0);
   var tO=d2.reduce(function(s,r){return s+r.debit;},0);
@@ -1246,11 +1297,11 @@ function downloadCombinedPDF(){
   doc.setFillColor(76,175,80); doc.rect(148.5,14,74.25,1.5,'F');
   doc.setFillColor(26,35,126); doc.rect(222.75,14,74.25,1.5,'F');
 
-  var assetHead=[['Vehicle No','Driver Name','Date','Payment Source','Debit (Rs.)','Note No','Status']];
+  var assetHead=[['Vehicle No','Driver Name','Date','Payment Source','Debit (Rs.)','Note No','Ref No','Status']];
   var assetBody=d1.map(function(r,i){
     var st=assetStatus[i];
     var stTxt=st==='match'?'MATCH':st==='diff'?'DIFF':'ASSET ONLY';
-    return[r.vehicleNo,r.driverName,dispDate(r.date),r.paymentSource,fmtAmt(r.debit),r.noteNo||'',stTxt];
+    return[r.vehicleNo,r.driverName,dispDate(r.date),r.paymentSource,fmtAmt(r.debit),r.noteNo||'',r.refNo||'',stTxt];
   });
 
   doc.autoTable({
@@ -1260,7 +1311,7 @@ function downloadCombinedPDF(){
     margin:{left:margin,right:margin},
     styles:{fontSize:6.5,font:'helvetica',cellPadding:1.8,lineColor:[226,232,240],lineWidth:0.2},
     headStyles:{fillColor:[26,35,126],textColor:[255,255,255],fontStyle:'bold',fontSize:5.5},
-    columnStyles:{4:{textColor:[26,35,126],fontStyle:'bold',halign:'right'},6:{halign:'center',cellWidth:20}},
+    columnStyles:{4:{textColor:[26,35,126],fontStyle:'bold',halign:'right'},7:{halign:'center',cellWidth:20}},
     didParseCell:function(data){
       if(data.section==='body'){
         var rowIdx=data.row.index;
@@ -1269,13 +1320,18 @@ function downloadCombinedPDF(){
           if(st==='match') data.cell.styles.fillColor=[240,253,244];
           else if(st==='diff') data.cell.styles.fillColor=[252,228,236];
           else data.cell.styles.fillColor=[255,248,225];
-          if(data.column.index===6){
+          if(data.column.index===7){
             if(st==='match') data.cell.styles.textColor=[22,101,52];
             else if(st==='diff') data.cell.styles.textColor=[153,27,27];
             else data.cell.styles.textColor=[194,65,12];
             data.cell.styles.fontStyle='bold';
           }
           if(data.column.index===4&&st==='diff') data.cell.styles.textColor=[198,40,40];
+          if(data.column.index===6&&refM.assetMatch[rowIdx]){
+            data.cell.styles.fillColor=[27,94,32];
+            data.cell.styles.textColor=[255,255,255];
+            data.cell.styles.fontStyle='bold';
+          }
         }
       }
     }
@@ -1329,6 +1385,11 @@ function downloadCombinedPDF(){
             data.cell.styles.fontStyle='bold';
           }
           if(data.column.index===1&&st==='diff') data.cell.styles.textColor=[198,40,40];
+          if(data.column.index===2&&refM.omniMatch[rowIdx]){
+            data.cell.styles.fillColor=[27,94,32];
+            data.cell.styles.textColor=[255,255,255];
+            data.cell.styles.fontStyle='bold';
+          }
         }
       }
     }
@@ -1351,8 +1412,11 @@ function downloadCombinedPDF(){
   doc.setFillColor(255,247,237);doc.roundedRect(margin+85,legY2+2.5,7,5,1,1,'F');
   doc.setDrawColor(253,186,116);doc.roundedRect(margin+85,legY2+2.5,7,5,1,1,'S');
   doc.setTextColor(194,65,12);doc.text('ONLY ONE FILE',margin+94,legY2+6.5);
+  doc.setFillColor(27,94,32);doc.roundedRect(margin+122,legY2+2.5,7,5,1,1,'F');
+  doc.setDrawColor(27,94,32);doc.roundedRect(margin+122,legY2+2.5,7,5,1,1,'S');
+  doc.setTextColor(27,94,32);doc.text('REF NO MATCHED',margin+131,legY2+6.5);
   doc.setTextColor(148,163,184);doc.setFontSize(5.5);doc.setFont('helvetica','normal');
-  doc.text('MM Roadways Tally Checker  |  Asset: '+d1.length+' records  |  Omni: '+d2.length+' records',margin+130,legY2+6.5);
+  doc.text('MM Roadways Tally Checker  |  Asset: '+d1.length+' records  |  Omni: '+d2.length+' records',margin+168,legY2+6.5);
 
   var totalPages=doc.internal.getNumberOfPages();
   for(var p=1;p<=totalPages;p++){
@@ -1402,6 +1466,7 @@ function downloadCombinedWord(){
     if(f1Used[r.date]&&f1Used[r.date][k]>0){f1Used[r.date][k]--;return 'match';}
     return 'diff';
   });
+  var refM=buildRefMatches(d1,d2);
 
   var tA=d1.reduce(function(s,r){return s+r.debit;},0);
   var tO=d2.reduce(function(s,r){return s+r.debit;},0);
@@ -1425,6 +1490,9 @@ function downloadCombinedWord(){
   var assetRows='';
   d1.forEach(function(r,i){
     var st=assetStatus[i];
+    var refTd=refM.assetMatch[i]
+      ?'<td style="'+TD+'background:#1b5e20;color:#ffffff;font-weight:bold;text-align:center;">'+escHtml(r.refNo)+' &#10003;</td>'
+      :'<td style="'+TD+'">'+escHtml(r.refNo||'')+'</td>';
     assetRows+='<tr style="background:'+stBg(st)+';border-left:'+stBdr(st)+';">'
       +'<td style="'+TD+'">'+escHtml(r.vehicleNo)+'</td>'
       +'<td style="'+TD+'">'+escHtml(r.driverName)+'</td>'
@@ -1432,18 +1500,22 @@ function downloadCombinedWord(){
       +'<td style="'+TD+'">'+escHtml(r.paymentSource)+'</td>'
       +'<td style="'+TD+'color:#1a237e;font-weight:bold;text-align:right;">'+fmtAmt(r.debit)+'</td>'
       +'<td style="'+TD+'">'+escHtml(r.noteNo||'')+'</td>'
+      +refTd
       +'<td style="'+TD+'text-align:center;">'+stChip(st)+'</td>'
       +'</tr>';
   });
-  if(!d1.length) assetRows='<tr><td colspan="7" style="padding:18px;text-align:center;color:#94a3b8;font-family:Calibri,Arial;font-size:11px;">No data</td></tr>';
+  if(!d1.length) assetRows='<tr><td colspan="8" style="padding:18px;text-align:center;color:#94a3b8;font-family:Calibri,Arial;font-size:11px;">No data</td></tr>';
 
   var omniRows='';
   d2.forEach(function(r,i){
     var st=omniStatus[i];
+    var remTd=refM.omniMatch[i]
+      ?'<td style="'+TD+'background:#1b5e20;color:#ffffff;font-weight:bold;max-width:180px;word-wrap:break-word;">'+escHtml(r.remarks)+' &#10003;</td>'
+      :'<td style="'+TD+'max-width:180px;word-wrap:break-word;">'+escHtml(r.remarks)+'</td>';
     omniRows+='<tr style="background:'+stBg(st)+';border-left:'+stBdr(st)+';">'
       +'<td style="'+TD+'">'+dispDate(r.date)+'</td>'
       +'<td style="'+TD+'color:#0277bd;font-weight:bold;text-align:right;">'+fmtAmt(r.debit)+'</td>'
-      +'<td style="'+TD+'max-width:180px;word-wrap:break-word;">'+escHtml(r.remarks)+'</td>'
+      +remTd
       +'<td style="'+TD+'text-align:center;">'+stChip(st)+'</td>'
       +'</tr>';
   });
@@ -1491,10 +1563,10 @@ function downloadCombinedWord(){
     +'<div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:12px;"><div style="background:#37474f;padding:9px 16px;"><table style="width:100%;"><tr><td style="color:#fff;font-size:13pt;font-weight:bold;font-family:Calibri,Arial;">&#128269; Date-wise Comparison</td><td style="text-align:right;color:#b0bec5;font-size:9pt;font-family:Calibri,Arial;">'+cmpRows.length+' date entries</td></tr></table></div>'
     +'<table style="width:100%;"><thead><tr style="background:#f8fafc;"><th style="padding:7px 9px;text-align:left;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #37474f;background:#eceff1;font-family:Calibri,Arial;">Date</th><th style="padding:7px 9px;text-align:center;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #37474f;background:#eceff1;font-family:Calibri,Arial;">Asset Entries</th><th style="padding:7px 9px;text-align:right;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #1a237e;background:#eef2ff;font-family:Calibri,Arial;">Asset Debit (&#8377;)</th><th style="padding:7px 9px;text-align:center;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #37474f;background:#eceff1;font-family:Calibri,Arial;">Omni Txns</th><th style="padding:7px 9px;text-align:right;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #0288d1;background:#e1f5fe;font-family:Calibri,Arial;">Omni Debit (&#8377;)</th><th style="padding:7px 9px;text-align:right;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #e53935;background:#fce4ec;font-family:Calibri,Arial;">Difference (&#8377;)</th><th style="padding:7px 9px;text-align:center;font-size:8px;font-weight:bold;text-transform:uppercase;letter-spacing:.6px;color:#475569;border-bottom:2px solid #37474f;background:#eceff1;font-family:Calibri,Arial;">Status</th></tr></thead><tbody>'+cmpHtmlRows+'</tbody></table></div>'
     +'<table cellpadding="0" cellspacing="10" style="width:100%;border-collapse:separate;margin-bottom:12px;"><tr>'
-    +'<td style="width:55%;vertical-align:top;"><div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;"><div style="background:#1a237e;padding:9px 16px;"><table style="width:100%;"><tr><td style="color:#fff;font-size:12pt;font-weight:bold;font-family:Calibri,Arial;"><span style="background:rgba(255,255,255,0.18);padding:2px 9px;border-radius:4px;margin-right:8px;">A</span>ASSET <span style="color:#ffd54f;">DATA</span></td><td style="color:#c5cae9;font-size:9pt;text-align:right;font-family:Calibri,Arial;">'+d1.length+' Records</td></tr></table></div><table style="width:100%;"><thead><tr><th style="'+TH_A+'">Vehicle No</th><th style="'+TH_A+'">Driver Name</th><th style="'+TH_A+'">Date</th><th style="'+TH_A+'">Source</th><th style="'+TH_A+'text-align:right;">Debit (&#8377;)</th><th style="'+TH_A+'">Note No</th><th style="'+TH_A+'text-align:center;">Status</th></tr></thead><tbody>'+assetRows+'</tbody></table></div></td>'
-    +'<td style="width:45%;vertical-align:top;"><div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;"><div style="background:#01579b;padding:9px 16px;"><table style="width:100%;"><tr><td style="color:#fff;font-size:12pt;font-weight:bold;font-family:Calibri,Arial;"><span style="background:rgba(255,255,255,0.18);padding:2px 9px;border-radius:4px;margin-right:8px;">O</span>OMNI <span style="color:#69f0ae;">DATA</span></td><td style="color:#b3e5fc;font-size:9pt;text-align:right;font-family:Calibri,Arial;">'+d2.length+' Records</td></tr></table></div><table style="width:100%;"><thead><tr><th style="'+TH_O+'">Date</th><th style="'+TH_O+'text-align:right;">Debit (&#8377;)</th><th style="'+TH_O+'">Remarks</th><th style="'+TH_O+'text-align:center;">Status</th></tr></thead><tbody>'+omniRows+'</tbody></table></div></td>'
+    +'<td style="width:58%;vertical-align:top;"><div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;"><div style="background:#1a237e;padding:9px 16px;"><table style="width:100%;"><tr><td style="color:#fff;font-size:12pt;font-weight:bold;font-family:Calibri,Arial;"><span style="background:rgba(255,255,255,0.18);padding:2px 9px;border-radius:4px;margin-right:8px;">A</span>ASSET <span style="color:#ffd54f;">DATA</span></td><td style="color:#c5cae9;font-size:9pt;text-align:right;font-family:Calibri,Arial;">'+d1.length+' Records</td></tr></table></div><table style="width:100%;"><thead><tr><th style="'+TH_A+'">Vehicle No</th><th style="'+TH_A+'">Driver Name</th><th style="'+TH_A+'">Date</th><th style="'+TH_A+'">Source</th><th style="'+TH_A+'text-align:right;">Debit (&#8377;)</th><th style="'+TH_A+'">Note No</th><th style="'+TH_A+'">Ref No</th><th style="'+TH_A+'text-align:center;">Status</th></tr></thead><tbody>'+assetRows+'</tbody></table></div></td>'
+    +'<td style="width:42%;vertical-align:top;"><div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;"><div style="background:#01579b;padding:9px 16px;"><table style="width:100%;"><tr><td style="color:#fff;font-size:12pt;font-weight:bold;font-family:Calibri,Arial;"><span style="background:rgba(255,255,255,0.18);padding:2px 9px;border-radius:4px;margin-right:8px;">O</span>OMNI <span style="color:#69f0ae;">DATA</span></td><td style="color:#b3e5fc;font-size:9pt;text-align:right;font-family:Calibri,Arial;">'+d2.length+' Records</td></tr></table></div><table style="width:100%;"><thead><tr><th style="'+TH_O+'">Date</th><th style="'+TH_O+'text-align:right;">Debit (&#8377;)</th><th style="'+TH_O+'">Remarks</th><th style="'+TH_O+'text-align:center;">Status</th></tr></thead><tbody>'+omniRows+'</tbody></table></div></td>'
     +'</tr></table>'
-    +'<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:9px 16px;margin-bottom:8px;"><table style="width:100%;"><tr><td style="font-size:9pt;font-weight:bold;color:#475569;padding-right:16px;font-family:Calibri,Arial;">LEGEND:</td><td style="padding-right:16px;"><span style="background:#dcfce7;border:1px solid #86efac;padding:3px 10px;border-radius:4px;font-size:9pt;font-weight:bold;color:#166534;font-family:Calibri,Arial;">&#10003; Matched</span></td><td style="padding-right:16px;"><span style="background:#fee2e2;border:1px solid #fca5a5;padding:3px 10px;border-radius:4px;font-size:9pt;font-weight:bold;color:#991b1b;font-family:Calibri,Arial;">&#10007; Amount Mismatch</span></td><td><span style="background:#fff7ed;border:1px solid #fdba74;padding:3px 10px;border-radius:4px;font-size:9pt;font-weight:bold;color:#c2410c;font-family:Calibri,Arial;">&#9888; Only in One File</span></td><td style="text-align:right;font-size:8pt;color:#94a3b8;font-family:Calibri,Arial;">Asset: '+d1.length+' records &nbsp;|&nbsp; Omni: '+d2.length+' records &nbsp;|&nbsp; Generated by MM Roadways Tally Checker</td></tr></table></div>'
+    +'<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:9px 16px;margin-bottom:8px;"><table style="width:100%;"><tr><td style="font-size:9pt;font-weight:bold;color:#475569;padding-right:16px;font-family:Calibri,Arial;">LEGEND:</td><td style="padding-right:16px;"><span style="background:#dcfce7;border:1px solid #86efac;padding:3px 10px;border-radius:4px;font-size:9pt;font-weight:bold;color:#166534;font-family:Calibri,Arial;">&#10003; Matched</span></td><td style="padding-right:16px;"><span style="background:#fee2e2;border:1px solid #fca5a5;padding:3px 10px;border-radius:4px;font-size:9pt;font-weight:bold;color:#991b1b;font-family:Calibri,Arial;">&#10007; Amount Mismatch</span></td><td style="padding-right:16px;"><span style="background:#fff7ed;border:1px solid #fdba74;padding:3px 10px;border-radius:4px;font-size:9pt;font-weight:bold;color:#c2410c;font-family:Calibri,Arial;">&#9888; Only in One File</span></td><td><span style="background:#1b5e20;border:1px solid #1b5e20;padding:3px 10px;border-radius:4px;font-size:9pt;font-weight:bold;color:#ffffff;font-family:Calibri,Arial;">&#10003; Ref No Matched</span></td></tr><tr><td colspan="5" style="text-align:right;font-size:8pt;color:#94a3b8;font-family:Calibri,Arial;padding-top:6px;">Asset: '+d1.length+' records &nbsp;|&nbsp; Omni: '+d2.length+' records &nbsp;|&nbsp; Generated by MM Roadways Tally Checker</td></tr></table></div>'
     +'</div></body></html>';
 
   var blob=new Blob(['\ufeff',html],{type:'application/msword'});
@@ -1510,6 +1582,7 @@ function downloadCombinedWord(){
 function xlsFill(rgb){return{patternType:'solid',fgColor:{rgb:rgb}};}
 function hdrStyle2(bg){return{fill:xlsFill(bg),font:{bold:true,color:{rgb:'FFFFFF'},sz:11},alignment:{horizontal:'center',wrapText:true}};}
 function cellStyle2(bg){return{fill:xlsFill(bg),border:{bottom:{style:'thin',color:{rgb:'E2E8F0'}}}};}
+function refMatchStyle(){return{fill:xlsFill('1B5E20'),font:{bold:true,color:{rgb:'FFFFFF'}},border:{bottom:{style:'thin',color:{rgb:'0D3311'}}}};}
 function applySheetStyle(ws,rows,cols,hdrBg,evenBg,oddBg){
   for(var c=0;c<cols;c++){var cell=XLSX.utils.encode_cell({r:0,c:c});if(ws[cell])ws[cell].s=hdrStyle2(hdrBg);}
   for(var r=1;r<rows;r++){for(var c=0;c<cols;c++){var cell=XLSX.utils.encode_cell({r:r,c:c});if(ws[cell])ws[cell].s=cellStyle2(r%2===0?evenBg:oddBg);}}
@@ -1517,6 +1590,8 @@ function applySheetStyle(ws,rows,cols,hdrBg,evenBg,oddBg){
 
 function downloadExcelReport(){
   var wb=XLSX.utils.book_new();
+  var refM=buildRefMatches(assetData,omniData);
+  var refMatchedCnt=refM.assetMatch.filter(function(v){return v;}).length;
   var sumData=[['MM Roadways \u2014 Tally Checker Report'],['Generated: '+new Date().toLocaleString('en-IN')],[''],
     ['Total Asset Entries',assetData.length],['Total Omni Transactions',omniData.length],
     ['Asset Total Debit',parseFloat(assetData.reduce(function(s,r){return s+r.debit;},0).toFixed(2))],
@@ -1525,7 +1600,8 @@ function downloadExcelReport(){
     ['Matched Dates',cmpRows.filter(function(r){return r.status==='match';}).length],
     ['Diff Dates',cmpRows.filter(function(r){return r.status==='diff';}).length],
     ['Only Asset Dates',cmpRows.filter(function(r){return r.status==='only_asset';}).length],
-    ['Only Omni Dates',cmpRows.filter(function(r){return r.status==='only_omni';}).length]
+    ['Only Omni Dates',cmpRows.filter(function(r){return r.status==='only_omni';}).length],
+    ['Ref No Matched Records',refMatchedCnt]
   ];
   var wsSummary=XLSX.utils.aoa_to_sheet(sumData);wsSummary['!cols']=[{wch:30},{wch:20}];
   XLSX.utils.book_append_sheet(wb,wsSummary,'Summary');
@@ -1538,11 +1614,12 @@ function downloadExcelReport(){
   var g2=groupByDate(omniData),f2freq={};
   Object.keys(g2).forEach(function(dt){var freq={};g2[dt].entries.forEach(function(r){var k=Math.round(r.debit*100);freq[k]=(freq[k]||0)+1;});f2freq[dt]=freq;});
   var f2u=JSON.parse(JSON.stringify(f2freq));
-  var assetSheet=[['Vehicle No','Driver Name','Payment Date','Payment Source','Debit (\u20b9)','Note No','Status']],assetSt=[];
-  assetData.forEach(function(r){var st;if(!g2[r.date]) st='ASSET ONLY';else{var k=Math.round(r.debit*100);if(f2u[r.date]&&f2u[r.date][k]>0){f2u[r.date][k]--;st='MATCH';}else st='DIFFERENCE';}assetSheet.push([r.vehicleNo,r.driverName,dispDate(r.date),r.paymentSource,parseFloat(r.debit.toFixed(2)),r.noteNo||'',st]);assetSt.push(st);});
-  var wsAsset=XLSX.utils.aoa_to_sheet(assetSheet);wsAsset['!cols']=[{wch:14},{wch:18},{wch:14},{wch:18},{wch:16},{wch:14},{wch:16}];
-  applySheetStyle(wsAsset,assetSheet.length,7,'1A237E','EEF2FF','E8EAF6');
-  assetSt.forEach(function(st,i){var bg=st==='MATCH'?'E8F5E9':st==='DIFFERENCE'?'FCE4EC':'FFF8E1';['A','B','C','D','E','F','G'].forEach(function(col){var c=col+(i+2);if(wsAsset[c])wsAsset[c].s=cellStyle2(bg);});});
+  var assetSheet=[['Vehicle No','Driver Name','Payment Date','Payment Source','Debit (\u20b9)','Note No','Ref No','Status']],assetSt=[];
+  assetData.forEach(function(r){var st;if(!g2[r.date]) st='ASSET ONLY';else{var k=Math.round(r.debit*100);if(f2u[r.date]&&f2u[r.date][k]>0){f2u[r.date][k]--;st='MATCH';}else st='DIFFERENCE';}assetSheet.push([r.vehicleNo,r.driverName,dispDate(r.date),r.paymentSource,parseFloat(r.debit.toFixed(2)),r.noteNo||'',r.refNo||'',st]);assetSt.push(st);});
+  var wsAsset=XLSX.utils.aoa_to_sheet(assetSheet);wsAsset['!cols']=[{wch:14},{wch:18},{wch:14},{wch:18},{wch:16},{wch:14},{wch:20},{wch:16}];
+  applySheetStyle(wsAsset,assetSheet.length,8,'1A237E','EEF2FF','E8EAF6');
+  assetSt.forEach(function(st,i){var bg=st==='MATCH'?'E8F5E9':st==='DIFFERENCE'?'FCE4EC':'FFF8E1';['A','B','C','D','E','F','G','H'].forEach(function(col){var c=col+(i+2);if(wsAsset[c])wsAsset[c].s=cellStyle2(bg);});});
+  refM.assetMatch.forEach(function(hit,i){if(hit){var c='G'+(i+2);if(wsAsset[c])wsAsset[c].s=refMatchStyle();}});
   XLSX.utils.book_append_sheet(wb,wsAsset,'Asset Records');
   var g1=groupByDate(assetData),f1freq={};
   Object.keys(g1).forEach(function(dt){var freq={};g1[dt].entries.forEach(function(r){var k=Math.round(r.debit*100);freq[k]=(freq[k]||0)+1;});f1freq[dt]=freq;});
@@ -1552,6 +1629,7 @@ function downloadExcelReport(){
   var wsOmni=XLSX.utils.aoa_to_sheet(omniSheet);wsOmni['!cols']=[{wch:16},{wch:16},{wch:30},{wch:16}];
   applySheetStyle(wsOmni,omniSheet.length,4,'0277BD','E1F5FE','B3E5FC');
   omniSt.forEach(function(st,i){var bg=st==='MATCH'?'E8F5E9':st==='DIFFERENCE'?'FCE4EC':'FFF8E1';['A','B','C','D'].forEach(function(col){var c=col+(i+2);if(wsOmni[c])wsOmni[c].s=cellStyle2(bg);});});
+  refM.omniMatch.forEach(function(hit,i){if(hit){var c='C'+(i+2);if(wsOmni[c])wsOmni[c].s=refMatchStyle();}});
   XLSX.utils.book_append_sheet(wb,wsOmni,'Omni Records');
   var diffOnly=cmpRows.filter(function(r){return r.status==='diff';});
   if(diffOnly.length){
@@ -1570,22 +1648,26 @@ function downloadRawExcel(type){
     var g2=groupByDate(omniData),freq={};
     Object.keys(g2).forEach(function(dt){var f={};g2[dt].entries.forEach(function(r){var k=Math.round(r.debit*100);f[k]=(f[k]||0)+1;});freq[dt]=f;});
     var fu=JSON.parse(JSON.stringify(freq));
-    var rows=[['Vehicle No','Driver Name','Payment Date','Payment Source','Debit (\u20b9)','Note No','Status']],stArr=[];
-    assetData.forEach(function(r){var st;if(!g2[r.date]) st='ASSET ONLY';else{var k=Math.round(r.debit*100);if(fu[r.date]&&fu[r.date][k]>0){fu[r.date][k]--;st='MATCH';}else st='DIFFERENCE';}rows.push([r.vehicleNo,r.driverName,dispDate(r.date),r.paymentSource,parseFloat(r.debit.toFixed(2)),r.noteNo||'',st]);stArr.push(st);});
-    var ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:14},{wch:18},{wch:14},{wch:18},{wch:16},{wch:14},{wch:16}];
-    applySheetStyle(ws,rows.length,7,'1A237E','EEF2FF','E8EAF6');
-    stArr.forEach(function(st,i){var bg=st==='MATCH'?'E8F5E9':st==='DIFFERENCE'?'FCE4EC':'FFF8E1';['A','B','C','D','E','F','G'].forEach(function(col){var c=col+(i+2);if(ws[c])ws[c].s=cellStyle2(bg);});});
+    var refM=buildRefMatches(assetData,omniData);
+    var rows=[['Vehicle No','Driver Name','Payment Date','Payment Source','Debit (\u20b9)','Note No','Ref No','Status']],stArr=[];
+    assetData.forEach(function(r){var st;if(!g2[r.date]) st='ASSET ONLY';else{var k=Math.round(r.debit*100);if(fu[r.date]&&fu[r.date][k]>0){fu[r.date][k]--;st='MATCH';}else st='DIFFERENCE';}rows.push([r.vehicleNo,r.driverName,dispDate(r.date),r.paymentSource,parseFloat(r.debit.toFixed(2)),r.noteNo||'',r.refNo||'',st]);stArr.push(st);});
+    var ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:14},{wch:18},{wch:14},{wch:18},{wch:16},{wch:14},{wch:20},{wch:16}];
+    applySheetStyle(ws,rows.length,8,'1A237E','EEF2FF','E8EAF6');
+    stArr.forEach(function(st,i){var bg=st==='MATCH'?'E8F5E9':st==='DIFFERENCE'?'FCE4EC':'FFF8E1';['A','B','C','D','E','F','G','H'].forEach(function(col){var c=col+(i+2);if(ws[c])ws[c].s=cellStyle2(bg);});});
+    refM.assetMatch.forEach(function(hit,i){if(hit){var c='G'+(i+2);if(ws[c])ws[c].s=refMatchStyle();}});
     XLSX.utils.book_append_sheet(wb,ws,'Asset Records');
     XLSX.writeFile(wb,'MMROADWAYS_Asset_Records.xlsx');
   } else {
     var g1=groupByDate(assetData),freq={};
     Object.keys(g1).forEach(function(dt){var f={};g1[dt].entries.forEach(function(r){var k=Math.round(r.debit*100);f[k]=(f[k]||0)+1;});freq[dt]=f;});
     var fu=JSON.parse(JSON.stringify(freq));
+    var refM=buildRefMatches(assetData,omniData);
     var rows=[['Transaction Date','Debit (\u20b9)','Remarks','Status']],stArr=[];
     omniData.forEach(function(r){var st;if(!g1[r.date]) st='OMNI ONLY';else{var k=Math.round(r.debit*100);if(fu[r.date]&&fu[r.date][k]>0){fu[r.date][k]--;st='MATCH';}else st='DIFFERENCE';}rows.push([dispDate(r.date),parseFloat(r.debit.toFixed(2)),r.remarks,st]);stArr.push(st);});
     var ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:16},{wch:16},{wch:30},{wch:16}];
     applySheetStyle(ws,rows.length,4,'0277BD','E1F5FE','B3E5FC');
     stArr.forEach(function(st,i){var bg=st==='MATCH'?'E8F5E9':st==='DIFFERENCE'?'FCE4EC':'FFF8E1';['A','B','C','D'].forEach(function(col){var c=col+(i+2);if(ws[c])ws[c].s=cellStyle2(bg);});});
+    refM.omniMatch.forEach(function(hit,i){if(hit){var c='C'+(i+2);if(ws[c])ws[c].s=refMatchStyle();}});
     XLSX.utils.book_append_sheet(wb,ws,'Omni Records');
     XLSX.writeFile(wb,'MMROADWAYS_Omni_Records.xlsx');
   }
