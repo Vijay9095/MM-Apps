@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MMR - Time Table</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --bg:#ffffff;
+    --border:#c9d0da;
+    --header-bg:#1c2530;
+    --header-ink:#ffffff;
+    --ink:#1c2530;
+    --sub:#6b7480;
+    --accent:#2f6fed;
+    --accent-soft:#eaf1ff;
+    --stripe:#f7f9fc;
+    --lunch:#fff6e8;
+    --lunch-ink:#a5670b;
+    --meet:#eef8f0;
+    --meet-ink:#1f8a4c;
+    --buffer:#f3f4f6;
+    --buffer-ink:#6b7480;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Arial, sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    padding:40px 16px;
+    display:flex;
+    justify-content:center;
+  }
+  .wrap{
+    width:100%;
+    max-width:960px;
+  }
+  .header{
+    text-align:center;
+    margin-bottom:18px;
+  }
+  .eyebrow{
+    letter-spacing:3px;
+    font-size:12px;
+    color:var(--accent);
+    font-weight:700;
+    text-transform:uppercase;
+  }
+  h1{
+    margin:6px 0 4px;
+    font-size:32px;
+    letter-spacing:0.5px;
+    color:var(--ink);
+  }
+  .sub{
+    color:var(--sub);
+    font-size:14px;
+  }
+  .toolbar{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    margin-bottom:16px;
+    flex-wrap:wrap;
+  }
+  .btn-download{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:10px 20px;
+    border-radius:8px;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    box-shadow:0 4px 12px rgba(47,111,237,0.28);
+  }
+  .btn-download:hover{ background:#255cd0; }
+  .hint{
+    font-size:12px;
+    color:var(--sub);
+  }
+  .table-shell{
+    background:#ffffff;
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 6px 20px rgba(20,30,50,0.07);
+    border:1px solid var(--border);
+  }
+  table{
+    width:100%;
+    border-collapse:collapse;
+  }
+  thead th{
+    background:var(--header-bg);
+    color:var(--header-ink);
+    text-align:left;
+    padding:13px 16px;
+    font-size:12.5px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    border:1px solid #2f3a48;
+  }
+  thead th:first-child{ width:56px; text-align:center; }
+  thead th:nth-child(3){ width:180px; }
+  thead th:nth-child(4){ width:80px; text-align:center; }
+  thead th:nth-child(5){ width:150px; text-align:center; }
+  tbody td{
+    padding:12px 16px;
+    border:1px solid var(--border);
+    font-size:14.5px;
+    vertical-align:middle;
+  }
+  tbody tr:nth-child(even){ background:var(--stripe); }
+  .sno{
+    text-align:center;
+    font-weight:700;
+    color:var(--accent);
+  }
+  .task{
+    font-weight:600;
+    color:var(--ink);
+  }
+  .time{
+    display:inline-block;
+    background:var(--accent-soft);
+    color:var(--accent);
+    padding:4px 10px;
+    border-radius:6px;
+    font-size:12.5px;
+    font-weight:700;
+    white-space:nowrap;
+  }
+  .dur{
+    text-align:center;
+    color:var(--sub);
+    font-size:13px;
+    font-weight:600;
+  }
+  tr.lunch td{
+    background:var(--lunch);
+    color:var(--lunch-ink);
+    font-weight:700;
+    text-align:center;
+    font-size:13px;
+    letter-spacing:0.5px;
+  }
+  tr.buffer td{
+    background:var(--buffer);
+    color:var(--buffer-ink);
+    font-weight:700;
+    text-align:center;
+    font-size:12.5px;
+    letter-spacing:0.5px;
+    font-style:italic;
+  }
+  tr.meeting .task{ color:var(--meet-ink); }
+  tr.meeting .time{ background:var(--meet); color:var(--meet-ink); }
+  tr.meeting td{ background:#fbfffc; }
+  .tag{
+    display:inline-block;
+    font-size:10px;
+    font-weight:700;
+    letter-spacing:0.5px;
+    padding:2px 7px;
+    border-radius:4px;
+    margin-left:8px;
+    vertical-align:middle;
+  }
+  .tag.meet{ background:var(--meet); color:var(--meet-ink); }
+  .status-cell{
+    display:block;
+    min-width:100px;
+    text-align:center;
+    margin:0 auto;
+    padding:6px 10px;
+    border-radius:6px;
+    font-weight:700;
+    font-size:12.5px;
+    letter-spacing:0.3px;
+    cursor:text;
+    outline:none;
+    border:1px dashed transparent;
+  }
+  .status-cell:focus{ border:1px dashed var(--accent); }
+  .status-complete{ background:#e3f8e9; color:#1f8a4c; }
+  .status-pending{ background:#fdeaea; color:#c0392b; }
+  .status-neutral{ background:#eef0f3; color:#6b7480; }
+  tfoot td{
+    padding:12px 16px;
+    border:1px solid var(--border);
+    background:var(--header-bg);
+    color:#fff;
+    font-weight:700;
+    font-size:13px;
+    text-align:right;
+  }
+  .footer-note{
+    text-align:center;
+    margin-top:16px;
+    font-size:12px;
+    color:var(--sub);
+  }
+  @media (max-width:640px){
+    thead th:nth-child(3){ width:auto; }
+    tbody td, thead th{ padding:9px 8px; font-size:12.5px; }
+    h1{ font-size:22px; }
+    .tag{ display:none; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div class="eyebrow">Daily Work Schedule</div>
+      <h1>MMR - Time Table</h1>
+      <div class="sub">10:00 AM to 6:30 PM</div>
+    </div>
+
+    <div class="toolbar">
+      <button class="btn-download" onclick="downloadImage()">Download as Image</button>
+      <span class="hint">Click a Status cell &amp; type Completed / Pending</span>
+    </div>
+
+    <div class="table-shell" id="captureArea">
+      <table>
+        <thead>
+          <tr>
+            <th>S.No</th>
+            <th>Task</th>
+            <th>Time Duration</th>
+            <th>Mins</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="sno">1</td>
+            <td class="task">IDLE Vehicle Report</td>
+            <td><span class="time">10:00 - 10:30 AM</span></td>
+            <td class="dur">30</td>
+            <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+          </tr>
+          <tr>
+            <td class="sno">2</td>
+            <td class="task">Trip Status Report</td>
+            <td><span class="time">10:30 - 11:15 AM</span></td>
+            <td class="dur">45</td>
+            <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+          </tr>
+          <tr>
+            <td class="sno">3</td>
+            <td class="task">Yesterday Service Log Report</td>
+            <td><span class="time">11:15 - 12:05 PM</span></td>
+            <td class="dur">50</td>
+            <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+          </tr>
+          <tr class="meeting">
+            <td class="sno">4</td>
+            <td class="task">MMR Dev Meeting<span class="tag meet">MEETING</span></td>
+            <td><span class="time">12:05 - 12:20 PM</span></td>
+            <td class="dur">15</td>
+            <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+          </tr>
+          <tr class="buffer">
+            <td colspan="5">SHORT BREAK — 12:20 PM to 12:30 PM (10 min)</td>
+          </tr>
+          <tr class="meeting">
+            <td class="sno">5</td>
+            <td class="task">Ticket Meeting<span class="tag meet">MEETING</span></td>
+            <td><span class="time">12:30 - 12:45 PM</span></td>
+            <td class="dur">15</td>
+            <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+          </tr>
+          <tr>
+            <td class="sno">6</td>
+            <td class="task">Yesterday Omni &amp; Happy Report</td>
+            <td><span class="time">12:45 - 1:30 PM</span></td>
+            <td class="dur">45</td>
+            <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+          </tr>
+          <tr>
+            <td class="sno">7</td>
+            <td class="task">Yesterday IOCL OTP Report</td>
+            <td><span class="time">1:30 - 2:15 PM</span></td>
+            <td class="dur">45</td>
+            <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+          </tr>
+          <tr>
+            <td class="sno">8</td>
+            <td class="task">Fuel Drain Check Report</td>
+            <td><span class="time">2:15 - 3:00 PM</span></td>
+            <td class="dur">45</td>
+            <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+          </tr>
+          <tr class="lunch">
+            <td colspan="5">LUNCH BREAK — 3:00 PM to 3:30 PM (30 min)</td>
+          </tr>
+          <tr>
+            <td class="sno">9</td>
+            <td class="task">Toll Update</td>
+            <td><span class="time">3:30 - 4:00 PM</span></td>
+            <td class="dur">30</td>
+            <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+          </tr>
+          <tr>
+            <td class="sno">10</td>
+            <td class="task">Driver Salary</td>
+            <td><span class="time">4:00 - 4:45 PM</span></td>
+            <td class="dur">45</td>
+            <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+          </tr>
+          <tr>
+            <td class="sno">11</td>
+            <td class="task">Tyre Update</td>
+            <td><span class="time">4:45 - 5:15 PM</span></td>
+            <td class="dur">30</td>
+            <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+          </tr>
+          <tr>
+            <td class="sno">12</td>
+            <td class="task">Settlement Verify</td>
+            <td><span class="time">5:15 - 5:55 PM</span></td>
+            <td class="dur">40</td>
+            <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+          </tr>
+          <tr>
+            <td class="sno">13</td>
+            <td class="task">Delay Report</td>
+            <td><span class="time">5:55 - 6:30 PM</span></td>
+            <td class="dur">35</td>
+            <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5">Total: 8.5 Hrs (incl. 30m lunch + meetings)</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="footer-note">13 tasks scheduled &middot; 10:00 AM - 6:30 PM &middot; Type Completed / Pending in Status column</div>
+  </div>
+
+<script>
+  function updateStatus(el){
+    const text = el.textContent.trim().toLowerCase();
+    el.classList.remove('status-complete','status-pending','status-neutral');
+    if(text.indexOf('complete') !== -1){
+      el.classList.add('status-complete');
+    } else if(text.indexOf('pending') !== -1){
+      el.classList.add('status-pending');
+    } else if(text.length === 0){
+      el.classList.add('status-neutral');
+    } else {
+      el.classList.add('status-neutral');
+    }
+  }
+
+  function downloadImage(){
+    const target = document.getElementById('captureArea');
+    html2canvas(target, {backgroundColor: '#ffffff', scale: 2}).then(function(canvas){
+      const link = document.createElement('a');
+      link.download = 'MMR-Time-Table.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+  }
+</script>
+</body>
+</html>
