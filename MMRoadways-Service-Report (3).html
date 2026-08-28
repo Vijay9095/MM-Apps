@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MMRoadways — Service Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --white:#ffffff;
+    --paper:#fbfcfd;
+    --line:#e4e8ee;
+    --line-strong:#cdd4de;
+    --ink:#152238;
+    --ink-soft:#5c6b81;
+    --navy:#152238;
+    --navy-2:#233252;
+    --marker:#ffc93c;
+    --marker-ink:#5c4400;
+    --signal:#1f8a70;
+    --alert:#e4572e;
+    --plate-tricolor-1:#ff9933;
+    --plate-tricolor-2:#1f8a70;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--white);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  ::selection{background:var(--marker);color:var(--ink);}
+
+  /* ---------- Road stripe divider ---------- */
+  .stripe{
+    height:6px;
+    width:100%;
+    background:repeating-linear-gradient(90deg, var(--marker) 0 34px, transparent 34px 58px);
+    opacity:.9;
+  }
+
+  /* ---------- Header ---------- */
+  header{
+    background:var(--navy);
+    color:var(--white);
+    padding:38px 6vw 30px;
+    position:relative;
+    overflow:hidden;
+  }
+  header::after{
+    content:"";
+    position:absolute; right:-60px; top:-60px;
+    width:260px; height:260px; border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, rgba(255,201,60,.18), transparent 70%);
+  }
+  .brand-row{
+    display:flex; align-items:baseline; justify-content:space-between;
+    flex-wrap:wrap; gap:10px; position:relative; z-index:1;
+  }
+  .wordmark{
+    font-family:'Oswald',sans-serif;
+    font-weight:700;
+    font-size:clamp(28px,4vw,42px);
+    letter-spacing:.5px;
+    text-transform:uppercase;
+    display:flex; align-items:center; gap:12px;
+  }
+  .wordmark .mm{
+    background:var(--marker);
+    color:var(--navy);
+    padding:2px 10px 4px;
+    border-radius:6px;
+    font-weight:700;
+  }
+  .tagline{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12.5px;
+    letter-spacing:2.5px;
+    text-transform:uppercase;
+    color:#ffc93c;
+    opacity:.9;
+  }
+  .subtitle{
+    font-family:'Oswald',sans-serif;
+    font-size:clamp(15px,1.8vw,19px);
+    color:#c7cede;
+    font-weight:400;
+    margin-top:4px;
+    letter-spacing:.3px;
+  }
+
+  .stat-row{
+    display:flex; gap:14px; flex-wrap:wrap;
+    margin-top:26px; position:relative; z-index:1;
+  }
+  .stat{
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.14);
+    border-radius:10px;
+    padding:12px 18px;
+    min-width:120px;
+  }
+  .stat .num{
+    font-family:'Oswald',sans-serif;
+    font-size:24px; font-weight:600; line-height:1;
+    color:var(--white);
+  }
+  .stat .lbl{
+    font-size:11px; letter-spacing:1px; text-transform:uppercase;
+    color:#9fabc2; margin-top:5px;
+  }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar{
+    max-width:1180px; margin:0 auto;
+    padding:26px 6vw 6px;
+    display:flex; gap:14px; align-items:center; flex-wrap:wrap;
+    justify-content:space-between;
+  }
+  .search-wrap{
+    position:relative; flex:1; min-width:240px; max-width:420px;
+  }
+  .search-wrap svg{position:absolute; left:14px; top:50%; transform:translateY(-50%); opacity:.45;}
+  #search{
+    width:100%;
+    padding:11px 14px 11px 40px;
+    border:1.5px solid var(--line-strong);
+    border-radius:10px;
+    font-family:'Inter',sans-serif;
+    font-size:14.5px;
+    color:var(--ink);
+    background:var(--paper);
+    outline:none;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  #search:focus{border-color:var(--navy); box-shadow:0 0 0 3px rgba(21,34,56,.08);}
+  #search::placeholder{color:#9aa4b5;}
+
+  .btn-group{display:flex; gap:10px; align-items:center;}
+  .sort-btn{
+    display:flex; align-items:center; gap:7px;
+    background:var(--paper);
+    border:1.5px solid var(--line-strong);
+    color:var(--ink);
+    padding:10px 14px;
+    border-radius:10px;
+    font-family:'Inter',sans-serif;
+    font-weight:600; font-size:13.5px;
+    cursor:pointer;
+  }
+  .sort-btn:hover{border-color:var(--navy);}
+  .sort-btn svg{transition:transform .2s;}
+  .sort-btn.asc svg{transform:rotate(180deg);}
+
+  #downloadBtn{
+    display:flex; align-items:center; gap:9px;
+    background:var(--marker);
+    color:var(--marker-ink);
+    border:none;
+    padding:11px 18px;
+    border-radius:10px;
+    font-family:'Inter',sans-serif;
+    font-weight:700; font-size:14px;
+    cursor:pointer;
+    box-shadow:0 2px 0 #d9a800;
+    transition:transform .1s, box-shadow .1s;
+  }
+  #downloadBtn:hover{transform:translateY(-1px);}
+  #downloadBtn:active{transform:translateY(1px); box-shadow:0 1px 0 #d9a800;}
+  #downloadBtn:disabled{opacity:.5; cursor:not-allowed; box-shadow:none;}
+
+  #uploadBtn{
+    display:flex; align-items:center; gap:9px;
+    background:var(--navy);
+    color:var(--white);
+    border:none;
+    padding:11px 18px;
+    border-radius:10px;
+    font-family:'Inter',sans-serif;
+    font-weight:700; font-size:14px;
+    cursor:pointer;
+    box-shadow:0 2px 0 #0c1626;
+    transition:transform .1s, box-shadow .1s;
+  }
+  #uploadBtn:hover{transform:translateY(-1px);}
+  #uploadBtn:active{transform:translateY(1px); box-shadow:0 1px 0 #0c1626;}
+  #uploadBtn:disabled{opacity:.6; cursor:progress;}
+
+  #downloadImgBtn{
+    display:flex; align-items:center; gap:9px;
+    background:var(--white);
+    color:var(--navy);
+    border:1.5px solid var(--navy);
+    padding:9.5px 18px;
+    border-radius:10px;
+    font-family:'Inter',sans-serif;
+    font-weight:700; font-size:14px;
+    cursor:pointer;
+    transition:transform .1s, background .15s;
+  }
+  #downloadImgBtn:hover{background:var(--paper); transform:translateY(-1px);}
+  #downloadImgBtn:active{transform:translateY(1px);}
+  #downloadImgBtn:disabled{opacity:.5; cursor:not-allowed;}
+
+  .upload-empty{
+    text-align:center; padding:70px 20px;
+    border:2px dashed var(--line-strong);
+    border-radius:var(--radius);
+    background:var(--paper);
+    margin-top:24px;
+  }
+  .upload-empty .icon{opacity:.35; margin-bottom:14px;}
+  .upload-empty .title{
+    font-family:'Oswald',sans-serif; font-size:18px; font-weight:600;
+    color:var(--ink); margin-bottom:6px;
+  }
+  .upload-empty .sub{
+    font-size:13.5px; color:var(--ink-soft); max-width:420px; margin:0 auto;
+  }
+  .upload-error{
+    text-align:center; padding:16px 20px; margin-top:20px;
+    background:#fdece5; border:1px solid #f6c9b8; border-radius:10px;
+    color:var(--alert); font-size:13.5px; font-weight:600;
+  }
+
+  /* ---------- Main ---------- */
+  main{max-width:1180px; margin:0 auto; padding:18px 6vw 70px;}
+
+  .date-group{margin-top:30px;}
+  .date-head{
+    display:flex; align-items:center; gap:12px;
+    margin-bottom:14px;
+  }
+  .date-head .pill{
+    font-family:'Oswald',sans-serif;
+    font-weight:600; font-size:15.5px;
+    letter-spacing:.4px;
+    background:var(--ink);
+    color:var(--white);
+    padding:6px 14px 7px;
+    border-radius:999px;
+    white-space:nowrap;
+  }
+  .date-head .count{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px; color:var(--ink-soft);
+  }
+  .date-head .rule{flex:1; height:1px; background:repeating-linear-gradient(90deg, var(--line-strong) 0 8px, transparent 8px 14px);}
+
+  .entry{
+    display:grid;
+    grid-template-columns:168px 1fr 172px;
+    gap:20px;
+    align-items:start;
+    padding:16px 18px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:var(--paper);
+    margin-bottom:10px;
+    transition:border-color .15s, box-shadow .15s, transform .1s;
+  }
+  .entry:hover{
+    border-color:var(--line-strong);
+    box-shadow:0 6px 18px rgba(21,34,56,.06);
+    transform:translateY(-1px);
+  }
+
+  /* license-plate badge, styled after real TN plates */
+  .plate{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:var(--white);
+    border:2.5px solid var(--ink);
+    border-radius:6px;
+    padding:7px 6px 6px;
+    position:relative;
+    box-shadow:inset 0 0 0 1.5px var(--white);
+  }
+  .plate::before{
+    content:"";
+    position:absolute; left:0; top:0; bottom:0; width:5px;
+    background:linear-gradient(180deg, var(--plate-tricolor-1), var(--white) 50%, var(--plate-tricolor-2));
+    border-radius:4px 0 0 4px;
+  }
+  .plate .ind{
+    font-family:'Inter',sans-serif;
+    font-size:8px; font-weight:700; letter-spacing:1px;
+    color:var(--ink-soft); margin-bottom:2px;
+  }
+  .plate .num{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:14.5px;
+    letter-spacing:.5px;
+    color:var(--ink);
+    text-align:center;
+    line-height:1.15;
+  }
+
+  .note{color:var(--ink); font-size:14.5px; line-height:1.55;}
+  .note .service-note{white-space:pre-line;}
+  .dup-flag{
+    display:inline-block; margin-top:6px;
+    font-size:10.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
+    color:var(--alert); background:#fdece5; border:1px solid #f6c9b8;
+    padding:2px 7px; border-radius:5px;
+  }
+
+  .meta{text-align:right;}
+  .meta .time{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700; font-size:12.5px; color:var(--navy-2);
+    line-height:1.35; white-space:nowrap;
+  }
+  .meta .lbl{
+    font-size:10px; letter-spacing:1px; text-transform:uppercase;
+    color:var(--ink-soft); margin-top:3px;
+  }
+
+  .empty{
+    text-align:center; padding:60px 20px; color:var(--ink-soft);
+    font-family:'Oswald',sans-serif; font-size:16px;
+  }
+
+  footer{
+    border-top:1px solid var(--line);
+    padding:22px 6vw 40px;
+    max-width:1180px; margin:0 auto;
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+    font-size:12px; color:var(--ink-soft);
+    font-family:'JetBrains Mono',monospace;
+  }
+
+  @media (max-width:640px){
+    .entry{grid-template-columns:1fr; gap:10px;}
+    .plate{align-self:flex-start; width:fit-content;}
+    .meta{text-align:left;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-row">
+    <div>
+      <div class="wordmark"><span class="mm">MM</span>ROADWAYS</div>
+      <div class="tagline">Fleet &amp; Vehicle Service Desk</div>
+    </div>
+    <div class="subtitle">Service Report</div>
+  </div>
+  <div class="stat-row" id="statRow"></div>
+</header>
+<div class="stripe"></div>
+
+<div class="toolbar">
+  <div class="search-wrap">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input id="search" type="text" placeholder="Search vehicle number or service note…" autocomplete="off">
+  </div>
+  <div class="btn-group">
+    <button class="sort-btn asc" id="sortBtn" title="Toggle order">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+      <span id="sortLbl">Newest first</span>
+    </button>
+    <button id="uploadBtn">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 21V9M7 14l5-5 5 5M4 3h16"/></svg>
+      Upload Excel
+    </button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+    <button id="downloadBtn" disabled>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>
+      Download Excel
+    </button>
+    <button id="downloadImgBtn" disabled>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      Download Image
+    </button>
+  </div>
+</div>
+
+<main id="main"></main>
+
+<footer>
+  <span id="genLine"></span>
+  <span>MMRoadways Service Report · Generated from AssetTracker Service Log</span>
+</footer>
+
+<script>
+/* ============ DATA (populated after Excel upload) ============ */
+let RECORDS = [];
+
+/* ============ helpers ============ */
+function pad(n){ return String(n).padStart(2,'0'); }
+
+// Turn an Excel date-time value (JS Date from ExcelJS, or a string) into "DD/MM/YYYY" text
+function normalizeDateStr(val){
+  if(val instanceof Date){
+    return `${pad(val.getUTCDate())}/${pad(val.getUTCMonth()+1)}/${val.getUTCFullYear()}`;
+  }
+  let s = String(val ?? '').trim();
+  // ISO like 2026-08-24 -> DD/MM/YYYY
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+  return s;
+}
+
+// Turn an Excel date-time value into "DD/MM/YYYY hh:mm AM/PM" text
+function normalizeDateTimeStr(val){
+  if(val instanceof Date){
+    let hh = val.getUTCHours(), mm = val.getUTCMinutes();
+    const ampm = hh >= 12 ? 'PM' : 'AM';
+    let hh12 = hh % 12; if(hh12 === 0) hh12 = 12;
+    return `${pad(val.getUTCDate())}/${pad(val.getUTCMonth()+1)}/${val.getUTCFullYear()} ${pad(hh12)}:${pad(mm)} ${ampm}`;
+  }
+  let s = String(val ?? '').trim();
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);
+  if(iso){
+    let hh = Number(iso[4]), mm = iso[5];
+    const ampm = hh >= 12 ? 'PM' : 'AM';
+    let hh12 = hh % 12; if(hh12 === 0) hh12 = 12;
+    return `${iso[3]}/${iso[2]}/${iso[1]} ${pad(hh12)}:${mm} ${ampm}`;
+  }
+  return s;
+}
+
+function parseDMY(s){ // "24/08/2026"
+  const [d,m,y] = s.split('/').map(Number);
+  return new Date(y, m-1, d);
+}
+function parseCreated(s){ // "24/08/2026 10:52 PM"
+  const parts = s.split(' ');
+  const datePart = parts[0], time = parts[1], ampm = parts[2];
+  const [d,m,y] = datePart.split('/').map(Number);
+  let [hh,mm] = time.split(':').map(Number);
+  if(ampm){
+    if(ampm.toUpperCase() === 'PM' && hh !== 12) hh += 12;
+    if(ampm.toUpperCase() === 'AM' && hh === 12) hh = 0;
+  }
+  return new Date(y, m-1, d, hh, mm);
+}
+
+// pull a plain value out of an ExcelJS cell value (handles rich text / formula results)
+function cellValue(v){
+  if(v == null) return '';
+  if(v instanceof Date) return v;
+  if(typeof v === 'object'){
+    if(v.richText) return v.richText.map(t=>t.text).join('');
+    if(v.text !== undefined) return v.text;
+    if(v.result !== undefined) return v.result;
+    if(v.hyperlink) return v.text || v.hyperlink;
+  }
+  return v;
+}
+function fmtDateHead(dateObj){
+  return dateObj.toLocaleDateString('en-GB', {weekday:'short', day:'2-digit', month:'short', year:'numeric'});
+}
+function fmtTime(dateObj){
+  return dateObj.toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit', hour12:true});
+}
+
+/* enrich records */
+let DATA = [];
+function rebuildData(){
+  DATA = RECORDS.map((r,i) => ({
+    ...r,
+    _dateObj: parseDMY(r['Date']),
+    _createdObj: parseCreated(r['Created By']),
+    _idx:i
+  }));
+}
+
+let sortDir = 'desc'; // by Created By
+let query = '';
+
+function isDuplicate(rec, all){
+  return all.filter(x => x.Vehicle===rec.Vehicle && x['Service Note']===rec['Service Note'] && x['Created By']===rec['Created By']).length > 1;
+}
+
+function render(){
+  const main = document.getElementById('main');
+  if(DATA.length === 0){
+    main.innerHTML = `
+      <div class="upload-empty">
+        <div class="icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21V9M7 14l5-5 5 5M4 3h16"/></svg></div>
+        <div class="title">No data loaded yet</div>
+        <div class="sub">Click "Upload Excel" above and choose your service log file (.xlsx). Columns needed: Vehicle, Date, Service Note, Created By.</div>
+      </div>`;
+    return;
+  }
+  const q = query.trim().toLowerCase();
+  let rows = DATA.filter(r =>
+    !q || String(r.Vehicle).toLowerCase().includes(q) || String(r['Service Note']).toLowerCase().includes(q)
+  );
+  rows = rows.slice().sort((a,b) => sortDir==='desc' ? b._createdObj - a._createdObj : a._createdObj - b._createdObj);
+
+  // group by Date (service date), preserving sorted order
+  const groups = [];
+  let lastKey = null, group = null;
+  rows.forEach(r => {
+    const key = r.Date;
+    if(key !== lastKey){
+      group = {date:r.Date, dateObj:r._dateObj, items:[]};
+      groups.push(group);
+      lastKey = key;
+    }
+    group.items.push(r);
+  });
+
+  if(rows.length === 0){
+    main.innerHTML = '<div class="empty">No service entries match that search.</div>';
+    return;
+  }
+
+  main.innerHTML = groups.map(g => `
+    <div class="date-group">
+      <div class="date-head">
+        <span class="pill">${fmtDateHead(g.dateObj)}</span>
+        <span class="count">${g.items.length} ${g.items.length===1?'entry':'entries'}</span>
+        <span class="rule"></span>
+      </div>
+      ${g.items.map(r => entryHTML(r)).join('')}
+    </div>
+  `).join('');
+}
+
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function entryHTML(r){
+  const dup = isDuplicate(r, DATA);
+  return `
+    <div class="entry">
+      <div class="plate">
+        <span class="ind">IND</span>
+        <span class="num">${esc(r.Vehicle)}</span>
+      </div>
+      <div class="note">
+        <div class="service-note">${esc(r['Service Note'])}</div>
+        ${dup ? '<span class="dup-flag">Duplicate entry</span>' : ''}
+      </div>
+      <div class="meta">
+        <div class="time">${esc(r['Created By'])}</div>
+        <div class="lbl">Logged by desk</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderStats(){
+  if(DATA.length === 0){
+    const stats = [
+      {num:'—', lbl:'Total entries'},
+      {num:'—', lbl:'Vehicles serviced'},
+      {num:'Upload a file', lbl:'Date range'},
+    ];
+    document.getElementById('statRow').innerHTML = stats.map(s=>`
+      <div class="stat"><div class="num">${s.num}</div><div class="lbl">${s.lbl}</div></div>
+    `).join('');
+    return;
+  }
+  const vehicles = new Set(DATA.map(r=>r.Vehicle)).size;
+  const dates = DATA.map(r=>r._dateObj.getTime());
+  const min = new Date(Math.min(...dates)), max = new Date(Math.max(...dates));
+  const fmtShort = d => d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+  const stats = [
+    {num: DATA.length, lbl:'Total entries'},
+    {num: vehicles, lbl:'Vehicles serviced'},
+    {num: `${fmtShort(min)} – ${fmtShort(max)}`, lbl:'Date range'},
+  ];
+  document.getElementById('statRow').innerHTML = stats.map(s=>`
+    <div class="stat"><div class="num">${s.num}</div><div class="lbl">${s.lbl}</div></div>
+  `).join('');
+}
+
+document.getElementById('search').addEventListener('input', e=>{
+  query = e.target.value; render();
+});
+document.getElementById('sortBtn').addEventListener('click', e=>{
+  sortDir = sortDir==='desc' ? 'asc' : 'desc';
+  const btn = document.getElementById('sortBtn');
+  btn.classList.toggle('asc', sortDir==='desc');
+  document.getElementById('sortLbl').textContent = sortDir==='desc' ? 'Newest first' : 'Oldest first';
+  render();
+});
+
+const genEl = document.getElementById('genLine');
+genEl.textContent = 'Generated ' + new Date().toLocaleString('en-GB', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+
+renderStats();
+render();
+
+/* ============ EXCEL UPLOAD (read RECORDS from a user file) ============ */
+function showUploadError(msg){
+  const main = document.getElementById('main');
+  const existing = document.querySelector('.upload-error');
+  if(existing) existing.remove();
+  const div = document.createElement('div');
+  div.className = 'upload-error';
+  div.textContent = msg;
+  main.parentNode.insertBefore(div, main.nextSibling);
+}
+function clearUploadError(){
+  const existing = document.querySelector('.upload-error');
+  if(existing) existing.remove();
+}
+
+// find which column index matches a given field, by loose header matching
+function findCol(headerMap, candidates){
+  for(const cand of candidates){
+    for(const [name, idx] of headerMap.entries()){
+      if(name.includes(cand)) return idx;
+    }
+  }
+  return -1;
+}
+
+async function handleExcelFile(file){
+  const uploadBtn = document.getElementById('uploadBtn');
+  const origHTML = uploadBtn.innerHTML;
+  uploadBtn.disabled = true;
+  uploadBtn.innerHTML = 'Reading…';
+  clearUploadError();
+
+  try{
+    const buf = await file.arrayBuffer();
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(buf);
+    const ws = wb.worksheets[0];
+    if(!ws) throw new Error('No worksheet found in this file.');
+
+    // Build header map from the first row
+    const headerRow = ws.getRow(1);
+    const headerMap = new Map(); // normalized header text -> column index
+    headerRow.eachCell({includeEmpty:false}, (cell, colNumber) => {
+      const text = String(cellValue(cell.value) ?? '').trim().toLowerCase();
+      if(text) headerMap.set(text, colNumber);
+    });
+
+    const vehicleCol = findCol(headerMap, ['vehicle']);
+    const noteCol = findCol(headerMap, ['service note', 'note', 'remark', 'description']);
+    const createdCol = findCol(headerMap, ['created by', 'created']);
+
+    // Resolve "Date" column carefully: prefer a header that is exactly/starts with "date" but not "created"
+    let resolvedDateCol = -1;
+    for(const [name, idx] of headerMap.entries()){
+      if(name.includes('date') && !name.includes('created')){ resolvedDateCol = idx; break; }
+    }
+
+    if(vehicleCol === -1 || noteCol === -1 || createdCol === -1){
+      throw new Error('Could not find the required columns. Please make sure the sheet has headers: Vehicle, Date, Service Note, Created By.');
+    }
+
+    const newRecords = [];
+    ws.eachRow({includeEmpty:false}, (row, rowNumber) => {
+      if(rowNumber === 1) return; // skip header
+      const vehicle = cellValue(row.getCell(vehicleCol).value);
+      const note = cellValue(row.getCell(noteCol).value);
+      const createdRaw = cellValue(row.getCell(createdCol).value);
+      const dateRaw = resolvedDateCol !== -1 ? cellValue(row.getCell(resolvedDateCol).value) : createdRaw;
+
+      if(!vehicle && !note) return; // skip fully blank rows
+
+      const createdStr = normalizeDateTimeStr(createdRaw);
+      // Date column: if it only has a date (no time info detected), normalize as date-only,
+      // otherwise fall back to the date portion of Created By.
+      let dateStr;
+      if(dateRaw instanceof Date || (typeof dateRaw === 'string' && dateRaw.includes('/'))){
+        dateStr = normalizeDateStr(dateRaw);
+      } else {
+        dateStr = createdStr.split(' ')[0];
+      }
+
+      newRecords.push({
+        'Vehicle': String(vehicle ?? '').trim(),
+        'Date': dateStr,
+        'Service Note': String(note ?? '').trim(),
+        'Created By': createdStr
+      });
+    });
+
+    if(newRecords.length === 0){
+      throw new Error('No data rows found under the header row.');
+    }
+
+    RECORDS = newRecords;
+    rebuildData();
+    sortDir = 'desc';
+    query = '';
+    document.getElementById('search').value = '';
+    document.getElementById('sortBtn').classList.add('asc');
+    document.getElementById('sortLbl').textContent = 'Newest first';
+    renderStats();
+    render();
+    document.getElementById('downloadBtn').disabled = false;
+    document.getElementById('downloadImgBtn').disabled = false;
+  } catch(err){
+    console.error(err);
+    showUploadError('Could not read this file: ' + err.message);
+  } finally {
+    uploadBtn.disabled = false;
+    uploadBtn.innerHTML = origHTML;
+  }
+}
+
+document.getElementById('uploadBtn').addEventListener('click', () => {
+  document.getElementById('fileInput').click();
+});
+document.getElementById('fileInput').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if(file) handleExcelFile(file);
+  e.target.value = ''; // allow re-uploading the same file name later
+});
+
+/* ============ EXCEL EXPORT (colorful, styled) ============ */
+async function downloadExcel(){
+  const btn = document.getElementById('downloadBtn');
+  btn.disabled = true;
+  const origHTML = btn.innerHTML;
+  btn.innerHTML = 'Preparing…';
+
+  try{
+    const wb = new ExcelJS.Workbook();
+    wb.creator = 'MMRoadways';
+    wb.created = new Date();
+    const ws = wb.addWorksheet('Service Report', {
+      views:[{state:'frozen', ySplit:4}]
+    });
+
+    ws.columns = [
+      {width:20}, {width:14}, {width:60}, {width:20}
+    ];
+
+    const NAVY = 'FF152238';
+    const MARKER = 'FFFFC93C';
+    const PAPER = 'FFFBFCFD';
+    const BAND = 'FFF1F4F8';
+    const LINE = 'FFCDD4DE';
+    const INK = 'FF152238';
+    const WHITE = 'FFFFFFFF';
+    const ALERT_FILL = 'FFFDECE5';
+    const ALERT_FONT = 'FFB23A11';
+
+    // Title band
+    ws.mergeCells('A1:D1');
+    const title = ws.getCell('A1');
+    title.value = 'MMROADWAYS — SERVICE REPORT';
+    title.font = {name:'Calibri', bold:true, size:16, color:{argb:WHITE}};
+    title.fill = {type:'pattern', pattern:'solid', fgColor:{argb:NAVY}};
+    title.alignment = {vertical:'middle', horizontal:'left', indent:1};
+    ws.getRow(1).height = 30;
+
+    ws.mergeCells('A2:D2');
+    const sub = ws.getCell('A2');
+    sub.value = `Fleet & Vehicle Service Desk  ·  Generated ${new Date().toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}`;
+    sub.font = {name:'Calibri', italic:true, size:10, color:{argb:'FF5C6B81'}};
+    sub.fill = {type:'pattern', pattern:'solid', fgColor:{argb:PAPER}};
+    sub.alignment = {vertical:'middle', horizontal:'left', indent:1};
+    ws.getRow(2).height = 20;
+
+    ws.getRow(3).height = 6;
+
+    // Header row
+    const headerRow = ws.getRow(4);
+    headerRow.values = ['Vehicle', 'Date', 'Service Note', 'Created By'];
+    headerRow.eachCell(cell=>{
+      cell.font = {name:'Calibri', bold:true, size:11, color:{argb:WHITE}};
+      cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:NAVY}};
+      cell.alignment = {vertical:'middle', horizontal:'left', indent:1};
+      cell.border = {bottom:{style:'thin', color:{argb:NAVY}}};
+    });
+    headerRow.height = 22;
+
+    // sort rows same as current view (desc by Created By), grouped by date visually via marker stripe on date change
+    const sorted = DATA.slice().sort((a,b)=> b._createdObj - a._createdObj);
+
+    let rIdx = 5;
+    let lastDate = null;
+    sorted.forEach((r, i) => {
+      const row = ws.getRow(rIdx);
+      row.values = [r.Vehicle, r._dateObj, r['Service Note'], fmtTime(r._createdObj) + ' · ' + fmtDateHead(r._createdObj)];
+      row.getCell(2).numFmt = 'dd mmm yyyy';
+
+      const zebra = (i % 2 === 0) ? PAPER : BAND;
+      const isNewDate = r.Date !== lastDate;
+      lastDate = r.Date;
+      const dup = isDuplicate(r, DATA);
+
+      row.eachCell({includeEmpty:true}, (cell, colNum)=>{
+        cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb: dup ? ALERT_FILL : zebra}};
+        cell.border = {
+          top:{style:'thin', color:{argb:LINE}},
+          bottom:{style:'thin', color:{argb:LINE}},
+          left:{style:'thin', color:{argb:LINE}},
+          right:{style:'thin', color:{argb:LINE}}
+        };
+        cell.alignment = {vertical:'middle', horizontal: colNum===3 ? 'left':'left', wrapText: colNum===3, indent:1};
+        cell.font = {name:'Calibri', size:10.5, color:{argb: dup ? ALERT_FONT : INK}};
+      });
+
+      // vehicle badge cell — bold navy on marker-yellow tint, like a plate
+      row.getCell(1).font = {name:'Consolas', bold:true, size:11, color:{argb:INK}};
+      row.getCell(1).fill = {type:'pattern', pattern:'solid', fgColor:{argb: isNewDate ? MARKER : (dup?ALERT_FILL:zebra)}};
+
+      row.getCell(4).font = {name:'Consolas', size:10, color:{argb:'FF233252'}};
+
+      row.height = 34;
+      rIdx++;
+    });
+
+    // Auto filter
+    ws.autoFilter = { from:'A4', to:`D${rIdx-1}` };
+
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'MMRoadways-Service-Report.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch(err){
+    console.error(err);
+    alert('Could not generate the Excel file: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origHTML;
+  }
+}
+
+document.getElementById('downloadBtn').addEventListener('click', downloadExcel);
+
+/* ============ IMAGE EXPORT (full report as a PNG) ============ */
+async function downloadImage(){
+  const btn = document.getElementById('downloadImgBtn');
+  if(btn.disabled) return;
+  const origHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = 'Preparing…';
+
+  // hide the toolbar (search/sort/upload/download controls) so only the
+  // report itself — header, stats, entries, footer — shows up in the image
+  const toolbar = document.querySelector('.toolbar');
+  const prevDisplay = toolbar.style.display;
+  toolbar.style.display = 'none';
+
+  try{
+    // make sure the web fonts are fully loaded before we rasterize —
+    // capturing too early is the #1 cause of blurry / fallback-font text
+    if(document.fonts && document.fonts.ready){
+      await document.fonts.ready;
+    }
+    // tiny delay lets the browser settle the reflow after hiding the toolbar
+    await new Promise(res => setTimeout(res, 60));
+
+    const w = document.body.scrollWidth;
+    const h = document.body.scrollHeight;
+
+    const canvas = await html2canvas(document.body, {
+      scale: 3,                 // high pixel density -> crisp text on any screen
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      allowTaint: true,
+      imageTimeout: 15000,
+      logging: false,
+      width: w,
+      height: h,
+      windowWidth: w,
+      windowHeight: h
+    });
+
+    // toDataURL with explicit PNG (lossless) keeps text/edges sharp
+    const url = canvas.toDataURL('image/png', 1.0);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'MMRoadways-Service-Report.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  } catch(err){
+    console.error(err);
+    alert('Could not generate the image: ' + err.message);
+  } finally {
+    toolbar.style.display = prevDisplay;
+    btn.disabled = false;
+    btn.innerHTML = origHTML;
+  }
+}
+document.getElementById('downloadImgBtn').addEventListener('click', downloadImage);
+</script>
+
+</body>
+</html>
