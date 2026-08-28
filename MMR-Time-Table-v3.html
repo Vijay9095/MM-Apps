@@ -34,7 +34,7 @@
   }
   .wrap{
     width:100%;
-    max-width:960px;
+    max-width:1080px;
   }
   .header{
     text-align:center;
@@ -102,10 +102,11 @@
     text-transform:uppercase;
     border:1px solid #2f3a48;
   }
-  thead th:first-child{ width:56px; text-align:center; }
-  thead th:nth-child(3){ width:180px; }
-  thead th:nth-child(4){ width:80px; text-align:center; }
-  thead th:nth-child(5){ width:150px; text-align:center; }
+  thead th:first-child{ width:50px; text-align:center; }
+  thead th:nth-child(3){ width:160px; }
+  thead th:nth-child(4){ width:70px; text-align:center; }
+  thead th:nth-child(5){ width:130px; text-align:center; }
+  thead th:nth-child(6){ width:200px; text-align:center; }
   tbody td{
     padding:12px 16px;
     border:1px solid var(--border);
@@ -187,6 +188,26 @@
   .status-complete{ background:#e3f8e9; color:#1f8a4c; }
   .status-pending{ background:#fdeaea; color:#c0392b; }
   .status-neutral{ background:#eef0f3; color:#6b7480; }
+  .remark-cell{
+    display:block;
+    min-height:20px;
+    text-align:left;
+    padding:6px 10px;
+    border-radius:6px;
+    font-weight:500;
+    font-size:13px;
+    color:var(--ink);
+    background:#fbfbfc;
+    cursor:text;
+    outline:none;
+    border:1px dashed var(--border);
+  }
+  .remark-cell:empty::before{
+    content:"Type remark...";
+    color:#a9b0bb;
+    font-style:italic;
+  }
+  .remark-cell:focus{ border:1px dashed var(--accent); background:#fff; }
   tfoot td{
     padding:12px 16px;
     border:1px solid var(--border);
@@ -204,6 +225,7 @@
   }
   @media (max-width:640px){
     thead th:nth-child(3){ width:auto; }
+    thead th:nth-child(6){ width:auto; }
     tbody td, thead th{ padding:9px 8px; font-size:12.5px; }
     h1{ font-size:22px; }
     .tag{ display:none; }
@@ -220,7 +242,7 @@
 
     <div class="toolbar">
       <button class="btn-download" onclick="downloadImage()">Download as Image</button>
-      <span class="hint">Click a Status cell &amp; type Completed / Pending</span>
+      <span class="hint">Type in Status &amp; Remark columns — both get saved in the image</span>
     </div>
 
     <div class="table-shell" id="captureArea">
@@ -232,6 +254,7 @@
             <th>Time Duration</th>
             <th>Mins</th>
             <th>Status</th>
+            <th>Remark</th>
           </tr>
         </thead>
         <tbody>
@@ -241,6 +264,7 @@
             <td><span class="time">10:00 - 10:30 AM</span></td>
             <td class="dur">30</td>
             <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+            <td><div class="remark-cell" contenteditable="true" spellcheck="false"></div></td>
           </tr>
           <tr>
             <td class="sno">2</td>
@@ -248,6 +272,7 @@
             <td><span class="time">10:30 - 11:15 AM</span></td>
             <td class="dur">45</td>
             <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+            <td><div class="remark-cell" contenteditable="true" spellcheck="false"></div></td>
           </tr>
           <tr>
             <td class="sno">3</td>
@@ -255,6 +280,7 @@
             <td><span class="time">11:15 - 12:05 PM</span></td>
             <td class="dur">50</td>
             <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+            <td><div class="remark-cell" contenteditable="true" spellcheck="false"></div></td>
           </tr>
           <tr class="meeting">
             <td class="sno">4</td>
@@ -262,9 +288,10 @@
             <td><span class="time">12:05 - 12:20 PM</span></td>
             <td class="dur">15</td>
             <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+            <td><div class="remark-cell" contenteditable="true" spellcheck="false"></div></td>
           </tr>
           <tr class="buffer">
-            <td colspan="5">SHORT BREAK — 12:20 PM to 12:30 PM (10 min)</td>
+            <td colspan="6">SHORT BREAK — 12:20 PM to 12:30 PM (10 min)</td>
           </tr>
           <tr class="meeting">
             <td class="sno">5</td>
@@ -272,6 +299,7 @@
             <td><span class="time">12:30 - 12:45 PM</span></td>
             <td class="dur">15</td>
             <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+            <td><div class="remark-cell" contenteditable="true" spellcheck="false"></div></td>
           </tr>
           <tr>
             <td class="sno">6</td>
@@ -279,6 +307,7 @@
             <td><span class="time">12:45 - 1:30 PM</span></td>
             <td class="dur">45</td>
             <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+            <td><div class="remark-cell" contenteditable="true" spellcheck="false"></div></td>
           </tr>
           <tr>
             <td class="sno">7</td>
@@ -286,6 +315,7 @@
             <td><span class="time">1:30 - 2:15 PM</span></td>
             <td class="dur">45</td>
             <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+            <td><div class="remark-cell" contenteditable="true" spellcheck="false"></div></td>
           </tr>
           <tr>
             <td class="sno">8</td>
@@ -293,54 +323,68 @@
             <td><span class="time">2:15 - 3:00 PM</span></td>
             <td class="dur">45</td>
             <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+            <td><div class="remark-cell" contenteditable="true" spellcheck="false"></div></td>
           </tr>
           <tr class="lunch">
-            <td colspan="5">LUNCH BREAK — 3:00 PM to 3:30 PM (30 min)</td>
+            <td colspan="6">LUNCH BREAK — 3:00 PM to 3:30 PM (30 min)</td>
           </tr>
           <tr>
             <td class="sno">9</td>
             <td class="task">Toll Update</td>
-            <td><span class="time">3:30 - 4:00 PM</span></td>
-            <td class="dur">30</td>
+            <td><span class="time">3:30 - 3:55 PM</span></td>
+            <td class="dur">25</td>
             <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+            <td><div class="remark-cell" contenteditable="true" spellcheck="false"></div></td>
           </tr>
           <tr>
             <td class="sno">10</td>
             <td class="task">Driver Salary</td>
-            <td><span class="time">4:00 - 4:45 PM</span></td>
-            <td class="dur">45</td>
+            <td><span class="time">3:55 - 4:35 PM</span></td>
+            <td class="dur">40</td>
             <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+            <td><div class="remark-cell" contenteditable="true" spellcheck="false"></div></td>
           </tr>
           <tr>
             <td class="sno">11</td>
             <td class="task">Tyre Update</td>
-            <td><span class="time">4:45 - 5:15 PM</span></td>
-            <td class="dur">30</td>
+            <td><span class="time">4:35 - 4:55 PM</span></td>
+            <td class="dur">20</td>
             <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+            <td><div class="remark-cell" contenteditable="true" spellcheck="false"></div></td>
           </tr>
           <tr>
             <td class="sno">12</td>
             <td class="task">Settlement Verify</td>
-            <td><span class="time">5:15 - 5:55 PM</span></td>
+            <td><span class="time">4:55 - 5:35 PM</span></td>
             <td class="dur">40</td>
             <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+            <td><div class="remark-cell" contenteditable="true" spellcheck="false"></div></td>
           </tr>
           <tr>
             <td class="sno">13</td>
+            <td class="task">Today User Wise Settlement</td>
+            <td><span class="time">5:35 - 5:55 PM</span></td>
+            <td class="dur">20</td>
+            <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+            <td><div class="remark-cell" contenteditable="true" spellcheck="false"></div></td>
+          </tr>
+          <tr>
+            <td class="sno">14</td>
             <td class="task">Delay Report</td>
             <td><span class="time">5:55 - 6:30 PM</span></td>
             <td class="dur">35</td>
             <td><div class="status-cell status-pending" contenteditable="true" spellcheck="false" oninput="updateStatus(this)">Pending</div></td>
+            <td><div class="remark-cell" contenteditable="true" spellcheck="false"></div></td>
           </tr>
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="5">Total: 8.5 Hrs (incl. 30m lunch + meetings)</td>
+            <td colspan="6">Total: 8.5 Hrs (incl. 30m lunch + meetings)</td>
           </tr>
         </tfoot>
       </table>
     </div>
-    <div class="footer-note">13 tasks scheduled &middot; 10:00 AM - 6:30 PM &middot; Type Completed / Pending in Status column</div>
+    <div class="footer-note">14 tasks scheduled &middot; 10:00 AM - 6:30 PM &middot; Type Completed / Pending in Status &amp; notes in Remark</div>
   </div>
 
 <script>
