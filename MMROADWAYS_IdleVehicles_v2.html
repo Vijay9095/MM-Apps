@@ -333,11 +333,11 @@
           </div>
         </div>
 
-        <div class="cap-title-strip">&#9679;&nbsp;&nbsp;MMROADWAYS-IDLE VEHICLES LIST&nbsp;&nbsp;&#9679;</div>
+        <div class="cap-title-strip" id="cap-title-strip">&#9679;&nbsp;&nbsp;MMROADWAYS-IDLE VEHICLES LIST&nbsp;&nbsp;&#9679;</div>
 
         <!-- STATS BAR -->
         <div class="stats-bar" id="stats-bar">
-          <div class="stats-label">Fleet Overview —</div>
+          <div class="stats-label" id="stats-label">Fleet Overview —</div>
           <div style="display:flex;gap:12px;flex-wrap:wrap;" id="stat-chips"></div>
         </div>
 
@@ -465,9 +465,9 @@
     });
 
     sortKey='idle'; sortDir=-1; activeFilter='all';
+    document.getElementById('search-input').value='';
     buildFilterButtons();
-    applyFilters();
-    updateStats(allRows);
+    applyFilters();   // this also refreshes stats + labels for the initial "All" view
     document.getElementById('table-section').style.display='block';
     document.getElementById('upload-zone').style.display='none';
   }
@@ -530,7 +530,12 @@
     return btn;
   }
 
-  /* ── apply search + filter ── */
+  /* ── apply search + filter ──
+     NOTE: renderTable(), updateStats() AND updateHeaderLabels() are all
+     driven from the SAME filtered array below. Because downloadImage()
+     just screenshots whatever is currently on screen, whichever status
+     is selected (e.g. "Accident") is exactly what ends up in the PNG —
+     table rows, stat counts, and the title strip all match the filter. */
   function applyFilters(){
     const q = document.getElementById('search-input').value.trim().toLowerCase();
     let rows = allRows;
@@ -546,6 +551,8 @@
       );
     }
     renderTable(rows);
+    updateStats(rows);
+    updateHeaderLabels(rows.length);
   }
 
   /* ── render ── */
@@ -579,7 +586,7 @@
       `Showing ${sorted.length} of ${allRows.length} vehicles`;
   }
 
-  /* ── stats ── */
+  /* ── stats (now called with whatever rows are currently filtered/searched) ── */
   function updateStats(rows){
     const total=rows.length;
     const moving=rows.filter(r=>r.status.toLowerCase().includes('moving')).length;
@@ -611,6 +618,19 @@
     `;
   }
 
+  /* ── header labels: stats-label + title strip reflect the active filter ── */
+  function updateHeaderLabels(matchCount){
+    const statsLabel = document.getElementById('stats-label');
+    const titleStrip = document.getElementById('cap-title-strip');
+    if(activeFilter==='all'){
+      statsLabel.textContent = 'Fleet Overview — All Statuses —';
+      titleStrip.innerHTML = '&#9679;&nbsp;&nbsp;MMROADWAYS-IDLE VEHICLES LIST&nbsp;&nbsp;&#9679;';
+    } else {
+      statsLabel.textContent = `Fleet Overview — Filtered: ${activeFilter} (${matchCount}) —`;
+      titleStrip.innerHTML = `&#9679;&nbsp;&nbsp;MMROADWAYS-IDLE VEHICLES LIST — ${esc(activeFilter.toUpperCase())}&nbsp;&nbsp;&#9679;`;
+    }
+  }
+
   /* ── sort ── */
   function sortTable(key){
     if(sortKey===key) sortDir*=-1;
@@ -638,7 +658,10 @@
       .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  /* ── download ── */
+  /* ── download ──
+     Captures #capture-area exactly as it currently looks — so whatever
+     status filter is active (table rows + stats + title strip) is what
+     goes into the PNG. */
   async function downloadImage(){
     const bar   = document.getElementById('action-bar-ui');
     const wrap  = document.getElementById('table-scroll-wrap');
@@ -672,7 +695,8 @@
         windowWidth:el.scrollWidth+60,width:el.scrollWidth,
       });
       const link=document.createElement('a');
-      link.download=`MMROADWAYS_IdleVehicles_${today.toISOString().slice(0,10)}.png`;
+      const suffix = activeFilter==='all' ? 'All' : activeFilter.replace(/\s+/g,'');
+      link.download=`MMROADWAYS_IdleVehicles_${suffix}_${today.toISOString().slice(0,10)}.png`;
       link.href=canvas.toDataURL('image/png');
       link.click();
     } finally {
