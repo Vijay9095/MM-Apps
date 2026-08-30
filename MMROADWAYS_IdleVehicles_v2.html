@@ -204,9 +204,13 @@
     }
     .td-driver{color:var(--text);text-align:left !important;}
     .td-address{
-      color:var(--text);text-align:left !important;
+      text-align:left !important;
       white-space:normal !important;word-break:break-word !important;
       line-height:1.5;
+    }
+    .address-badge{
+      display:inline-block;padding:5px 12px;border-radius:8px;
+      border:1.5px solid transparent;line-height:1.5;font-weight:700;
     }
 
     /* IDLE BADGE */
@@ -379,8 +383,8 @@
                 <th style="width:46px">#</th>
                 <th onclick="sortTable('vehicle')" id="th-vehicle">Vehicle<span class="sort-icon">↕</span></th>
                 <th onclick="sortTable('driver')"  id="th-driver">Drivers<span class="sort-icon">↕</span></th>
-                <th onclick="sortTable('idle')"    id="th-idle" class="sorted">Idle Days<span class="sort-icon">↓</span></th>
-                <th onclick="sortTable('address')" id="th-address">Address<span class="sort-icon">↕</span></th>
+                <th onclick="sortTable('idle')"    id="th-idle">Idle Days<span class="sort-icon">↕</span></th>
+                <th onclick="sortTable('address')" id="th-address" class="sorted">Address<span class="sort-icon">↑</span></th>
                 <th onclick="sortTable('status')"  id="th-status">Status<span class="sort-icon">↕</span></th>
               </tr>
             </thead>
@@ -407,8 +411,9 @@
   document.getElementById('footer-date').textContent = fmt;
 
   let allRows    = [];
-  let sortKey    = 'idle';
-  let sortDir    = -1;
+  /* Default sort: Address column, A → Z */
+  let sortKey    = 'address';
+  let sortDir    = 1;
   let activeFilter = 'all';
 
   /* ── drag & drop ── */
@@ -464,12 +469,24 @@
       };
     });
 
-    sortKey='idle'; sortDir=-1; activeFilter='all';
+    /* Default sort: Address column, A → Z */
+    sortKey='address'; sortDir=1; activeFilter='all';
     document.getElementById('search-input').value='';
+    resetSortHeaderUI();
     buildFilterButtons();
     applyFilters();   // this also refreshes stats + labels for the initial "All" view
     document.getElementById('table-section').style.display='block';
     document.getElementById('upload-zone').style.display='none';
+  }
+
+  /* ── keep the header icons/highlight in sync with sortKey/sortDir ── */
+  function resetSortHeaderUI(){
+    ['vehicle','driver','idle','address','status'].forEach(k=>{
+      const el=document.getElementById('th-'+k);
+      el.classList.toggle('sorted',k===sortKey);
+      el.querySelector('.sort-icon').textContent=
+        k===sortKey?(sortDir===-1?'↓':'↑'):'↕';
+    });
   }
 
   /* ── status badge ── */
@@ -492,6 +509,36 @@
   function getIdleBadge(d){
     const cls = d>=10?'idle-high':d>=5?'idle-mid':'idle-low';
     return `<span class="idle-badge ${cls}">${d} day${d!==1?'s':''}</span>`;
+  }
+
+  /* ── per-address light color badge ──
+     Same address string always gets the same light pastel color
+     (deterministic hash → hue), so it stays consistent no matter
+     how the table is sorted/filtered — including in the downloaded image. */
+  const addressColorCache = {};
+  function hashStr(str){
+    let hash = 0;
+    for(let i=0;i<str.length;i++){
+      hash = str.charCodeAt(i) + ((hash<<5) - hash);
+      hash |= 0;
+    }
+    return Math.abs(hash);
+  }
+  function getAddressColors(addr){
+    const key = addr.trim().toLowerCase();
+    if(addressColorCache[key]) return addressColorCache[key];
+    const hue = hashStr(key) % 360;
+    const colors = {
+      bg:     `hsl(${hue}, 70%, 93%)`,
+      border: `hsl(${hue}, 55%, 78%)`,
+      text:   `hsl(${hue}, 55%, 26%)`,
+    };
+    addressColorCache[key] = colors;
+    return colors;
+  }
+  function getAddressBadge(addr){
+    const c = getAddressColors(addr);
+    return `<span class="address-badge" style="background:${c.bg};border-color:${c.border};color:${c.text};">${esc(addr)}</span>`;
   }
 
   /* ── filter buttons ── */
@@ -534,8 +581,9 @@
      NOTE: renderTable(), updateStats() AND updateHeaderLabels() are all
      driven from the SAME filtered array below. Because downloadImage()
      just screenshots whatever is currently on screen, whichever status
-     is selected (e.g. "Accident") is exactly what ends up in the PNG —
-     table rows, stat counts, and the title strip all match the filter. */
+     is selected (e.g. "Accident") AND whichever column sort is active
+     (default: Address A→Z) is exactly what ends up in the PNG —
+     table rows, stat counts, and the title strip all match. */
   function applyFilters(){
     const q = document.getElementById('search-input').value.trim().toLowerCase();
     let rows = allRows;
@@ -577,7 +625,7 @@
         <td class="td-vehicle">${esc(r.vehicle)}</td>
         <td class="td-driver">${esc(r.driver)}</td>
         <td>${getIdleBadge(r.idle)}</td>
-        <td class="td-address">${esc(r.address)}</td>
+        <td class="td-address">${getAddressBadge(r.address)}</td>
         <td>${getStatusBadge(r.status)}</td>
       </tr>
     `).join('');
@@ -635,12 +683,7 @@
   function sortTable(key){
     if(sortKey===key) sortDir*=-1;
     else{ sortKey=key; sortDir=key==='idle'?-1:1; }
-    ['vehicle','driver','idle','address','status'].forEach(k=>{
-      const el=document.getElementById('th-'+k);
-      el.classList.toggle('sorted',k===sortKey);
-      el.querySelector('.sort-icon').textContent=
-        k===sortKey?(sortDir===-1?'↓':'↑'):'↕';
-    });
+    resetSortHeaderUI();
     applyFilters();
   }
 
@@ -660,8 +703,8 @@
 
   /* ── download ──
      Captures #capture-area exactly as it currently looks — so whatever
-     status filter is active (table rows + stats + title strip) is what
-     goes into the PNG. */
+     status filter AND whatever column sort (default: Address A→Z) is
+     active (table rows + stats + title strip) is what goes into the PNG. */
   async function downloadImage(){
     const bar   = document.getElementById('action-bar-ui');
     const wrap  = document.getElementById('table-scroll-wrap');
