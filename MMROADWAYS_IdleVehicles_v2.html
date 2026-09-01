@@ -129,7 +129,7 @@
       border:1.5px solid;display:inline-block;
     }
     .stat-num{font-family:'Rajdhani',sans-serif;font-size:22px;line-height:1;font-weight:700;}
-    .stat-lbl{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;margin-top:2px;font-weight:700;}
+    .stat-lbl{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;margin-top:2px;font-weight:700;white-space:nowrap;}
 
     /* ACTION BAR */
     .action-bar{
@@ -158,9 +158,6 @@
     }
     .filter-btn:hover{border-color:var(--primary);color:var(--primary);}
     .filter-btn.active-all{background:var(--primary);color:#fff;border-color:var(--primary);}
-    .filter-btn.active-moving{background:#dcfce7;color:#14532d;border-color:#4ade80;}
-    .filter-btn.active-accident{background:#fee2e2;color:#991b1b;border-color:#f87171;}
-    .filter-btn.active-workshop{background:#fefce8;color:#78350f;border-color:#fde047;}
 
     /* TABLE */
     .table-scroll{overflow-x:auto;}
@@ -222,7 +219,7 @@
     .idle-mid{background:#fff3cd;color:#78350f;border-color:#fcd34d;}
     .idle-low{background:#dcfce7;color:#14532d;border-color:#86efac;}
 
-    /* STATUS BADGE — exact status from Excel */
+    /* STATUS BADGE — dynamic per-status color, same theme style as the Address badge */
     .status-badge{
       display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;
       font-size:12px;letter-spacing:0.06em;text-transform:uppercase;
@@ -231,26 +228,6 @@
     .status-dot{
       width:7px;height:7px;border-radius:50%;flex-shrink:0;
     }
-    /* Moving = Green */
-    .status-moving{
-      background:#dcfce7;color:#14532d;border-color:#4ade80;
-    }
-    .status-moving .status-dot{background:#16a34a;}
-    /* Accident = Red */
-    .status-accident{
-      background:#fee2e2;color:#991b1b;border-color:#f87171;
-    }
-    .status-accident .status-dot{background:#dc2626;}
-    /* Workshop = Yellow */
-    .status-workshop{
-      background:#fefce8;color:#78350f;border-color:#fde047;
-    }
-    .status-workshop .status-dot{background:#ca8a04;}
-    /* Fallback for other status values */
-    .status-other{
-      background:#f1f5f9;color:#334155;border-color:#cbd5e1;
-    }
-    .status-other .status-dot{background:#64748b;}
 
     /* FOOTER */
     .table-footer{
@@ -350,7 +327,7 @@
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
             <div class="search-box">
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="#8a96ae" stroke-width="1.6"/><path d="M10 10l2.5 2.5" stroke="#8a96ae" stroke-width="1.6" stroke-linecap="round"/></svg>
-              <input type="text" id="search-input" placeholder="Search vehicles, drivers, address…" oninput="applyFilters()"/>
+              <input type="text" id="search-input" placeholder="Search vehicles, drivers, address..." oninput="applyFilters()"/>
             </div>
             <div class="filter-bar" id="filter-bar"></div>
           </div>
@@ -489,33 +466,8 @@
     });
   }
 
-  /* ── status badge ── */
-  function getStatusBadge(s){
-    const sl = String(s).toLowerCase().trim();
-    let cls, label;
-    if(sl.includes('moving')){
-      cls='status-moving'; label='Moving';
-    } else if(sl.includes('accident')){
-      cls='status-accident'; label='Accident';
-    } else if(sl.includes('workshop')||sl.includes('work shop')){
-      cls='status-workshop'; label='Workshop';
-    } else {
-      cls='status-other'; label=s||'—';
-    }
-    return `<span class="status-badge ${cls}"><span class="status-dot"></span>${label}</span>`;
-  }
-
-  /* ── idle badge ── */
-  function getIdleBadge(d){
-    const cls = d>=10?'idle-high':d>=5?'idle-mid':'idle-low';
-    return `<span class="idle-badge ${cls}">${d} day${d!==1?'s':''}</span>`;
-  }
-
-  /* ── per-address light color badge ──
-     Same address string always gets the same light pastel color
-     (deterministic hash → hue), so it stays consistent no matter
-     how the table is sorted/filtered — including in the downloaded image. */
-  const addressColorCache = {};
+  /* ── shared hash → hue helper (used by BOTH address & status badges,
+       so both columns share the same pastel color theme/logic) ── */
   function hashStr(str){
     let hash = 0;
     for(let i=0;i<str.length;i++){
@@ -524,6 +476,12 @@
     }
     return Math.abs(hash);
   }
+
+  /* ── per-address light color badge ──
+     Same address string always gets the same light pastel color
+     (deterministic hash → hue), so it stays consistent no matter
+     how the table is sorted/filtered — including in the downloaded image. */
+  const addressColorCache = {};
   function getAddressColors(addr){
     const key = addr.trim().toLowerCase();
     if(addressColorCache[key]) return addressColorCache[key];
@@ -541,36 +499,77 @@
     return `<span class="address-badge" style="background:${c.bg};border-color:${c.border};color:${c.text};">${esc(addr)}</span>`;
   }
 
-  /* ── filter buttons ── */
+  /* ── per-status color badge — SAME color theme/logic as the Address
+       badge above (pastel bg / border / text from a hashed hue), so
+       every unique status name in the sheet automatically gets its
+       own consistent color, not just Moving/Accident/Workshop. ── */
+  const statusColorCache = {};
+  function getStatusColors(status){
+    const key = status.trim().toLowerCase();
+    if(statusColorCache[key]) return statusColorCache[key];
+    const hue = hashStr(key) % 360;
+    const colors = {
+      bg:     `hsl(${hue}, 70%, 93%)`,
+      border: `hsl(${hue}, 55%, 78%)`,
+      text:   `hsl(${hue}, 55%, 26%)`,
+      dot:    `hsl(${hue}, 60%, 45%)`,
+    };
+    statusColorCache[key] = colors;
+    return colors;
+  }
+  function getStatusBadge(s){
+    const label = (s && s.trim()) ? s.trim() : '—';
+    const c = getStatusColors(label);
+    return `<span class="status-badge" style="background:${c.bg};border-color:${c.border};color:${c.text};"><span class="status-dot" style="background:${c.dot};"></span>${esc(label)}</span>`;
+  }
+
+  /* ── idle badge ── */
+  function getIdleBadge(d){
+    const cls = d>=10?'idle-high':d>=5?'idle-mid':'idle-low';
+    return `<span class="idle-badge ${cls}">${d} day${d!==1?'s':''}</span>`;
+  }
+
+  /* ── filter buttons — one per unique status name found in the sheet,
+       each colored to match that status's badge color (same theme). ── */
   function buildFilterButtons(){
     const statuses = [...new Set(allRows.map(r=>r.status.trim()))].filter(Boolean);
     const bar = document.getElementById('filter-bar');
 
-    const allBtn = makeFilterBtn('All','all','active-all');
     bar.innerHTML='';
-    bar.appendChild(allBtn);
+    bar.appendChild(makeFilterBtn('All','all'));
 
     statuses.forEach(s=>{
-      const sl = s.toLowerCase();
-      let activeCls = 'active-all';
-      if(sl.includes('moving'))   activeCls='active-moving';
-      else if(sl.includes('accident')) activeCls='active-accident';
-      else if(sl.includes('workshop')) activeCls='active-workshop';
-      bar.appendChild(makeFilterBtn(s,s,activeCls));
+      bar.appendChild(makeFilterBtn(s,s));
     });
   }
 
-  function makeFilterBtn(label,val,activeCls){
+  function styleFilterBtn(btn,val,isActive){
+    if(val==='all'){
+      btn.className='filter-btn'+(isActive?' active-all':'');
+      btn.style.background=''; btn.style.color=''; btn.style.borderColor='';
+      return;
+    }
+    if(isActive){
+      const c=getStatusColors(val);
+      btn.className='filter-btn';
+      btn.style.background=c.bg;
+      btn.style.color=c.text;
+      btn.style.borderColor=c.border;
+    } else {
+      btn.className='filter-btn';
+      btn.style.background=''; btn.style.color=''; btn.style.borderColor='';
+    }
+  }
+
+  function makeFilterBtn(label,val){
     const btn = document.createElement('button');
-    btn.className='filter-btn'+(val==='all'?' active-all':'');
     btn.textContent=label;
     btn.dataset.val=val;
-    btn.dataset.activeCls=activeCls;
+    styleFilterBtn(btn,val,val==='all');
     btn.onclick=()=>{
       activeFilter=val;
       document.querySelectorAll('.filter-btn').forEach(b=>{
-        b.className='filter-btn';
-        if(b.dataset.val===val) b.classList.add(b.dataset.activeCls);
+        styleFilterBtn(b,b.dataset.val,b.dataset.val===val);
       });
       applyFilters();
     };
@@ -581,9 +580,9 @@
      NOTE: renderTable(), updateStats() AND updateHeaderLabels() are all
      driven from the SAME filtered array below. Because downloadImage()
      just screenshots whatever is currently on screen, whichever status
-     is selected (e.g. "Accident") AND whichever column sort is active
-     (default: Address A→Z) is exactly what ends up in the PNG —
-     table rows, stat counts, and the title strip all match. */
+     is selected AND whichever column sort is active (default: Address
+     A→Z) is exactly what ends up in the PNG — table rows, stat counts,
+     and the title strip all match. */
   function applyFilters(){
     const q = document.getElementById('search-input').value.trim().toLowerCase();
     let rows = allRows;
@@ -634,36 +633,41 @@
       `Showing ${sorted.length} of ${allRows.length} vehicles`;
   }
 
-  /* ── stats (now called with whatever rows are currently filtered/searched) ── */
+  /* ── stats — a chip for Total, then ONE chip per unique status name
+       present in the currently filtered rows (count on top, name below),
+       colored to match that status's badge theme, then a Max Days chip. ── */
   function updateStats(rows){
     const total=rows.length;
-    const moving=rows.filter(r=>r.status.toLowerCase().includes('moving')).length;
-    const accident=rows.filter(r=>r.status.toLowerCase().includes('accident')).length;
-    const workshop=rows.filter(r=>r.status.toLowerCase().includes('workshop')).length;
     const maxIdle=rows.reduce((m,r)=>Math.max(m,r.idle),0);
 
-    document.getElementById('stat-chips').innerHTML=`
+    const statusCounts={};
+    rows.forEach(r=>{
+      const key=(r.status&&r.status.trim())?r.status.trim():'—';
+      statusCounts[key]=(statusCounts[key]||0)+1;
+    });
+
+    let chips=`
       <div class="stat-chip" style="background:#f8fafc;border-color:#b0bcd4;">
         <div class="stat-num" style="color:#1a2a4a;">${total}</div>
         <div class="stat-lbl" style="color:#6b7a99;">Total</div>
-      </div>
-      <div class="stat-chip" style="background:#dcfce7;border-color:#4ade80;">
-        <div class="stat-num" style="color:#14532d;">${moving}</div>
-        <div class="stat-lbl" style="color:#14532d;">Moving</div>
-      </div>
-      <div class="stat-chip" style="background:#fee2e2;border-color:#f87171;">
-        <div class="stat-num" style="color:#991b1b;">${accident}</div>
-        <div class="stat-lbl" style="color:#991b1b;">Accident</div>
-      </div>
-      <div class="stat-chip" style="background:#fefce8;border-color:#fde047;">
-        <div class="stat-num" style="color:#78350f;">${workshop}</div>
-        <div class="stat-lbl" style="color:#78350f;">Workshop</div>
-      </div>
+      </div>`;
+
+    Object.keys(statusCounts).sort().forEach(name=>{
+      const c=getStatusColors(name);
+      chips+=`
+      <div class="stat-chip" style="background:${c.bg};border-color:${c.border};">
+        <div class="stat-num" style="color:${c.text};">${statusCounts[name]}</div>
+        <div class="stat-lbl" style="color:${c.text};">${esc(name)}</div>
+      </div>`;
+    });
+
+    chips+=`
       <div class="stat-chip" style="background:#f8fafc;border-color:#b0bcd4;">
         <div class="stat-num" style="color:#1a2a4a;">${maxIdle}</div>
         <div class="stat-lbl" style="color:#6b7a99;">Max Days</div>
-      </div>
-    `;
+      </div>`;
+
+    document.getElementById('stat-chips').innerHTML=chips;
   }
 
   /* ── header labels: stats-label + title strip reflect the active filter ── */
@@ -713,26 +717,42 @@
     bar.style.display='none';
     const prevWrapOverflow=wrap.style.overflowX;
     const prevTableLayout=table.style.tableLayout;
+    const prevTableWidth=table.style.width;
+    const prevTableMinWidth=table.style.minWidth;
     const prevWrapWidth=wrap.style.width;
     wrap.style.overflowX='visible';
     table.style.tableLayout='auto';
+    /* Force the table to hug its own content instead of stretching to
+       fill 100% of whatever container width html2canvas gives it —
+       this is what was causing the big empty gap in the Address column. */
+    table.style.width='auto';
+    table.style.minWidth='0';
     wrap.style.width='max-content';
 
     const addressCells=table.querySelectorAll('.td-address');
     const prevStyles=[];
     addressCells.forEach(td=>{
       prevStyles.push({ws:td.style.whiteSpace,mw:td.style.maxWidth,ov:td.style.overflow});
-      td.style.whiteSpace='normal';
+      td.style.whiteSpace='nowrap';
       td.style.maxWidth='none';
       td.style.overflow='visible';
     });
 
     const el=document.getElementById('capture-area');
     const prevElWidth=el.style.width;
+    const prevElDisplay=el.style.display;
     el.style.width='max-content';
+    el.style.display='inline-block';
 
     try{
-      await new Promise(r=>setTimeout(r,120));
+      /* let layout settle, then measure the table's own natural width
+         (not the wider header/stats bar) so the header/footer are
+         re-stretched to match the table — no leftover blank strip. */
+      await new Promise(r=>setTimeout(r,50));
+      const tableWidth = table.scrollWidth;
+      el.style.width = tableWidth + 'px';
+      await new Promise(r=>setTimeout(r,80));
+
       const canvas=await html2canvas(el,{
         scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,
         windowWidth:el.scrollWidth+60,width:el.scrollWidth,
@@ -746,8 +766,11 @@
       bar.style.display='';
       wrap.style.overflowX=prevWrapOverflow;
       table.style.tableLayout=prevTableLayout;
+      table.style.width=prevTableWidth;
+      table.style.minWidth=prevTableMinWidth;
       wrap.style.width=prevWrapWidth;
       el.style.width=prevElWidth;
+      el.style.display=prevElDisplay;
       addressCells.forEach((td,i)=>{
         td.style.whiteSpace=prevStyles[i].ws;
         td.style.maxWidth=prevStyles[i].mw;
