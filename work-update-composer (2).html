@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Work Update Composer — KT Telematic Solutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --white:#FFFFFF;
+    --surface:#F6F5F1;
+    --ink:#23241F;
+    --ink-soft:#5B5B54;
+    --line:#DAD8CE;
+    --line-strong:#B9B7AA;
+    --accent:#1E4B6B;
+    --accent-soft:#E7EEF2;
+    --pending:#B4791F;
+    --pending-bg:#FBF1E1;
+    --progress:#1E4B6B;
+    --progress-bg:#E7EEF2;
+    --completed:#2E6B45;
+    --completed-bg:#E7F1EA;
+    --danger:#A6402F;
+    --radius-control:5px;
+    --font-sans: 'IBM Plex Sans', -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html,body{
+    margin:0;
+    padding:0;
+    background:var(--white);
+    color:var(--ink);
+    font-family:var(--font-sans);
+  }
+
+  .app{
+    max-width:1180px;
+    margin:0 auto;
+    padding:28px 24px 60px;
+  }
+
+  /* ---------- Topbar ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    flex-wrap:wrap;
+    padding-bottom:20px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:24px;
+  }
+
+  .brand{ display:flex; align-items:center; gap:12px; }
+
+  .brand-mark{
+    width:38px; height:38px;
+    background:var(--accent);
+    color:var(--white);
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-mono);
+    font-weight:600;
+    font-size:14px;
+    letter-spacing:0.02em;
+    border-radius:4px;
+    flex-shrink:0;
+  }
+
+  .brand-name{ font-size:16px; font-weight:600; line-height:1.2; }
+  .brand-sub{ font-size:12.5px; color:var(--ink-soft); line-height:1.2; margin-top:2px; }
+
+  .session-control{
+    display:flex;
+    border:1px solid var(--line-strong);
+    border-radius:6px;
+    overflow:hidden;
+  }
+
+  .session-btn{
+    font-family:var(--font-sans);
+    font-size:13.5px;
+    padding:9px 16px;
+    background:var(--white);
+    color:var(--ink-soft);
+    border:none;
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .session-btn + .session-btn{ border-left:1px solid var(--line-strong); }
+  .session-btn.active{ background:var(--accent); color:var(--white); }
+  .session-btn:not(.active):hover{ background:var(--surface); }
+
+  /* ---------- Layout ---------- */
+  .layout{
+    display:grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap:32px;
+    align-items:start;
+  }
+
+  @media (max-width: 880px){
+    .layout{ grid-template-columns: 1fr; }
+  }
+
+  section.editor{ min-width:0; }
+
+  .field-row{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    margin-bottom:16px;
+  }
+
+  .field-row label{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    font-weight:500;
+  }
+
+  .two-col{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+  }
+
+  input[type="text"], textarea, select{
+    font-family:var(--font-sans);
+    font-size:14px;
+    color:var(--ink);
+    background:var(--white);
+    border:1px solid var(--line-strong);
+    border-radius:var(--radius-control);
+    padding:9px 10px;
+    width:100%;
+  }
+
+  input[type="text"]:focus, textarea:focus, select:focus{
+    outline:2px solid var(--accent);
+    outline-offset:1px;
+    border-color:var(--accent);
+  }
+
+  textarea{ resize:vertical; min-height:70px; line-height:1.5; }
+
+  /* ---------- Tasks panel ---------- */
+  .tasks-panel{
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:var(--surface);
+    padding:14px;
+    margin-bottom:16px;
+  }
+
+  .tasks-head{
+    display:grid;
+    grid-template-columns: 30px 1fr 128px 30px;
+    gap:10px;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    font-weight:500;
+    padding:0 2px 8px;
+  }
+
+  .task-row{
+    display:grid;
+    grid-template-columns: 30px 1fr 128px 30px;
+    gap:10px;
+    align-items:center;
+    margin-bottom:8px;
+  }
+
+  .task-index{
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+
+  .task-text{ background:var(--white); }
+
+  .task-status{ background:var(--white); cursor:pointer; }
+
+  .remove-task{
+    width:28px; height:28px;
+    border:1px solid var(--line-strong);
+    background:var(--white);
+    color:var(--ink-soft);
+    border-radius:4px;
+    cursor:pointer;
+    font-size:15px;
+    line-height:1;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .remove-task:hover{ border-color:var(--danger); color:var(--danger); }
+
+  .ghost-btn{
+    font-family:var(--font-sans);
+    font-size:13px;
+    font-weight:500;
+    color:var(--accent);
+    background:none;
+    border:1px dashed var(--line-strong);
+    border-radius:5px;
+    padding:8px 12px;
+    cursor:pointer;
+  }
+  .ghost-btn:hover{ background:var(--accent-soft); border-color:var(--accent); }
+
+  .note-toggle{ margin:14px 0 10px; }
+  .note-toggle label{
+    display:flex; align-items:center; gap:8px;
+    font-size:13.5px; color:var(--ink-soft); cursor:pointer;
+  }
+  .note-toggle input{ cursor:pointer; }
+
+  .notes-panel{
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:var(--surface);
+    padding:14px;
+    margin-bottom:16px;
+  }
+
+  .notes-head{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    font-weight:500;
+    margin-bottom:10px;
+  }
+
+  .note-row{
+    display:grid;
+    grid-template-columns: 26px 1fr 30px;
+    gap:10px;
+    align-items:center;
+    margin-bottom:8px;
+  }
+
+  .note-index{
+    font-family:var(--font-mono);
+    font-size:13px;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+
+  .note-text{ background:var(--white); }
+
+  .signature-block{
+    border-top:1px solid var(--line);
+    padding-top:16px;
+    margin-top:8px;
+  }
+
+  .action-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:6px;
+  }
+
+  /* ---------- Preview ---------- */
+  aside.preview{
+    position:sticky;
+    top:20px;
+  }
+
+  .preview-label{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    margin-bottom:10px;
+  }
+
+  .preview-sheet{
+    background:var(--white);
+    border:1px solid var(--line);
+    box-shadow: 0 1px 3px rgba(35,36,31,0.06), 0 6px 18px rgba(35,36,31,0.05);
+    padding:22px 24px;
+    max-height:520px;
+    overflow-y:auto;
+  }
+
+  #email-render{ font-family: Arial, Helvetica, sans-serif; }
+  #email-render p{ margin:0 0 12px; font-size:14px; line-height:1.5; color:#1a1a1a; }
+  #email-render table{ margin-bottom:12px; }
+
+  .copy-row{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:14px;
+  }
+
+  .primary-btn{
+    flex:1;
+    min-width:130px;
+    font-family:var(--font-sans);
+    font-size:13.5px;
+    font-weight:600;
+    color:var(--white);
+    background:var(--accent);
+    border:none;
+    border-radius:5px;
+    padding:11px 14px;
+    cursor:pointer;
+  }
+  .primary-btn:hover{ background:#173B54; }
+  .primary-btn:active{ transform:translateY(1px); }
+
+  .primary-btn.combined{
+    flex-basis:100%;
+    background:var(--ink);
+  }
+  .primary-btn.combined:hover{ background:#000000; }
+
+  .copy-hint{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-top:10px;
+    line-height:1.5;
+  }
+
+  .toast{
+    margin-top:10px;
+    font-size:13px;
+    color:var(--completed);
+    background:var(--completed-bg);
+    border:1px solid var(--completed);
+    border-radius:5px;
+    padding:8px 10px;
+  }
+  .toast.error{
+    color:var(--danger);
+    background:#FBEDE9;
+    border-color:var(--danger);
+  }
+
+  @media (max-width: 880px){
+    aside.preview{ position:static; margin-top:8px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">KT</div>
+      <div>
+        <div class="brand-name">Work Update Composer</div>
+        <div class="brand-sub">KT Telematic Solutions Private Limited</div>
+      </div>
+    </div>
+    <div class="session-control">
+      <button class="session-btn active" data-session="morning">Morning plan</button>
+      <button class="session-btn" data-session="evening">Evening update</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="editor">
+
+      <div class="field-row">
+        <label for="subject-input">Subject</label>
+        <input type="text" id="subject-input" />
+      </div>
+
+      <div class="two-col">
+        <div class="field-row">
+          <label for="date-input">Date</label>
+          <input type="text" id="date-input" />
+        </div>
+        <div class="field-row">
+          <label for="greeting-input">Greeting</label>
+          <input type="text" id="greeting-input" />
+        </div>
+      </div>
+
+      <div class="tasks-panel">
+        <div class="tasks-head">
+          <span>#</span>
+          <span>Work summary</span>
+          <span>Status</span>
+          <span></span>
+        </div>
+        <div id="task-rows"></div>
+        <button class="ghost-btn" id="add-task">+ Add task</button>
+      </div>
+
+      <div class="note-toggle">
+        <label><input type="checkbox" id="note-toggle-check" /> Add additional notes</label>
+      </div>
+      <div class="notes-panel" id="note-field" hidden>
+        <div class="notes-head">Additional notes — each point becomes a numbered line</div>
+        <div id="note-rows"></div>
+        <button class="ghost-btn" id="add-note">+ Add note point</button>
+      </div>
+
+      <div class="signature-block">
+        <div class="two-col">
+          <div class="field-row">
+            <label for="name-input">Name</label>
+            <input type="text" id="name-input" />
+          </div>
+          <div class="field-row">
+            <label for="company-input">Company</label>
+            <input type="text" id="company-input" />
+          </div>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="ghost-btn" id="reset-status">Reset all to Pending</button>
+        <button class="ghost-btn" id="save-template">Save task list as default</button>
+      </div>
+
+    </section>
+
+    <aside class="preview">
+      <div class="preview-label">Preview — this is what gets copied into Gmail</div>
+      <div class="preview-sheet">
+        <div id="email-render"></div>
+      </div>
+      <div class="copy-row">
+        <button class="primary-btn" id="copy-subject">Copy subject</button>
+        <button class="primary-btn" id="copy-body">Copy email body</button>
+        <button class="primary-btn combined" id="copy-all">Copy subject + body together</button>
+      </div>
+      <div class="copy-hint">Use the two separate buttons for Gmail's normal Subject and body fields. "Copy subject + body together" copies one block (subject shown in bold on its own line) — handy for WhatsApp, notes, or any single text box.</div>
+      <div class="toast" id="toast" hidden></div>
+    </aside>
+  </main>
+
+  <div id="combined-render" style="position:fixed; top:-9999px; left:-9999px; width:560px;"></div>
+</div>
+
+<script>
+(function(){
+  const STATUS_OPTIONS = ['Pending','In Progress','Completed'];
+
+  const DEFAULT_TASKS = [
+    'Complete drain report checks',
+    'Update toll expenses for settlement vehicles',
+    'Update fuel odometer and verify trip sheets',
+    'Compare fuel amounts between IOCL and Asset',
+    'Edit and verify advance entries',
+    'Prepare idle vehicle status report',
+    'Compare fuel amounts between Omni and Asset',
+    'Check Trip Status and update the report - WFH',
+    'Add freight amounts - WFH'
+  ].map((text, i) => ({ id: 't' + (i+1), text, status: 'Pending' }));
+
+  const SESSION_COPY = {
+    morning: {
+      subject: 'Morning Work Plan',
+      intro: 'Please find below my work plan for the morning session:'
+    },
+    evening: {
+      subject: 'Evening Work Update',
+      intro: 'Please find below my work update for the evening session:'
+    }
+  };
+
+  let state = {
+    session: 'morning',
+    date: formatToday(),
+    greeting: 'Dear Sir/Mam,',
+    subject: SESSION_COPY.morning.subject,
+    tasks: DEFAULT_TASKS.map(t => ({ ...t })),
+    noteEnabled: false,
+    notes: [],
+    name: 'Vigneshwaran',
+    company: 'KT Telematic Solutions Private Limited'
+  };
+
+  let subjectTouched = false;
+  let idCounter = DEFAULT_TASKS.length + 1;
+  let draftSaveTimer = null;
+  let toastTimer = null;
+
+  function formatToday(){
+    const d = new Date();
+    return d.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  function escapeHtml(str){
+    return String(str)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#39;');
+  }
+
+  function statusColors(status){
+    if (status === 'Completed') return { fg:'#2E6B45', bg:'#E7F1EA' };
+    if (status === 'In Progress') return { fg:'#1E4B6B', bg:'#E7EEF2' };
+    return { fg:'#B4791F', bg:'#FBF1E1' };
+  }
+
+  /* ---------------- Rendering ---------------- */
+
+  function renderTasks(){
+    const container = document.getElementById('task-rows');
+    container.innerHTML = '';
+    state.tasks.forEach((task, idx) => {
+      const row = document.createElement('div');
+      row.className = 'task-row';
+
+      const indexEl = document.createElement('span');
+      indexEl.className = 'task-index';
+      indexEl.textContent = String(idx + 1).padStart(2, '0');
+
+      const textInput = document.createElement('input');
+      textInput.type = 'text';
+      textInput.className = 'task-text';
+      textInput.value = task.text;
+      textInput.dataset.id = task.id;
+      textInput.addEventListener('input', (e) => {
+        const t = state.tasks.find(x => x.id === task.id);
+        if (t) t.text = e.target.value;
+        renderPreview();
+        scheduleDraftSave();
+      });
+
+      const statusSelect = document.createElement('select');
+      statusSelect.className = 'task-status';
+      statusSelect.dataset.id = task.id;
+      STATUS_OPTIONS.forEach(opt => {
+        const o = document.createElement('option');
+        o.value = opt;
+        o.textContent = opt;
+        if (opt === task.status) o.selected = true;
+        statusSelect.appendChild(o);
+      });
+      statusSelect.addEventListener('change', (e) => {
+        const t = state.tasks.find(x => x.id === task.id);
+        if (t) t.status = e.target.value;
+        renderPreview();
+        scheduleDraftSave();
+      });
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-task';
+      removeBtn.type = 'button';
+      removeBtn.setAttribute('aria-label', 'Remove task');
+      removeBtn.textContent = '\u00D7';
+      removeBtn.addEventListener('click', () => {
+        state.tasks = state.tasks.filter(x => x.id !== task.id);
+        renderTasks();
+        renderPreview();
+        scheduleDraftSave();
+      });
+
+      row.appendChild(indexEl);
+      row.appendChild(textInput);
+      row.appendChild(statusSelect);
+      row.appendChild(removeBtn);
+      container.appendChild(row);
+    });
+  }
+
+  function renderNotes(){
+    const container = document.getElementById('note-rows');
+    container.innerHTML = '';
+    state.notes.forEach((note, idx) => {
+      const row = document.createElement('div');
+      row.className = 'note-row';
+
+      const indexEl = document.createElement('span');
+      indexEl.className = 'note-index';
+      indexEl.textContent = (idx + 1) + '.';
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'note-text';
+      input.value = note;
+      input.addEventListener('input', (e) => {
+        state.notes[idx] = e.target.value;
+        renderPreview();
+        scheduleDraftSave();
+      });
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-task';
+      removeBtn.type = 'button';
+      removeBtn.setAttribute('aria-label', 'Remove note point');
+      removeBtn.textContent = '\u00D7';
+      removeBtn.addEventListener('click', () => {
+        state.notes.splice(idx, 1);
+        renderNotes();
+        renderPreview();
+        scheduleDraftSave();
+      });
+
+      row.appendChild(indexEl);
+      row.appendChild(input);
+      row.appendChild(removeBtn);
+      container.appendChild(row);
+    });
+  }
+
+  function renderPreview(){
+    const intro = SESSION_COPY[state.session].intro;
+    const rows = state.tasks.map((t, i) => {
+      const c = statusColors(t.status);
+      return `<tr>
+        <td style="border:1px solid #000000; padding:8px 10px; font-family:Arial,Helvetica,sans-serif; font-size:13.5px;">${i+1}</td>
+        <td style="border:1px solid #000000; padding:8px 10px; font-family:Arial,Helvetica,sans-serif; font-size:13.5px;">${escapeHtml(t.text)}</td>
+        <td style="border:1px solid #000000; padding:8px 10px; font-family:Arial,Helvetica,sans-serif; font-size:13.5px; color:${c.fg}; background-color:${c.bg}; font-weight:700;">${escapeHtml(t.status)}</td>
+      </tr>`;
+    }).join('');
+
+    const noteItems = state.notes.map(n => n.trim()).filter(Boolean);
+    const noteBlock = (state.noteEnabled && noteItems.length)
+      ? `<p><strong>Additional Note:</strong><br/>${noteItems.map((n, i) => `${i+1}. ${escapeHtml(n)}`).join('<br/>')}</p>`
+      : '';
+
+    const html = `
+      <p>${escapeHtml(state.greeting)}</p>
+      <p>${escapeHtml(intro)}</p>
+      <table style="border-collapse:collapse; width:100%; max-width:560px;">
+        <tr>
+          <th style="border:1px solid #000000; padding:8px 10px; background-color:#E7EEF2; color:#1E4B6B; text-align:left; font-family:Arial,Helvetica,sans-serif; font-size:13.5px; font-weight:700;">S.No</th>
+          <th style="border:1px solid #000000; padding:8px 10px; background-color:#E7EEF2; color:#1E4B6B; text-align:left; font-family:Arial,Helvetica,sans-serif; font-size:13.5px; font-weight:700;">Work Summary</th>
+          <th style="border:1px solid #000000; padding:8px 10px; background-color:#E7EEF2; color:#1E4B6B; text-align:left; font-family:Arial,Helvetica,sans-serif; font-size:13.5px; font-weight:700;">Status</th>
+        </tr>
+        ${rows}
+      </table>
+      ${noteBlock}
+      <p style="margin-top:18px;"><strong>Regards,</strong><br/><strong>${escapeHtml(state.name)}</strong><br/>${escapeHtml(state.company)}</p>
+    `;
+
+    document.getElementById('email-render').innerHTML = html;
+  }
+
+  function hydrateFormFromState(){
+    document.getElementById('subject-input').value = state.subject;
+    document.getElementById('date-input').value = state.date;
+    document.getElementById('greeting-input').value = state.greeting;
+    document.getElementById('note-toggle-check').checked = state.noteEnabled;
+    document.getElementById('note-field').hidden = !state.noteEnabled;
+    renderNotes();
+    document.getElementById('name-input').value = state.name;
+    document.getElementById('company-input').value = state.company;
+
+    document.querySelectorAll('.session-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.session === state.session);
+    });
+  }
+
+  /* ---------------- Storage ---------------- */
+
+  async function safeGet(key){
+    try {
+      const res = await window.storage.get(key, false);
+      return res ? res.value : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function safeSet(key, value){
+    try {
+      await window.storage.set(key, value, false);
+    } catch (e) {
+      // ignore silently, tool still works in-memory for this session
+    }
+  }
+
+  function scheduleDraftSave(){
+    clearTimeout(draftSaveTimer);
+    draftSaveTimer = setTimeout(saveDraft, 700);
+  }
+
+  async function saveDraft(){
+    const payload = {
+      date: state.date,
+      greeting: state.greeting,
+      subject: state.subject,
+      tasks: state.tasks,
+      noteEnabled: state.noteEnabled,
+      notes: state.notes
+    };
+    await safeSet('draft:' + state.session, JSON.stringify(payload));
+  }
+
+  async function saveSettings(){
+    await safeSet('settings', JSON.stringify({ name: state.name, company: state.company }));
+  }
+
+  async function loadEverything(){
+    const settingsRaw = await safeGet('settings');
+    if (settingsRaw) {
+      try {
+        const s = JSON.parse(settingsRaw);
+        if (s.name) state.name = s.name;
+        if (s.company) state.company = s.company;
+      } catch (e) {}
+    }
+
+    const templateRaw = await safeGet('tasks-template');
+    let template = null;
+    if (templateRaw) {
+      try { template = JSON.parse(templateRaw); } catch (e) {}
+    }
+
+    await loadSessionDraft(state.session, template);
+    hydrateFormFromState();
+    renderTasks();
+    renderPreview();
+  }
+
+  async function loadSessionDraft(session, fallbackTemplate){
+    const draftRaw = await safeGet('draft:' + session);
+    if (draftRaw) {
+      try {
+        const d = JSON.parse(draftRaw);
+        state.date = d.date || state.date;
+        state.greeting = d.greeting || state.greeting;
+        state.subject = d.subject || SESSION_COPY[session].subject;
+        state.tasks = Array.isArray(d.tasks) && d.tasks.length ? d.tasks : cloneTemplate(fallbackTemplate);
+        state.noteEnabled = !!d.noteEnabled;
+        state.notes = Array.isArray(d.notes) ? d.notes : (d.note ? [d.note] : []);
+        subjectTouched = state.subject !== SESSION_COPY[session].subject;
+        return;
+      } catch (e) {}
+    }
+    state.subject = SESSION_COPY[session].subject;
+    state.tasks = cloneTemplate(fallbackTemplate);
+    state.noteEnabled = false;
+    state.notes = [];
+    subjectTouched = false;
+  }
+
+  function cloneTemplate(fallbackTemplate){
+    const source = (Array.isArray(fallbackTemplate) && fallbackTemplate.length)
+      ? fallbackTemplate
+      : DEFAULT_TASKS;
+    return source.map(t => ({ id: t.id || ('t' + (idCounter++)), text: t.text, status: 'Pending' }));
+  }
+
+  /* ---------------- Toast ---------------- */
+
+  function showToast(message, isError){
+    const el = document.getElementById('toast');
+    el.textContent = message;
+    el.classList.toggle('error', !!isError);
+    el.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.hidden = true; }, 2600);
+  }
+
+  /* ---------------- Copy actions ---------------- */
+
+  function copySubject(){
+    const val = document.getElementById('subject-input').value;
+    const done = () => showToast('Subject copied');
+    const fail = () => legacyCopyText(val, done, () => showToast('Could not copy — please copy the subject manually', true));
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(val).then(done).catch(fail);
+    } else {
+      fail();
+    }
+  }
+
+  function legacyCopyText(text, onOk, onFail){
+    const tmp = document.createElement('textarea');
+    tmp.value = text;
+    tmp.style.position = 'fixed';
+    tmp.style.opacity = '0';
+    document.body.appendChild(tmp);
+    tmp.focus();
+    tmp.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(tmp);
+    if (ok) onOk(); else onFail();
+  }
+
+  function copyBody(){
+    const node = document.getElementById('email-render');
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    selection.removeAllRanges();
+
+    if (ok) showToast('Email body copied — paste into Gmail');
+    else showToast('Copy failed — click inside the preview and press Ctrl/Cmd+A then Ctrl/Cmd+C', true);
+  }
+
+  function copyAll(){
+    const subject = document.getElementById('subject-input').value;
+    const bodyHtml = document.getElementById('email-render').innerHTML;
+    const holder = document.getElementById('combined-render');
+
+    holder.innerHTML = `<p style="margin:0 0 14px; font-family:Arial,Helvetica,sans-serif; font-size:14.5px;"><strong>Subject: ${escapeHtml(subject)}</strong></p>` + bodyHtml;
+
+    const range = document.createRange();
+    range.selectNodeContents(holder);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    selection.removeAllRanges();
+    holder.innerHTML = '';
+
+    if (ok) showToast('Subject + body copied together');
+    else showToast('Copy failed — try the individual copy buttons instead', true);
+  }
+
+  /* ---------------- Wiring ---------------- */
+
+  function wireEvents(){
+    document.querySelectorAll('.session-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (btn.dataset.session === state.session) return;
+        await saveDraft();
+        state.session = btn.dataset.session;
+        const templateRaw = await safeGet('tasks-template');
+        let template = null;
+        if (templateRaw) { try { template = JSON.parse(templateRaw); } catch (e) {} }
+        await loadSessionDraft(state.session, template);
+        hydrateFormFromState();
+        renderTasks();
+        renderPreview();
+      });
+    });
+
+    document.getElementById('subject-input').addEventListener('input', (e) => {
+      state.subject = e.target.value;
+      subjectTouched = true;
+      scheduleDraftSave();
+    });
+
+    document.getElementById('date-input').addEventListener('input', (e) => {
+      state.date = e.target.value;
+      scheduleDraftSave();
+    });
+
+    document.getElementById('greeting-input').addEventListener('input', (e) => {
+      state.greeting = e.target.value;
+      renderPreview();
+      scheduleDraftSave();
+    });
+
+    document.getElementById('note-toggle-check').addEventListener('change', (e) => {
+      state.noteEnabled = e.target.checked;
+      document.getElementById('note-field').hidden = !state.noteEnabled;
+      if (state.noteEnabled && state.notes.length === 0) {
+        state.notes.push('');
+        renderNotes();
+        const inputs = document.querySelectorAll('.note-text');
+        if (inputs.length) inputs[inputs.length - 1].focus();
+      }
+      renderPreview();
+      scheduleDraftSave();
+    });
+
+    document.getElementById('add-note').addEventListener('click', () => {
+      state.notes.push('');
+      renderNotes();
+      renderPreview();
+      scheduleDraftSave();
+      const inputs = document.querySelectorAll('.note-text');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    });
+
+    document.getElementById('name-input').addEventListener('input', (e) => {
+      state.name = e.target.value;
+      renderPreview();
+      clearTimeout(draftSaveTimer);
+      draftSaveTimer = setTimeout(saveSettings, 700);
+    });
+
+    document.getElementById('company-input').addEventListener('input', (e) => {
+      state.company = e.target.value;
+      renderPreview();
+      clearTimeout(draftSaveTimer);
+      draftSaveTimer = setTimeout(saveSettings, 700);
+    });
+
+    document.getElementById('add-task').addEventListener('click', () => {
+      state.tasks.push({ id: 't' + (idCounter++), text: '', status: 'Pending' });
+      renderTasks();
+      renderPreview();
+      scheduleDraftSave();
+      const inputs = document.querySelectorAll('.task-text');
+      if (inputs.length) inputs[inputs.length - 1].focus();
+    });
+
+    document.getElementById('reset-status').addEventListener('click', () => {
+      state.tasks.forEach(t => t.status = 'Pending');
+      renderTasks();
+      renderPreview();
+      scheduleDraftSave();
+      showToast('All statuses reset to Pending');
+    });
+
+    document.getElementById('save-template').addEventListener('click', async () => {
+      const template = state.tasks.map(t => ({ id: t.id, text: t.text }));
+      await safeSet('tasks-template', JSON.stringify(template));
+      showToast('Saved — new sessions will start with this task list');
+    });
+
+    document.getElementById('copy-subject').addEventListener('click', copySubject);
+    document.getElementById('copy-body').addEventListener('click', copyBody);
+    document.getElementById('copy-all').addEventListener('click', copyAll);
+  }
+
+  wireEvents();
+  loadEverything();
+})();
+</script>
+</body>
+</html>
