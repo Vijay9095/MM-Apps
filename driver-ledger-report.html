@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Driver Ledger Report</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+  :root{
+    --paper:#fbfaf5;
+    --paper-deep:#f4f1e6;
+    --ink:#1c1c18;
+    --ink-soft:#5c5a4e;
+    --ink-faint:#918d7c;
+    --rule:#ddd7c2;
+    --rule-strong:#c9c2a4;
+    --brass:#a9824f;
+    --brass-dark:#8a6a3d;
+    --forest:#1f4d3d;
+    --forest-light:#2f6b54;
+    --forest-wash:#eaf1ed;
+    --brick:#a3291f;
+    --brick-light:#c23b2f;
+    --brick-wash:#faeae8;
+    --gold-wash:#f3ecd3;
+    --shadow: 0 1px 2px rgba(28,28,24,0.04), 0 8px 24px rgba(28,28,24,0.06);
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0; padding:0;
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0px, transparent 30px,
+        rgba(31,77,61,0.055) 31px, transparent 32px
+      ),
+      var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  ::selection{ background:var(--gold-wash); color:var(--ink); }
+
+  .page{
+    max-width:1400px;
+    margin:0 auto;
+    padding:36px 28px 60px;
+  }
+
+  /* ===== HEADER ===== */
+  header.masthead{
+    position:relative;
+    display:flex;
+    align-items:flex-end;
+    justify-content:space-between;
+    gap:24px;
+    padding:34px 40px 26px 64px;
+    background:var(--paper);
+    border:1px solid var(--rule-strong);
+    border-left:none;
+    box-shadow:var(--shadow);
+    margin-bottom:28px;
+  }
+
+  .ledger-tab{
+    position:absolute;
+    top:14px;
+    left:-1px;
+    width:38px;
+    height:calc(100% - 28px);
+    background:linear-gradient(180deg,var(--forest),var(--forest-light));
+    border-radius:2px 6px 6px 2px;
+    box-shadow:2px 2px 6px rgba(28,28,24,0.18);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .ledger-tab span{
+    writing-mode:vertical-rl;
+    transform:rotate(180deg);
+    color:var(--gold-wash);
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.32em;
+    font-weight:600;
+  }
+
+  .masthead-title h1{
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:clamp(28px, 4vw, 40px);
+    line-height:1.05;
+    margin:0 0 6px 0;
+    letter-spacing:-0.01em;
+    color:var(--ink);
+  }
+  .masthead-title h1 em{
+    font-style:italic;
+    font-weight:500;
+    color:var(--forest);
+  }
+  .masthead-title p{
+    margin:0;
+    color:var(--ink-soft);
+    font-size:13.5px;
+    letter-spacing:0.02em;
+  }
+  .source-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    margin-top:10px;
+    padding:4px 10px;
+    border-radius:20px;
+    background:var(--forest-wash);
+    color:var(--forest);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    font-weight:600;
+    letter-spacing:0.03em;
+  }
+  .source-badge .dot{ width:6px; height:6px; border-radius:50%; background:currentColor; }
+  .source-badge.is-upload{ background:var(--gold-wash); color:var(--brass-dark); }
+
+  .masthead-meta{
+    text-align:right;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-faint);
+    line-height:1.7;
+    white-space:nowrap;
+  }
+  .masthead-meta strong{ color:var(--ink-soft); font-weight:600; }
+
+  /* ===== CONTROLS ===== */
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    align-items:stretch;
+    margin-bottom:26px;
+  }
+
+  .dropzone{
+    flex:1 1 320px;
+    border:1.5px dashed var(--rule-strong);
+    background:var(--paper-deep);
+    border-radius:4px;
+    padding:16px 20px;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    cursor:pointer;
+    transition:border-color .18s ease, background .18s ease;
+    position:relative;
+  }
+  .dropzone:hover, .dropzone.dragover{
+    border-color:var(--brass);
+    background:var(--gold-wash);
+  }
+  .dropzone .dz-icon{
+    width:38px; height:38px;
+    flex:0 0 auto;
+    border-radius:50%;
+    background:var(--forest);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff;
+  }
+  .dropzone .dz-text b{
+    display:block;
+    font-size:13.5px;
+    color:var(--ink);
+    font-weight:600;
+  }
+  .dropzone .dz-text span{
+    font-size:11.5px;
+    color:var(--ink-faint);
+  }
+  .dropzone input[type=file]{
+    position:absolute; inset:0; opacity:0; cursor:pointer;
+  }
+
+  .action-btns{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+  }
+
+  button.btn{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    padding:12px 18px;
+    border-radius:3px;
+    border:1px solid transparent;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+    white-space:nowrap;
+  }
+  button.btn:active{ transform:translateY(1px); }
+  button.btn:disabled{ opacity:.4; cursor:not-allowed; }
+
+  .btn-primary{ background:var(--forest); color:#fff; box-shadow:var(--shadow); }
+  .btn-primary:hover:not(:disabled){ background:var(--forest-light); }
+
+  .btn-outline{ background:transparent; color:var(--ink); border-color:var(--rule-strong); }
+  .btn-outline:hover:not(:disabled){ border-color:var(--brass); color:var(--brass-dark); }
+
+  .btn-ghost{ background:transparent; color:var(--brick); border-color:transparent; text-decoration:underline; text-underline-offset:3px; padding:12px 6px;}
+  .btn-ghost:hover:not(:disabled){ color:var(--brick-light); }
+
+  kbd{
+    display:inline-block;
+    padding:1px 5px;
+    border:1px solid var(--rule-strong);
+    border-bottom-width:2px;
+    border-radius:3px;
+    background:var(--paper);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-soft);
+  }
+
+  /* ===== PASTE PANEL ===== */
+  .paste-panel{
+    background:var(--paper);
+    border:1px solid var(--rule-strong);
+    box-shadow:var(--shadow);
+    padding:16px 18px;
+    margin-bottom:26px;
+  }
+  .paste-panel[hidden]{ display:none; }
+  .paste-panel-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:10px;
+    margin-bottom:10px;
+  }
+  .paste-panel-head b{
+    font-size:13.5px;
+    color:var(--ink);
+  }
+  .paste-panel-head span{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color:var(--ink-faint);
+  }
+  .paste-textarea{
+    width:100%;
+    min-height:150px;
+    resize:vertical;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    line-height:1.6;
+    padding:12px 14px;
+    border:1.5px dashed var(--rule-strong);
+    border-radius:4px;
+    background:var(--paper-deep);
+    color:var(--ink);
+  }
+  .paste-textarea:focus{ outline:none; border-color:var(--brass); border-style:solid; background:var(--paper); }
+  .paste-panel-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    align-items:center;
+    margin-top:12px;
+  }
+  .paste-match-table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:10px;
+    font-size:11px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .paste-match-table th, .paste-match-table td{
+    border:1px solid var(--rule);
+    padding:5px 8px;
+    text-align:left;
+    white-space:nowrap;
+  }
+  .paste-match-table th{ background:var(--paper-deep); color:var(--ink-soft); font-weight:600; }
+  .paste-match-table td.unmapped{ color:var(--brick); }
+  .paste-match-table td.mapped{ color:var(--forest); }
+
+  /* ===== SUMMARY CARDS ===== */
+  .summary{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+    gap:14px;
+    margin-bottom:26px;
+  }
+  .stat-card{
+    background:var(--paper);
+    border:1px solid var(--rule);
+    border-top:3px solid var(--rule-strong);
+    padding:18px 20px;
+    box-shadow:var(--shadow);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .stat-card:hover{ transform:translateY(-2px); box-shadow:0 4px 5px rgba(28,28,24,0.05), 0 14px 28px rgba(28,28,24,0.09); }
+  .stat-card .label{
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:0.12em;
+    color:var(--ink-faint);
+    font-weight:600;
+    margin-bottom:8px;
+  }
+  .stat-card .value{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:24px;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .stat-card.pay{ border-top-color:var(--forest); }
+  .stat-card.pay .value{ color:var(--forest); }
+  .stat-card.receive{ border-top-color:var(--brick); }
+  .stat-card.receive .value{ color:var(--brick); }
+  .stat-card .sub{ font-size:11px; color:var(--ink-faint); margin-top:4px; }
+
+  /* ===== FILTER BAR ===== */
+  .filter-bar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    align-items:center;
+    justify-content:space-between;
+    padding:14px 4px;
+    margin-bottom:10px;
+  }
+  .filter-left{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
+  .search-input{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:13px;
+    padding:10px 14px;
+    border:1px solid var(--rule-strong);
+    border-radius:3px;
+    background:var(--paper);
+    min-width:220px;
+    color:var(--ink);
+  }
+  .search-input:focus{ outline:none; border-color:var(--brass); }
+
+  select.status-filter{
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:12.5px;
+    font-weight:600;
+    padding:10px 14px;
+    border:1px solid var(--rule-strong);
+    border-radius:3px;
+    background:var(--paper);
+    color:var(--ink);
+    cursor:pointer;
+  }
+
+  .record-count{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    color:var(--ink-faint);
+  }
+
+  /* ===== TABLE ===== */
+  .table-frame{
+    background:var(--paper);
+    border:1px solid var(--rule-strong);
+    box-shadow:var(--shadow);
+    padding:4px;
+  }
+  .table-scroll{
+    overflow-x:auto;
+    max-height:640px;
+    overflow-y:auto;
+  }
+  table.ledger{
+    border-collapse:collapse;
+    width:100%;
+    min-width:1280px;
+    font-size:12.5px;
+  }
+  table.ledger thead th{
+    position:sticky; top:0; z-index:2;
+    background:var(--forest);
+    color:#f6f3e6;
+    text-align:left;
+    padding:13px 14px;
+    font-size:10.5px;
+    text-transform:uppercase;
+    letter-spacing:0.07em;
+    font-weight:600;
+    white-space:nowrap;
+    cursor:pointer;
+    user-select:none;
+    border-right:1px solid rgba(255,255,255,0.08);
+  }
+  table.ledger thead th:hover{ background:var(--forest-light); }
+  table.ledger thead th .arrow{ opacity:.55; font-size:9px; margin-left:4px; }
+  table.ledger thead th:first-child{ padding-left:20px; }
+
+  table.ledger tbody td{
+    padding:12px 14px;
+    border-bottom:1px solid var(--rule);
+    white-space:nowrap;
+    color:var(--ink);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    vertical-align:middle;
+  }
+  table.ledger tbody td.text-col{ font-family:'IBM Plex Sans', sans-serif; font-size:12.5px; }
+  table.ledger tbody td:first-child{ padding-left:20px; font-weight:600; }
+
+  table.ledger tbody tr:nth-child(even){ background:rgba(31,77,61,0.028); }
+  table.ledger tbody tr:hover{ background:var(--gold-wash); }
+
+  .num-neutral{ color:var(--ink); }
+
+  .balance-cell b{
+    display:block;
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:-0.01em;
+  }
+  .balance-cell .cap{
+    display:block;
+    margin-top:2px;
+    font-family:'IBM Plex Sans', sans-serif;
+    font-size:9.5px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.07em;
+  }
+  .balance-cell.pay b{ color:var(--forest); }
+  .balance-cell.pay .cap{ color:var(--forest-light); }
+  .balance-cell.receive b{ color:var(--brick); }
+  .balance-cell.receive .cap{ color:var(--brick-light); }
+  .balance-cell.settled b{ color:var(--ink-faint); }
+  .balance-cell.settled .cap{ color:var(--ink-faint); }
+
+  .empty-state{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:70px 20px;
+    text-align:center;
+    color:var(--ink-faint);
+  }
+  .empty-state .glyph{
+    width:56px;height:56px;border-radius:50%;
+    border:1.5px dashed var(--rule-strong);
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:16px;
+    color:var(--ink-faint);
+  }
+  .empty-state b{ color:var(--ink-soft); font-size:14px; display:block; margin-bottom:5px; }
+  .empty-state span{ font-size:12.5px; max-width:340px; }
+
+  /* ===== BORDERED / DATATABLE GRID (selector specificity 0,2,1) =====
+     table.table-bordered.dataTable -> 1 element + 2 classes = (0,2,1)
+     This deliberately outranks the older ".ledger tbody td" bottom-only
+     border rule above, so every cell gets a full grid line — this is
+     what makes the table "draw" cleanly both on screen and when it is
+     captured into the PNG/PDF export. */
+  table.table-bordered.dataTable{
+    border-collapse:collapse;
+    border:1px solid var(--rule-strong);
+  }
+  table.table-bordered.dataTable thead th{
+    border:1px solid var(--forest-light);
+    border-bottom:2px solid var(--brass);
+  }
+  table.table-bordered.dataTable tbody td{
+    border:1px solid var(--rule-strong);
+  }
+  table.table-bordered.dataTable tbody tr:nth-child(even) td{
+    border-color:var(--rule-strong);
+  }
+  /* keep the very outer edge crisp even after scroll clipping */
+  table.table-bordered.dataTable tbody tr:last-child td{
+    border-bottom:1px solid var(--rule-strong);
+  }
+
+  /* export-safe overrides: html2canvas struggles with position:sticky + clipped scroll */
+  .table-frame.exporting .table-scroll{ max-height:none !important; overflow:visible !important; }
+  .table-frame.exporting table.ledger thead th{ position:static !important; }
+
+  footer.foot{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-top:22px;
+    padding:16px 4px 0;
+    border-top:1px solid var(--rule);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    color:var(--ink-faint);
+    letter-spacing:0.02em;
+  }
+
+  @media (max-width:720px){
+    header.masthead{ flex-direction:column; align-items:flex-start; padding-left:56px; }
+    .masthead-meta{ text-align:left; }
+    .filter-bar{ flex-direction:column; align-items:stretch; }
+    .search-input{ min-width:0; width:100%; }
+  }
+
+  @media print{
+    body{ background:#fff; }
+    .controls, .filter-bar, footer.foot{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header class="masthead">
+    <div class="ledger-tab"><span>LEDGER</span></div>
+    <div class="masthead-title">
+      <h1>Driver <em>Ledger</em> Report</h1>
+      <p>Vehicle &amp; driver salary balance tracking — upload, review, settle.</p>
+      <span class="source-badge" id="sourceBadge"><span class="dot"></span><span id="sourceBadgeText">Auto-loaded from your uploaded report</span></span>
+    </div>
+    <div class="masthead-meta">
+      GENERATED&nbsp; <strong id="genDate">—</strong><br>
+      RECORDS&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <strong id="genCount">0</strong>
+    </div>
+  </header>
+
+  <section class="controls">
+    <label class="dropzone" id="dropzone">
+      <span class="dz-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3v12m0-12 4.5 4.5M12 3 7.5 7.5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <span class="dz-text">
+        <b>Upload a different Excel sheet</b>
+        <span>.xlsx, .xls or .csv — drag &amp; drop or click to browse. Replaces the data below.</span>
+      </span>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv">
+    </label>
+
+    <label class="dropzone" id="pasteZone">
+      <span class="dz-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 3h6a1 1 0 0 1 1 1v1H8V4a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><rect x="5" y="5" width="14" height="17" rx="2" stroke="currentColor" stroke-width="2"/><path d="M9 12h6M9 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </span>
+      <span class="dz-text">
+        <b>Paste rows copied from your software</b>
+        <span>Click here, then <kbd>Ctrl</kbd>+<kbd>V</kbd> the copied cells — headers/columns are matched automatically.</span>
+      </span>
+    </label>
+
+    <div class="action-btns">
+      <button class="btn btn-primary" id="pdfBtn" type="button" disabled>Download PDF</button>
+      <button class="btn btn-primary" id="imgBtn" type="button" disabled>Download Image</button>
+      <button class="btn btn-ghost" id="clearBtn" type="button" disabled>Clear all</button>
+    </div>
+  </section>
+
+  <section class="paste-panel" id="pastePanel" hidden>
+    <div class="paste-panel-head">
+      <b>Paste preview</b>
+      <span id="pastePreviewInfo">—</span>
+    </div>
+    <textarea id="pasteTextarea" class="paste-textarea" placeholder="Paste copied rows here (Ctrl+V) — from Excel, Google Sheets, or any table in your own software. Tab-separated or comma-separated both work."></textarea>
+    <div class="paste-panel-actions">
+      <button class="btn btn-outline" id="pasteParseBtn" type="button">Preview match</button>
+      <button class="btn btn-primary" id="pasteAppendBtn" type="button" disabled>Add pasted rows to table</button>
+      <button class="btn btn-primary" id="pasteReplaceBtn" type="button" disabled>Replace table with pasted rows</button>
+      <button class="btn btn-ghost" id="pasteCancelBtn" type="button">Cancel</button>
+    </div>
+  </section>
+
+  <section class="summary">
+    <div class="stat-card">
+      <div class="label">Total Records</div>
+      <div class="value" id="statCount">0</div>
+      <div class="sub" id="statVehicles">0 vehicles</div>
+    </div>
+    <div class="stat-card pay">
+      <div class="label">Total Balance To Pay</div>
+      <div class="value" id="statPay">₹0.00</div>
+      <div class="sub" id="statPayCount">0 records</div>
+    </div>
+    <div class="stat-card receive">
+      <div class="label">Total Balance To Receive</div>
+      <div class="value" id="statReceive">₹0.00</div>
+      <div class="sub" id="statReceiveCount">0 records</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Net Position</div>
+      <div class="value" id="statNet">₹0.00</div>
+      <div class="sub" id="statNetLabel">—</div>
+    </div>
+  </section>
+
+  <div class="filter-bar">
+    <div class="filter-left">
+      <input type="text" class="search-input" id="searchInput" placeholder="Search vehicle no, driver name, description…">
+      <select class="status-filter" id="statusFilter">
+        <option value="all">All statuses</option>
+        <option value="pay">Balance To Pay</option>
+        <option value="receive">Balance To Receive</option>
+        <option value="settled">Settled</option>
+      </select>
+    </div>
+    <div class="record-count" id="filterCount">Showing 0 of 0 records</div>
+  </div>
+
+  <section class="table-frame" id="report-capture">
+    <div class="table-scroll">
+      <table class="ledger table-bordered dataTable" id="ledgerTable">
+        <thead>
+          <tr id="tableHeadRow"></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="emptyState">
+      <div class="glyph">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </div>
+      <b>No ledger data yet</b>
+      <span>Upload your Excel file (.xlsx / .xls / .csv) using the panel above to build the report.</span>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span>DRIVER LEDGER REPORT · GENERATED IN-BROWSER · NO DATA LEAVES THIS DEVICE</span>
+    <span id="footTimestamp">—</span>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+
+  // ---------- Column definitions (Status merged into Current Balance — no separate column) ----------
+  var COLUMNS = [
+    { key:'vehicleNo',       label:'Vehicle No',        type:'text' },
+    { key:'driverName',      label:'Driver Name',       type:'text' },
+    { key:'date',            label:'Date',              type:'date' },
+    { key:'description',     label:'Description',       type:'text' },
+    { key:'paidDate',        label:'Paid Date',         type:'date' },
+    { key:'paymentSource',   label:'Payment Source',    type:'text' },
+    { key:'previousBalance', label:'Previous Balance',  type:'currency' },
+    { key:'credit',          label:'Credit',            type:'currency' },
+    { key:'debit',           label:'Debit',             type:'currency' },
+    { key:'currentBalance',  label:'Current Balance',   type:'balance' },
+    { key:'notes',           label:'Notes',             type:'text' },
+    { key:'createdBy',       label:'Created By',        type:'text' }
+  ];
+
+  // Maps many possible incoming header spellings -> canonical keys
+  var HEADER_ALIASES = {
+    vehicleno:'vehicleNo', vehiclenumber:'vehicleNo', vehicle:'vehicleNo', vehicleid:'vehicleNo',
+    drivername:'driverName', driver:'driverName', name:'driverName',
+    date:'date', entrydate:'date', transactiondate:'date',
+    description:'description', desc:'description', particulars:'description',
+    paiddate:'paidDate', datepaid:'paidDate',
+    paymentsource:'paymentSource', payment:'paymentSource', source:'paymentSource', mode:'paymentSource', paymentmode:'paymentSource',
+    previousbalance:'previousBalance', prevbalance:'previousBalance', openingbalance:'previousBalance', opbalance:'previousBalance',
+    credit:'credit', creditamount:'credit',
+    debit:'debit', debitamount:'debit',
+    currentbalance:'currentBalance', balance:'currentBalance', closingbalance:'currentBalance', clbalance:'currentBalance',
+    notes:'notes', note:'notes', remarks:'notes', remark:'notes',
+    createdby:'createdBy', enteredby:'createdBy', updatedby:'createdBy', staff:'createdBy'
+  };
+
+  function normalizeHeader(h){
+    var key = String(h||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+    return HEADER_ALIASES[key] || null;
+  }
+
+  function parseNumber(v){
+    if (v === null || v === undefined || v === '') return 0;
+    if (typeof v === 'number') return v;
+    var cleaned = String(v).replace(/[₹,\s]/g,'').replace(/[()]/g,'-');
+    var n = parseFloat(cleaned);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function formatCurrency(n){
+    var abs = Math.abs(n);
+    return '₹' + abs.toLocaleString('en-IN', { minimumFractionDigits:2, maximumFractionDigits:2 });
+  }
+
+  function formatDate(v){
+    if (!v && v !== 0) return '—';
+    if (v instanceof Date && !isNaN(v)) {
+      return v.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+    }
+    return String(v);
+  }
+
+  function computeStatus(row){
+    var bal = (row.currentBalance !== undefined && row.currentBalance !== '' && row.currentBalance !== null)
+      ? parseNumber(row.currentBalance)
+      : (parseNumber(row.previousBalance) + parseNumber(row.debit) - parseNumber(row.credit));
+    row._balance = bal;
+    if (bal > 0.004)      { row._status = 'pay';     row._statusLabel = 'Balance To Pay'; }
+    else if (bal < -0.004){ row._status = 'receive'; row._statusLabel = 'Balance To Receive'; }
+    else                  { row._status = 'settled'; row._statusLabel = 'Settled'; }
+    return row;
+  }
+
+  // ---------- Real data extracted from the uploaded report (Reports - Asset Tracker) ----------
+  var UPLOADED_DATA = [
+    { vehicleNo:'TN 52 AB 3344', driverName:'AJITHKUMAR (1929)', date:'11/06/2026', description:'Trip Sheets: 3732', paidDate:'', paymentSource:'', previousBalance:0, credit:0, debit:13225, currentBalance:13225, notes:'created via ledger form', createdBy:'Vignesh@MMR 31/07/2026 09:42 PM' },
+    { vehicleNo:'TN 52 AB 3344', driverName:'AJITHKUMAR (1929)', date:'12/06/2026', description:'Trip Sheets: 3732', paidDate:'12/06/2026', paymentSource:'Axis OD (923030066154137)', previousBalance:13225, credit:8225, debit:0, currentBalance:5000, notes:'created via ledger form', createdBy:'Vignesh@MMR 31/07/2026 09:43 PM' },
+    { vehicleNo:'TN 52 AB 3344', driverName:'AJITHKUMAR (1929)', date:'26/06/2026', description:'Trip Sheets: 3870', paidDate:'', paymentSource:'', previousBalance:5000, credit:0, debit:2362, currentBalance:7362, notes:'created via ledger form', createdBy:'Vignesh@MMR 31/07/2026 09:43 PM' },
+    { vehicleNo:'TN 52 AB 3344', driverName:'AJITHKUMAR (1929)', date:'08/07/2026', description:'Trip Sheets: 3870', paidDate:'08/07/2026', paymentSource:'Axis OD (923030066154137)', previousBalance:7362, credit:6362, debit:0, currentBalance:1000, notes:'created via ledger form', createdBy:'Vignesh@MMR 31/07/2026 09:44 PM' },
+    { vehicleNo:'TN 52 AB 3344', driverName:'AJITHKUMAR (1929)', date:'10/07/2026', description:'', paidDate:'', paymentSource:'', previousBalance:1000, credit:0, debit:500, currentBalance:1500, notes:'Empty', createdBy:'Vignesh@MMR 31/07/2026 09:45 PM' },
+    { vehicleNo:'TN 52 AB 3344', driverName:'AJITHKUMAR (1929)', date:'10/07/2026', description:'', paidDate:'', paymentSource:'', previousBalance:1500, credit:1000, debit:0, currentBalance:500, notes:'Driver Change Adv', createdBy:'Vignesh@MMR 31/07/2026 09:46 PM' },
+    { vehicleNo:'TN 52 AA 0099', driverName:'AJITHKUMAR (1929)', date:'15/08/2026', description:'Trip Sheets: 4308', paidDate:'', paymentSource:'', previousBalance:500, credit:0, debit:17880, currentBalance:18380, notes:'created via ledger form', createdBy:'Vignesh@MMR 05/09/2026 03:57 PM' },
+    { vehicleNo:'TN 52 AA 0099', driverName:'AJITHKUMAR (1929)', date:'17/08/2026', description:'Trip Sheets: 4308', paidDate:'17/08/2026', paymentSource:'Axis OD (923030066154137)', previousBalance:18380, credit:13000, debit:0, currentBalance:5380, notes:'created via ledger form', createdBy:'Vignesh@MMR 05/09/2026 03:58 PM' },
+    { vehicleNo:'TN 52 AA 0099', driverName:'AJITHKUMAR (1929)', date:'26/08/2026', description:'Trip Sheets: 4418', paidDate:'', paymentSource:'', previousBalance:5380, credit:0, debit:11510, currentBalance:16890, notes:'created via ledger form', createdBy:'Vignesh@MMR 05/09/2026 03:58 PM' },
+    { vehicleNo:'TN 52 AA 0099', driverName:'AJITHKUMAR (1929)', date:'29/08/2026', description:'Trip Sheets: 4418', paidDate:'29/08/2026', paymentSource:'Axis OD (923030066154137)', previousBalance:16890, credit:11000, debit:0, currentBalance:5890, notes:'created via ledger form', createdBy:'Vignesh@MMR 05/09/2026 03:59 PM' },
+    { vehicleNo:'TN 52 AA 0099', driverName:'AJITHKUMAR (1929)', date:'05/09/2026', description:'Trip Sheets: 4493', paidDate:'', paymentSource:'', previousBalance:5890, credit:0, debit:8470, currentBalance:14360, notes:'CREATED VIA LEDGER FORM', createdBy:'chenry115@gmail.com 05/09/2026 10:02 PM' }
+  ];
+
+  // ---------- State ----------
+  var state = { rows: [], sortKey: null, sortDir: 1, search:'', statusFilter:'all', source:'uploaded' };
+
+  // ---------- DOM refs ----------
+  var el = {
+    fileInput: document.getElementById('fileInput'),
+    dropzone: document.getElementById('dropzone'),
+    pdfBtn: document.getElementById('pdfBtn'),
+    imgBtn: document.getElementById('imgBtn'),
+    clearBtn: document.getElementById('clearBtn'),
+    tableHeadRow: document.getElementById('tableHeadRow'),
+    tableBody: document.getElementById('tableBody'),
+    tableFrame: document.getElementById('report-capture'),
+    emptyState: document.getElementById('emptyState'),
+    tableScroll: document.querySelector('.table-scroll'),
+    searchInput: document.getElementById('searchInput'),
+    statusFilter: document.getElementById('statusFilter'),
+    filterCount: document.getElementById('filterCount'),
+    genDate: document.getElementById('genDate'),
+    genCount: document.getElementById('genCount'),
+    footTimestamp: document.getElementById('footTimestamp'),
+    sourceBadge: document.getElementById('sourceBadge'),
+    sourceBadgeText: document.getElementById('sourceBadgeText'),
+    statCount: document.getElementById('statCount'),
+    statVehicles: document.getElementById('statVehicles'),
+    statPay: document.getElementById('statPay'),
+    statPayCount: document.getElementById('statPayCount'),
+    statReceive: document.getElementById('statReceive'),
+    statReceiveCount: document.getElementById('statReceiveCount'),
+    statNet: document.getElementById('statNet'),
+    statNetLabel: document.getElementById('statNetLabel'),
+    pasteZone: document.getElementById('pasteZone'),
+    pastePanel: document.getElementById('pastePanel'),
+    pastePreviewInfo: document.getElementById('pastePreviewInfo'),
+    pasteTextarea: document.getElementById('pasteTextarea'),
+    pasteParseBtn: document.getElementById('pasteParseBtn'),
+    pasteAppendBtn: document.getElementById('pasteAppendBtn'),
+    pasteReplaceBtn: document.getElementById('pasteReplaceBtn'),
+    pasteCancelBtn: document.getElementById('pasteCancelBtn')
+  };
+
+  function buildHeadRow(){
+    el.tableHeadRow.innerHTML = '';
+    COLUMNS.forEach(function(col){
+      var th = document.createElement('th');
+      th.textContent = col.label;
+      th.dataset.key = col.key;
+      var arrow = document.createElement('span');
+      arrow.className = 'arrow';
+      arrow.textContent = '';
+      th.appendChild(arrow);
+      th.addEventListener('click', function(){ sortBy(col.key); });
+      el.tableHeadRow.appendChild(th);
+    });
+  }
+
+  function sortBy(key){
+    if (key === 'currentBalance') key = '_balance';
+    if (state.sortKey === key) state.sortDir *= -1;
+    else { state.sortKey = key; state.sortDir = 1; }
+    render();
+  }
+
+  function getFiltered(){
+    var q = state.search.trim().toLowerCase();
+    return state.rows.filter(function(r){
+      if (state.statusFilter !== 'all' && r._status !== state.statusFilter) return false;
+      if (!q) return true;
+      var hay = [r.vehicleNo, r.driverName, r.description, r.paymentSource, r.notes, r.createdBy]
+        .map(function(v){ return (v===undefined||v===null) ? '' : String(v).toLowerCase(); })
+        .join(' ');
+      return hay.indexOf(q) !== -1;
+    });
+  }
+
+  function render(){
+    var filtered = getFiltered();
+
+    if (state.sortKey){
+      var k = state.sortKey, dir = state.sortDir;
+      filtered = filtered.slice().sort(function(a,b){
+        var av = a[k], bv = b[k];
+        if (av instanceof Date && bv instanceof Date) return (av-bv)*dir;
+        if (typeof av === 'number' && typeof bv === 'number') return (av-bv)*dir;
+        av = (av===undefined||av===null)?'':String(av).toLowerCase();
+        bv = (bv===undefined||bv===null)?'':String(bv).toLowerCase();
+        return av.localeCompare(bv)*dir;
+      });
+    }
+
+    el.tableBody.innerHTML = '';
+    filtered.forEach(function(r){
+      var tr = document.createElement('tr');
+      COLUMNS.forEach(function(col){
+        var td = document.createElement('td');
+        if (col.type === 'text'){
+          td.className = 'text-col';
+          td.textContent = (r[col.key] === undefined || r[col.key] === null || r[col.key] === '') ? '—' : r[col.key];
+        } else if (col.type === 'date'){
+          td.textContent = formatDate(r[col.key]);
+        } else if (col.type === 'currency'){
+          var val = parseNumber(r[col.key]);
+          td.classList.add('num-neutral');
+          td.textContent = (r[col.key]===undefined||r[col.key]===null||r[col.key]==='') ? '—' : formatCurrency(val);
+        } else if (col.type === 'balance'){
+          td.classList.add('balance-cell', r._status);
+          var b = document.createElement('b');
+          b.textContent = formatCurrency(r._balance);
+          var cap = document.createElement('span');
+          cap.className = 'cap';
+          cap.textContent = r._statusLabel;
+          td.appendChild(b);
+          td.appendChild(cap);
+        }
+        tr.appendChild(td);
+      });
+      el.tableBody.appendChild(tr);
+    });
+
+    el.emptyState.style.display = state.rows.length ? 'none' : 'flex';
+    el.tableScroll.style.display = state.rows.length ? 'block' : 'none';
+
+    el.filterCount.textContent = 'Showing ' + filtered.length + ' of ' + state.rows.length + ' records';
+    el.genCount.textContent = state.rows.length;
+
+    // arrows
+    Array.prototype.forEach.call(el.tableHeadRow.children, function(th){
+      var arrow = th.querySelector('.arrow');
+      var thKey = th.dataset.key === 'currentBalance' ? '_balance' : th.dataset.key;
+      arrow.textContent = (state.sortKey === thKey) ? (state.sortDir===1 ? '▲' : '▼') : '';
+    });
+
+    renderSummary();
+
+    var hasData = state.rows.length > 0;
+    el.pdfBtn.disabled = !hasData;
+    el.imgBtn.disabled = !hasData;
+    el.clearBtn.disabled = !hasData;
+  }
+
+  function renderSummary(){
+    var count = state.rows.length;
+    var vehicles = new Set(state.rows.map(function(r){ return (r.vehicleNo||'').toString().trim().toLowerCase(); }).filter(Boolean));
+    var payRows = state.rows.filter(function(r){ return r._status==='pay'; });
+    var recvRows = state.rows.filter(function(r){ return r._status==='receive'; });
+    var totalPay = payRows.reduce(function(s,r){ return s + r._balance; }, 0);
+    var totalRecv = recvRows.reduce(function(s,r){ return s + Math.abs(r._balance); }, 0);
+    var net = totalPay - totalRecv;
+
+    el.statCount.textContent = count;
+    el.statVehicles.textContent = vehicles.size + ' vehicle' + (vehicles.size===1?'':'s');
+    el.statPay.textContent = formatCurrency(totalPay);
+    el.statPayCount.textContent = payRows.length + ' record' + (payRows.length===1?'':'s');
+    el.statReceive.textContent = formatCurrency(totalRecv);
+    el.statReceiveCount.textContent = recvRows.length + ' record' + (recvRows.length===1?'':'s');
+    el.statNet.textContent = (net<0?'-':'') + formatCurrency(net);
+    el.statNet.style.color = net < 0 ? 'var(--brick)' : (net>0 ? 'var(--forest)' : 'var(--ink)');
+    el.statNetLabel.textContent = net < 0 ? 'Net amount to receive' : (net>0 ? 'Net amount to pay' : 'Fully settled');
+  }
+
+  function setRows(rawRows, sourceLabel, isUpload){
+    state.rows = rawRows.map(function(r){ return computeStatus(Object.assign({}, r)); });
+    var now = new Date();
+    var stamp = now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) + ' · ' + now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    el.genDate.textContent = stamp;
+    el.footTimestamp.textContent = 'Last updated ' + stamp;
+    if (sourceLabel){
+      el.sourceBadgeText.textContent = sourceLabel;
+      el.sourceBadge.classList.toggle('is-upload', !!isUpload);
+    }
+    render();
+  }
+
+  function appendRows(rawRows, sourceLabel){
+    var mapped = rawRows.map(function(r){ return computeStatus(Object.assign({}, r)); });
+    state.rows = state.rows.concat(mapped);
+    var now = new Date();
+    var stamp = now.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) + ' · ' + now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+    el.genDate.textContent = stamp;
+    el.footTimestamp.textContent = 'Last updated ' + stamp;
+    if (sourceLabel){
+      el.sourceBadgeText.textContent = sourceLabel;
+      el.sourceBadge.classList.add('is-upload');
+    }
+    render();
+  }
+
+  // ---------- Paste-to-import parsing ----------
+  // Splits pasted text into a grid of cells. Copying cells out of Excel,
+  // Google Sheets, or almost any HTML table puts TAB between columns and
+  // NEWLINE between rows on the clipboard, so we look for tabs first.
+  // If there are no tabs (e.g. a comma export, or plain typed text) we
+  // fall back to commas, then to runs of 2+ spaces as a last resort.
+  function splitPastedGrid(text){
+    var lines = String(text||'').replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n')
+      .map(function(l){ return l.replace(/\s+$/,''); })
+      .filter(function(l){ return l.trim() !== ''; });
+    if (!lines.length) return [];
+
+    var delim = null;
+    if (lines.some(function(l){ return l.indexOf('\t') !== -1; })) delim = '\t';
+    else if (lines.every(function(l){ return l.indexOf(',') !== -1; })) delim = ',';
+
+    return lines.map(function(l){
+      if (delim) return l.split(delim).map(function(c){ return c.trim(); });
+      // last resort: 2+ spaces treated as a column boundary
+      return l.split(/\s{2,}/).map(function(c){ return c.trim(); });
+    });
+  }
+
+  // Works out, for a pasted grid, which canonical COLUMNS key each
+  // column maps to — using the header row if one is recognisable,
+  // otherwise falling back to the same left-to-right column order as
+  // the on-screen table.
+  function matchPastedColumns(grid){
+    if (!grid.length) return { headerRow:false, keys:[], dataRows:[] };
+
+    var firstRow = grid[0];
+    var firstRowKeys = firstRow.map(function(cell){ return normalizeHeader(cell); });
+    var matchedCount = firstRowKeys.filter(Boolean).length;
+    var looksLikeHeader = matchedCount >= Math.max(2, Math.ceil(firstRow.length / 2));
+
+    var keys, dataRows;
+    if (looksLikeHeader){
+      keys = firstRowKeys;
+      dataRows = grid.slice(1);
+    } else {
+      // No header row detected — assume the same column order as the
+      // report table (Vehicle No, Driver Name, Date, ... Created By),
+      // trimmed or padded to whatever width was pasted.
+      keys = COLUMNS.map(function(c){ return c.key; }).slice(0, firstRow.length);
+      dataRows = grid;
+    }
+    return { headerRow: looksLikeHeader, keys: keys, dataRows: dataRows };
+  }
+
+  function buildRowsFromPaste(text){
+    var grid = splitPastedGrid(text);
+    var match = matchPastedColumns(grid);
+    var rows = match.dataRows.map(function(cells){
+      var out = {};
+      match.keys.forEach(function(key, i){
+        if (!key) return;
+        var val = cells[i] !== undefined ? cells[i] : '';
+        if (key === 'previousBalance' || key === 'credit' || key === 'debit' || key === 'currentBalance'){
+          out[key] = val === '' ? '' : parseNumber(val);
+        } else {
+          out[key] = val;
+        }
+      });
+      return out;
+    }).filter(function(r){ return Object.keys(r).length > 0; });
+    return { rows: rows, keys: match.keys, headerRow: match.headerRow, columnCount: grid.length ? grid[0].length : 0 };
+  }
+
+  function renderPastePreview(){
+    var text = el.pasteTextarea.value;
+    if (!text.trim()){
+      el.pastePreviewInfo.textContent = '—';
+      el.pasteAppendBtn.disabled = true;
+      el.pasteReplaceBtn.disabled = true;
+      return null;
+    }
+    var result = buildRowsFromPaste(text);
+    var mappedCols = result.keys.filter(Boolean).length;
+    var unmapped = result.keys.length - mappedCols;
+
+    el.pastePreviewInfo.textContent = result.rows.length + ' row' + (result.rows.length===1?'':'s') +
+      ' · ' + mappedCols + ' column' + (mappedCols===1?'':'s') + ' matched' +
+      (unmapped ? ' · ' + unmapped + ' unmatched (' + (result.headerRow ? 'header not recognised' : 'extra column') + ')' : '') +
+      (result.headerRow ? ' · header row detected' : ' · using default column order (no header row found)');
+
+    var ok = result.rows.length > 0 && mappedCols > 0;
+    el.pasteAppendBtn.disabled = !ok;
+    el.pasteReplaceBtn.disabled = !ok;
+    return result;
+  }
+
+  function openPastePanel(){
+    el.pastePanel.hidden = false;
+    el.pasteTextarea.focus();
+  }
+  function closePastePanel(){
+    el.pastePanel.hidden = true;
+    el.pasteTextarea.value = '';
+    el.pastePreviewInfo.textContent = '—';
+    el.pasteAppendBtn.disabled = true;
+    el.pasteReplaceBtn.disabled = true;
+  }
+
+  // Clicking (or focusing) the paste dropzone opens the panel and lets
+  // Ctrl+V land straight in the textarea.
+  el.pasteZone.addEventListener('click', function(e){ e.preventDefault(); openPastePanel(); });
+  el.pasteZone.addEventListener('paste', function(e){
+    openPastePanel();
+    var text = (e.clipboardData || window.clipboardData).getData('text');
+    if (text){ el.pasteTextarea.value = text; renderPastePreview(); }
+    e.preventDefault();
+  });
+  el.pasteZone.setAttribute('tabindex', '0');
+
+  el.pasteTextarea.addEventListener('input', renderPastePreview);
+  el.pasteTextarea.addEventListener('paste', function(){ setTimeout(renderPastePreview, 0); });
+  el.pasteParseBtn.addEventListener('click', renderPastePreview);
+
+  el.pasteAppendBtn.addEventListener('click', function(){
+    var result = renderPastePreview();
+    if (!result || !result.rows.length) return;
+    appendRows(result.rows, 'Pasted: ' + result.rows.length + ' row' + (result.rows.length===1?'':'s') + ' added');
+    closePastePanel();
+  });
+  el.pasteReplaceBtn.addEventListener('click', function(){
+    var result = renderPastePreview();
+    if (!result || !result.rows.length) return;
+    if (!confirm('Replace all ' + state.rows.length + ' existing rows with the ' + result.rows.length + ' pasted rows?')) return;
+    setRows(result.rows, 'Pasted: replaced with ' + result.rows.length + ' row' + (result.rows.length===1?'':'s'), true);
+    closePastePanel();
+  });
+  el.pasteCancelBtn.addEventListener('click', closePastePanel);
+
+  // ---------- Excel/CSV parsing ----------
+  function handleFile(file){
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        var data = new Uint8Array(e.target.result);
+        var wb = XLSX.read(data, { type:'array', cellDates:true });
+        var sheet = wb.Sheets[wb.SheetNames[0]];
+        var json = XLSX.utils.sheet_to_json(sheet, { defval:'' });
+        var mapped = json.map(function(rawRow){
+          var out = {};
+          Object.keys(rawRow).forEach(function(h){
+            var canon = normalizeHeader(h);
+            if (canon) out[canon] = rawRow[h];
+          });
+          return out;
+        }).filter(function(r){ return Object.keys(r).length > 0; });
+
+        if (!mapped.length){
+          alert('No recognizable columns found. Please check your file headers match: Vehicle No, Driver Name, Date, Description, Paid Date, Payment Source, Previous Balance, Credit, Debit, Current Balance, Notes, Created By.');
+          return;
+        }
+        setRows(mapped, 'Uploaded: ' + file.name, true);
+      } catch(err){
+        console.error(err);
+        alert('Could not read this file. Please upload a valid .xlsx, .xls or .csv file.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  el.fileInput.addEventListener('change', function(e){
+    if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+  });
+
+  ['dragenter','dragover'].forEach(function(evt){
+    el.dropzone.addEventListener(evt, function(e){ e.preventDefault(); el.dropzone.classList.add('dragover'); });
+  });
+  ['dragleave','drop'].forEach(function(evt){
+    el.dropzone.addEventListener(evt, function(e){ e.preventDefault(); el.dropzone.classList.remove('dragover'); });
+  });
+  el.dropzone.addEventListener('drop', function(e){
+    var f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+
+  // ---------- Search / filter ----------
+  el.searchInput.addEventListener('input', function(){ state.search = el.searchInput.value; render(); });
+  el.statusFilter.addEventListener('change', function(){ state.statusFilter = el.statusFilter.value; render(); });
+
+  // ---------- Clear ----------
+  el.clearBtn.addEventListener('click', function(){
+    if (!confirm('Clear all loaded ledger data?')) return;
+    state.rows = [];
+    el.fileInput.value = '';
+    el.sourceBadgeText.textContent = 'No data loaded';
+    el.sourceBadge.classList.remove('is-upload');
+    render();
+  });
+
+  // ---------- Export: PDF ----------
+  el.pdfBtn.addEventListener('click', function(){
+    if (!state.rows.length) return;
+    var jsPDFCtor = window.jspdf.jsPDF;
+    var doc = new jsPDFCtor({ orientation:'landscape', unit:'pt', format:'a4' });
+
+    var pageWidth = doc.internal.pageSize.getWidth();
+    var margin = 28;
+
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(18);
+    doc.setTextColor(31,77,61);
+    doc.text('Driver Ledger Report', margin, 34);
+
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(9);
+    doc.setTextColor(110,105,90);
+    var now = new Date();
+    doc.text('Generated: ' + now.toLocaleDateString('en-IN') + ' ' + now.toLocaleTimeString('en-IN'), margin, 48);
+    doc.text('Records: ' + state.rows.length, pageWidth - margin, 34, { align:'right' });
+
+    var head = [COLUMNS.map(function(c){ return c.label; })];
+    var body = getFiltered().map(function(r){
+      return COLUMNS.map(function(c){
+        if (c.type === 'currency'){
+          var v = parseNumber(r[c.key]);
+          return (r[c.key]===undefined||r[c.key]===null||r[c.key]==='') ? '-' : formatCurrency(v);
+        }
+        if (c.type === 'balance') return formatCurrency(r._balance) + '  (' + r._statusLabel + ')';
+        if (c.type === 'date') return formatDate(r[c.key]);
+        return (r[c.key]===undefined||r[c.key]===null||r[c.key]==='') ? '-' : String(r[c.key]);
+      });
+    });
+
+    var balanceColIndex = COLUMNS.findIndex(function(c){ return c.key === 'currentBalance'; });
+
+    doc.autoTable({
+      head: head,
+      body: body,
+      startY: 60,
+      margin: { left: margin, right: margin },
+      styles: { font:'helvetica', fontSize:7.5, cellPadding:5, textColor:[28,28,24], lineColor:[221,215,194], lineWidth:0.5 },
+      headStyles: { fillColor:[31,77,61], textColor:[246,243,230], fontStyle:'bold', fontSize:7.5 },
+      alternateRowStyles: { fillColor:[247,245,236] },
+      didParseCell: function(data){
+        if (data.section === 'body' && data.column.index === balanceColIndex){
+          var raw = String(data.cell.raw || '');
+          if (raw.indexOf('Balance To Receive') !== -1){
+            data.cell.styles.textColor = [163,41,31];
+            data.cell.styles.fontStyle = 'bold';
+          } else if (raw.indexOf('Balance To Pay') !== -1){
+            data.cell.styles.textColor = [31,77,61];
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+      }
+    });
+
+    doc.save('driver-ledger-report.pdf');
+  });
+
+  // ---------- Export: Image (full colour, export-safe layout) ----------
+  el.imgBtn.addEventListener('click', function(){
+    if (!state.rows.length) return;
+    var target = el.tableFrame;
+    var originalMaxHeight = el.tableScroll.style.maxHeight;
+
+    target.classList.add('exporting');
+    el.tableScroll.style.maxHeight = 'none';
+
+    // let layout settle before snapshotting
+    setTimeout(function(){
+      html2canvas(target, {
+        scale: 2,
+        backgroundColor: '#fbfaf5',
+        useCORS: true,
+        allowTaint: false,
+        logging: false,
+        windowWidth: target.scrollWidth,
+        windowHeight: target.scrollHeight
+      }).then(function(canvas){
+        target.classList.remove('exporting');
+        el.tableScroll.style.maxHeight = originalMaxHeight;
+        var link = document.createElement('a');
+        link.download = 'driver-ledger-report.png';
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+      }).catch(function(err){
+        target.classList.remove('exporting');
+        el.tableScroll.style.maxHeight = originalMaxHeight;
+        console.error(err);
+        alert('Could not generate image export.');
+      });
+    }, 60);
+  });
+
+  // ---------- Init: auto-load the data from the uploaded report ----------
+  buildHeadRow();
+  setRows(UPLOADED_DATA, 'Auto-loaded from your uploaded report', false);
+
+})();
+</script>
+</body>
+</html>
