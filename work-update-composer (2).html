@@ -199,6 +199,10 @@
     evening: { subject: 'Evening Work Update', intro: 'Please find below my work update for the evening session:' }
   };
 
+  // Gmail strips margins on paste, so gaps are made with real empty lines instead.
+  // To make the gap bigger, raise font-size / line-height (e.g. 20px).
+  const SPACER = '<p style="margin:0; font-family:Arial,Helvetica,sans-serif; font-size:14px; line-height:14px;">&nbsp;</p>';
+
   let state = {
     session: 'morning',
     date: formatToday(),
@@ -357,7 +361,7 @@
 
     const noteItems = state.notes.map(n => n.trim()).filter(Boolean);
     const noteBlock = (state.noteEnabled && noteItems.length)
-      ? `<table style="${TABLE}">
+      ? `${SPACER}<table style="${TABLE}">
           <tr>
             <th style="${TH_SNO}">S.No</th>
             <th style="${TH}">Additional Note</th>
@@ -381,6 +385,7 @@
         ${rows}
       </table>
       ${noteBlock}
+      ${SPACER}
       <p style="margin-top:18px;"><strong>Regards,</strong><br/><strong>${escapeHtml(state.name)}</strong><br/>${escapeHtml(state.company)}</p>
     `;
 
