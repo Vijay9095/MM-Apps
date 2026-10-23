@@ -451,6 +451,19 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
 .ext-note { font-size: 11px; color: var(--txt-muted); font-weight: 500; margin-top: 18px; line-height: 1.7; }
 .ext-note strong { color: var(--red); }
 
+/* ── MULTI LINK (Teal) ── */
+.nav-item.active.nav-multi { background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); box-shadow: 0 4px 18px rgba(13,148,136,0.3), inset 0 1px 0 rgba(255,255,255,0.2); }
+.nav-item.active.nav-multi::before { background: #5eead4; box-shadow: 0 0 8px rgba(13,148,136,0.3); }
+.multi-landing { background: linear-gradient(135deg, #f0fdfa 0%, #ecfeff 50%, #f0fdf4 100%); }
+.multi-card { border-color: #99f6e4; box-shadow: 0 8px 40px rgba(13,148,136,0.14), 0 2px 8px rgba(0,0,0,0.06); }
+.multi-icon { background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%); border-color: #99f6e4; box-shadow: 0 4px 20px rgba(13,148,136,0.2); }
+.multi-url-box { border-color: #99f6e4; margin-bottom: 12px; }
+.multi-url-box .ext-url-text { color: #0f766e; }
+.btn-multi-small { padding: 6px 14px; border-radius: 8px; background: #0d9488; color: #fff; font-size: 12px; font-weight: 800; font-family: 'Nunito', sans-serif; text-decoration: none; flex-shrink: 0; transition: background 0.18s; }
+.btn-multi-small:hover { background: #0f766e; }
+.btn-open-multi { background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); box-shadow: 0 4px 24px rgba(13,148,136,0.3); margin-top: 12px; }
+.btn-open-multi:hover { box-shadow: 0 8px 32px rgba(13,148,136,0.35); }
+
 /* ── LOADER ── */
 .loader { position: absolute; inset: 0; background: var(--page-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; z-index: 10; transition: opacity 0.3s; }
 .loader.hide { opacity: 0; pointer-events: none; }
@@ -634,6 +647,11 @@ const MODULES = [
   { icon:'🧾', title:'Trip Settlement',              sub:'Trip Settlement Records',     type:'file',          file:'Trip_Settlement.html',                    isNew: true  },
   { icon:'💳', title:'Payment Sources',              sub:'Payment Source Tracker',      type:'file',          file:'Payment Sources.html',                    isNew: false },
   { icon:'📝', title:'Work Log',                     sub:'Work Log Records',            type:'file',          file:'work log.html',                           isNew: true  },
+  { icon:'🚚', title:'MMR Vehicle Status',           sub:'Vehicle Status & MMR Sheets', type:'multi',
+    links:[
+      { icon:'🚚', label:'MMR Vehicle Status', url:'https://mmr-vehicle-status.vercel.app/' },
+      { icon:'📑', label:'MMR Sheets',         url:'https://mmr-sheet.vercel.app/' }
+    ], isNew: true },
 ];
 
 /* ── LOGIN ── */
@@ -761,20 +779,43 @@ function initApp() {
         area.appendChild(div);
         frameMap[i] = { type: 'driver-salary', el: div };
 
+      } else if (mod.type === 'multi') {
+        const div = document.createElement('div');
+        div.className = 'ext-landing multi-landing';
+        div.innerHTML = `
+          <div class="ext-card multi-card">
+            <div class="ext-icon-wrap multi-icon">${mod.icon}</div>
+            <div class="ext-title">${mod.title}</div>
+            <div class="ext-sub">${mod.sub} — Open both portals together, or one by one.</div>
+            ${mod.links.map(l => `
+              <div class="ext-url-box multi-url-box">
+                <span class="ext-url-icon">${l.icon}</span>
+                <span class="ext-url-text">${l.label}<br><small>${l.url}</small></span>
+                <a class="btn-multi-small" href="${l.url}" target="_blank" rel="noopener noreferrer">Open</a>
+              </div>`).join('')}
+            <button class="btn-open-ext btn-open-multi" type="button">🚀 &nbsp; Open Both Pages</button>
+            <div class="ext-note"><strong>Note:</strong> Both pages open in new tabs. If only one opens, allow pop-ups for this site in your browser.</div>
+          </div>`;
+        div.querySelector('.btn-open-multi').addEventListener('click', () => {
+          mod.links.forEach(l => window.open(l.url, '_blank', 'noopener,noreferrer'));
+        });
+        area.appendChild(div);
+        frameMap[i] = { type: 'multi', el: div };
+
       } else {
         const div = document.createElement('div');
         div.className = 'ext-landing';
         div.innerHTML = `
           <div class="ext-card">
-            <div class="ext-icon-wrap">❌</div>
-            <div class="ext-title">Rejected Form</div>
-            <div class="ext-sub">Settlement Rejected — View and manage all rejected settlement forms from the portal below.</div>
+            <div class="ext-icon-wrap">${mod.icon}</div>
+            <div class="ext-title">${mod.title}</div>
+            <div class="ext-sub">${mod.sub} — Open the portal below to view and manage everything.</div>
             <div class="ext-url-box">
               <span class="ext-url-icon">🔗</span>
               <span class="ext-url-text">${mod.url}</span>
             </div>
             <a class="btn-open-ext" href="${mod.url}" target="_blank" rel="noopener noreferrer">
-              🚀 &nbsp; Open Rejected Form Portal
+              🚀 &nbsp; Open ${mod.title}
             </a>
             <div class="ext-note"><strong>Note:</strong> This will open in a new tab. All operations (view, manage, submit) will happen inside the portal page.</div>
           </div>`;
@@ -809,7 +850,9 @@ function renderNavList() {
         ? ' nav-rejected'
         : mod.type === 'driver-salary'
           ? ' nav-driver-salary'
-          : '';
+          : mod.type === 'multi'
+            ? ' nav-multi'
+            : '';
       el.className = 'nav-item' + extraClass;
       el.setAttribute('data-title', mod.title);
       el.setAttribute('data-idx', i);
@@ -975,7 +1018,7 @@ function activate(idx) {
   activeIdx = idx;
   const fo = frameMap[idx];
 
-  if (fo.type === 'ext' || fo.type === 'driver-salary') {
+  if (fo.type === 'ext' || fo.type === 'driver-salary' || fo.type === 'multi') {
     document.getElementById('loader').classList.add('hide');
     fo.el.classList.add('active');
     setTimeout(() => fo.el.classList.add('visible'), 30);
