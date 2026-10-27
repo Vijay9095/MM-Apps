@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vehicle Trip Summary Tool</title>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #ffffff; --card: #ffffff; --text: #1d2733; --muted: #64748b;
+  --line: #d9e2ec; --brand: #1f4e78; --brand-2: #2f6fa8; --alt: #f6f9fc;
+  --ok: #1a7f4b; --warn-bg: #fff6e0; --warn-line: #f0c36d; --grid: #9aa9b8;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.45; }
+.top { background: #fff; color: var(--brand); padding: 22px 24px; border-bottom: 1px solid var(--line); }
+.top h1 { margin: 0 0 4px; font-size: 22px; }
+.top p { margin: 0; color: var(--muted); }
+main { max-width: 1320px; margin: 0 auto; padding: 24px; }
+
+.uploads { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+.drop { background: var(--card); border: 2px dashed var(--line); border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; cursor: pointer; transition: border-color .15s; }
+.drop:hover, .drop.over { border-color: var(--brand-2); }
+.drop.has-file { border-style: solid; border-color: var(--ok); }
+.drop .step { width: 26px; height: 26px; border-radius: 50%; background: var(--brand); color: #fff; display: grid; place-items: center; font-weight: bold; margin-bottom: 6px; }
+.drop small { color: var(--muted); }
+.drop em { font-style: normal; margin-top: 8px; word-break: break-all; }
+
+.actions { display: flex; gap: 12px; margin: 18px 0 6px; flex-wrap: wrap; align-items: center; }
+button { background: var(--brand); color: #fff; border: 0; border-radius: 8px; padding: 10px 20px; font-size: 14px; font-weight: bold; cursor: pointer; }
+button.secondary { background: #fff; color: var(--brand-2); border: 2px solid var(--brand-2); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.message { min-height: 20px; margin: 6px 0 0; color: var(--muted); }
+.message.error { color: #d64545; font-weight: bold; }
+
+.options { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; margin: 16px 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 10px; }
+.options label { display: flex; flex-direction: column; gap: 4px; font-weight: bold; font-size: 12px; color: var(--muted); }
+.options input, .options select { font-size: 14px; padding: 8px 10px; border: 1px solid var(--grid); border-radius: 6px; background: #fff; color: var(--text); min-width: 220px; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 16px 0; }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.stat b { display: block; font-size: 26px; color: var(--brand-2); }
+.stat span { color: var(--muted); }
+.notice { background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 10px; padding: 12px 16px; margin-bottom: 16px; }
+
+/* ---------- Report (screen + print) ---------- */
+.month-section { margin: 0 0 34px; }
+.report-head { text-align: center; margin: 10px 0 12px; }
+.report-title { margin: 0; font-size: 24px; letter-spacing: .3px; color: #000; }
+.report-sub { margin-top: 6px; font-size: 14px; display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; }
+.month-badge { background: var(--brand); color: #fff; padding: 3px 14px; border-radius: 14px; font-weight: bold; }
+.table-wrap { overflow-x: auto; }
+table.report { border-collapse: collapse; width: 100%; min-width: 1150px; background: #fff; }
+table.report th, table.report td { border: 1px solid var(--grid); padding: 0 4px; }
+table.report th { background: #eaf1f8; color: var(--brand); padding: 8px 4px; text-align: center; border-bottom: 2px solid var(--brand); }
+table.report td { vertical-align: top; }
+table.report tbody tr:nth-child(even) td { background: var(--alt); }
+td.c { text-align: center; padding-top: 2px; }
+td.veh { font-weight: bold; white-space: nowrap; padding-top: 2px; }
+td.cnt { text-align: center; font-weight: bold; padding-top: 2px; }
+td.wrapcell { padding-top: 2px; }
+table.report tfoot td { font-weight: bold; background: #eaf1f8; border-top: 2px solid var(--brand); padding: 5px 4px; }
+
+/* one fixed-height line per trip leg, so every column lines up */
+.line { display: block; white-space: nowrap; height: 19px; line-height: 18px; border-bottom: 1px dotted #c3ccd6; }
+.line:last-child { border-bottom: 0; }
+td.wrapcell .line { white-space: normal; height: auto; border-bottom: 0; }
+.loc { color: #555; }
+.loc.strong { color: #000; font-weight: bold; }          /* leg with green direction */
+.dir-x { color: var(--ok); font-weight: bold; }
+.dir-l { color: #8a96a3; }
+
+.zones { margin-top: 24px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; }
+.zones summary { cursor: pointer; font-weight: bold; }
+.hint { color: var(--muted); margin: 8px 0; }
+.zone-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+.zone-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; }
+.zone-row.unknown { border-color: var(--warn-line); background: var(--warn-bg); }
+select { background: #fff; color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; }
+
+/* ---------- Print ---------- */
+@page { size: A4 landscape; margin: 8mm; }
+@media print {
+  html, body { background: #fff; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .top, .uploads, .actions, .message, .options, .stats, .notice, .zones { display: none !important; }
+  main { max-width: none; padding: 0; }
+  .month-section { margin: 0; break-after: page; page-break-after: always; }
+  .month-section:last-child { break-after: auto; page-break-after: auto; }
+  .report-title { font-size: 18pt; }
+  .report-sub { font-size: 10pt; margin-bottom: 4px; }
+  .month-badge { background: #fff; color: #000; border: 1.5px solid #000; }
+  .table-wrap { overflow: visible; }
+  table.report { min-width: 0; width: 100%; font-size: 7.5pt; }
+  table.report th, table.report td { border: 1px solid #222; padding: 0 3px; }
+  table.report th { padding: 4px 2px; font-size: 8pt; color: #000; background: #e6edf5; }
+  .line { height: 14px; line-height: 13px; border-bottom: 1px dotted #888; }
+  .line:last-child { border-bottom: 0; }
+  td.wrapcell .line { height: auto; }
+  thead { display: table-header-group; }
+  tfoot { display: table-row-group; }
+  tr { break-inside: avoid; page-break-inside: avoid; }
+}
+</style>
+</head>
+<body>
+  <header class="top">
+    <h1>Vehicle Trip Summary Tool</h1>
+    <p>Upload the Trip Log and the vehicle register. Get a month-wise, printable table with trip counts.</p>
+  </header>
+
+  <main>
+    <section class="uploads">
+      <label class="drop" id="dropTrip">
+        <input type="file" id="tripFile" accept=".xlsx" hidden>
+        <span class="step">1</span>
+        <strong>Trip Log Excel</strong>
+        <small>Vehicle, Group, Driver, From, To, Loading Time, Unloaded Time</small>
+        <em id="tripName">Click or drop .xlsx here</em>
+      </label>
+      <label class="drop" id="dropReg">
+        <input type="file" id="regFile" accept=".xlsx" hidden>
+        <span class="step">2</span>
+        <strong>Register Excel</strong>
+        <small>Vehicle list (S.no, Vehicle)</small>
+        <em id="regName">Click or drop .xlsx here</em>
+      </label>
+    </section>
+
+    <div class="actions">
+      <button id="processBtn" disabled>Process files</button>
+      <button id="printBtn" class="secondary" disabled>Print</button>
+      <button id="downloadBtn" class="secondary" disabled>Download Excel</button>
+    </div>
+    <p id="message" class="message" role="status"></p>
+
+    <section id="results" hidden>
+      <div class="options">
+        <label>Report title (prints on top)
+          <input type="text" id="titleInput" value="MMR - Anish Driver">
+        </label>
+        <label>Month (by Loading Time)
+          <select id="monthSelect"><option value="all">All months</option></select>
+        </label>
+      </div>
+
+      <div class="stats" id="stats"></div>
+      <div id="notFoundBox" class="notice" hidden></div>
+
+      <div id="reportArea"></div>
+
+      <details class="zones">
+        <summary>Location zones (North / South) &ndash; change if a location is wrong</summary>
+        <p class="hint">Each South&harr;North leg counts 0.5 trip. Legs inside the same zone count 0.</p>
+        <div id="zoneGrid" class="zone-grid"></div>
+      </details>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+  <script>
+/* Vehicle Trip Summary Tool
+ * Rules
+ *  1. Keep only Trip Log rows whose Vehicle is in the register (spaces/case ignored).
+ *  2. Split by month of Loading Time. Inside a month: one row per vehicle,
+ *     Group/Driver unique values, other columns one value per leg (comma + new line).
+ *  3. Each leg South->North or North->South = 0.5 trip. Same-zone legs = 0.
+ *  4. Direction green (cross-zone) legs -> From/To Location shown bold black.
+ */
+
+/* ---------- Zone setup (edit these lists for other defaults) ---------- */
+const SOUTH_DEFAULT = [
+  'BLR BANGALORE','Coimbatore','Udumalapet','MRF TCC TCR','CHN MASChennai','MRF Pondy',
+  'Ramco Rajapalayam','RJP Rajapalyam','MDU Madurai','Tsr Thrissur','TPR TIRUPPUR','Manaparai',
+  'Pudukottai','Karaikal','TRICHY','SALEM','Karambakkudi','Thanjavur','Ramnad','Gangaikondan',
+  'Cuddalore','Svm Hp Pondydy','Tiruvannamalai','Dindigul','Mrf Tyre Kottayam','Cochin',
+  'Malappuram','Calicut','CHENGALPATTU','AKM MRF Arakkonam','Nellore','Palamner','Tvs Srichakra'
+];
+const NORTH_DEFAULT = [
+  'Ichalkaranji Godown','Mrf Tyre Indore','Indore','Gurugram','Firozabad','Aurangabad','Bhiwandi',
+  'AMBERNATH','Mrf Tyre Navi Mumbai','Chakan','Pune','Bhilad','Vapi','Vapi Hindustan lever',
+  'INDIAN OIL INDO SALES','Anjar','Mundra','Morbi','RJT Rajkot','Halol','Karjan','Surat','Gwalior',
+  'BUDHNI','Bhopal','Guna Mp','MRF KOTA warehouse','MRF JAIPUR','Jaipur','Niwai','Jodhpur',
+  'AHD Ahmadabad','MRF Godown Nagpur','NGP Nagpur','MRF Aurangabad','Kholapur','Solapur','JNPT',
+  'Khopoli','Vasai','Palghar','KOAA KOLKATA','HYD Hyderabad','Mrf Godown Raipur','Raipur'
+];
+const locKey = s => cleanText(s).toLowerCase();
+const DEFAULT_ZONE = {};
+SOUTH_DEFAULT.forEach(l => DEFAULT_ZONE[locKey(l)] = 'South');
+NORTH_DEFAULT.forEach(l => DEFAULT_ZONE[locKey(l)] = 'North');
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DIR_SN = 'South → North', DIR_NS = 'North → South';
+const isCross = d => d.includes('→');
+
+/* ---------- Helpers ---------- */
+function cleanText(v) {
+  return String(v ?? '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim().replace(/,+$/, '').trim();
+}
+const vehKey = v => String(v ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+const pad = n => String(n).padStart(2, '0');
+
+function cellText(v) {
+  if (v == null) return '';
+  if (v instanceof Date) {
+    let h = v.getUTCHours(); const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+    return `${pad(v.getUTCDate())}-${pad(v.getUTCMonth() + 1)}-${v.getUTCFullYear()} ` +
+           `${pad(h)}:${pad(v.getUTCMinutes())}:${pad(v.getUTCSeconds())} ${ap}`;
+  }
+  if (typeof v === 'object') {
+    if (v.richText) return v.richText.map(t => t.text).join('');
+    if ('result' in v) return cellText(v.result);
+    if ('text' in v) return cellText(v.text);
+  }
+  return String(v);
+}
+
+/* '01-09-202612:27:37 AM' -> '01-09-2026 12:27:37 AM' + sortable timestamp */
+function parseDateTime(s) {
+  const m = /^(\d{1,2})-(\d{1,2})-(\d{4})\s*(\d{1,2}):(\d{2})(?::(\d{2}))?\s*([AP]M)?/i.exec(s);
+  if (!m) return { text: s, ts: 0 };
+  let h = +m[4]; const ap = (m[7] || '').toUpperCase();
+  if (ap === 'PM' && h < 12) h += 12;
+  if (ap === 'AM' && h === 12) h = 0;
+  const ts = Date.UTC(+m[3], +m[2] - 1, +m[1], h, +m[5], +(m[6] || 0));
+  const text = `${pad(m[1])}-${pad(m[2])}-${m[3]} ${m[4].padStart(2, '0')}:${m[5]}:${pad(m[6] || 0)}${ap ? ' ' + ap : ''}`;
+  return { text, ts };
+}
+
+function monthOf(ts) {
+  if (!ts) return { key: '0000-00', label: 'Unknown month' };
+  const d = new Date(ts);
+  return { key: `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}`, label: `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}` };
+}
+
+async function readSheetRows(file) {
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(await file.arrayBuffer());
+  const ws = wb.worksheets[0];
+  if (!ws) throw new Error(`"${file.name}" has no sheet.`);
+  const headers = [];
+  ws.getRow(1).eachCell({ includeEmpty: false }, (c, i) => headers[i] = cleanText(cellText(c.value)));
+  const rows = [];
+  ws.eachRow({ includeEmpty: false }, (row, r) => {
+    if (r === 1) return;
+    const o = {};
+    headers.forEach((h, i) => { if (h) o[h.toLowerCase()] = cleanText(cellText(row.getCell(i).value)); });
+    rows.push(o);
+  });
+  return { headers, rows };
+}
+
+/* ---------- Core logic (pure) ---------- */
+const TRIP_COLS = ['vehicle', 'group', 'driver', 'from location', 'to location', 'loading time', 'unloaded time'];
+
+function buildResult(trip, reg, zoneOverrides = {}) {
+  const missing = TRIP_COLS.filter(c => !trip.headers.map(h => h.toLowerCase()).includes(c));
+  if (missing.length) throw new Error('Trip Log is missing column(s): ' + missing.join(', '));
+  const regHeader = reg.headers.find(h => /vehicle/i.test(h || '')) || reg.headers[2];
+  if (!regHeader) throw new Error('Register file has no "Vehicle" column.');
+
+  const regVehicles = reg.rows.map(r => r[regHeader.toLowerCase()]).filter(Boolean);
+  const regKeys = new Set(regVehicles.map(vehKey));
+
+  const legs = trip.rows
+    .filter(r => regKeys.has(vehKey(r['vehicle'])))
+    .map(r => ({
+      key: vehKey(r['vehicle']), vehicle: r['vehicle'], group: r['group'], driver: r['driver'],
+      from: r['from location'], to: r['to location'],
+      load: parseDateTime(r['loading time']), unload: parseDateTime(r['unloaded time'])
+    }));
+
+  const foundKeys = new Set(legs.map(l => l.key));
+  const notFound = [...new Set(regVehicles.filter(v => !foundKeys.has(vehKey(v))))];
+
+  const zones = {}, unknown = new Set();
+  legs.forEach(l => [l.from, l.to].forEach(loc => {
+    if (zones[loc]) return;
+    const k = locKey(loc);
+    if (zoneOverrides[k]) zones[loc] = zoneOverrides[k];
+    else if (DEFAULT_ZONE[k]) zones[loc] = DEFAULT_ZONE[k];
+    else { zones[loc] = 'North'; unknown.add(loc); }
+  }));
+  const dirOf = (f, t) => zones[f] === zones[t] ? `Local (${zones[f]})` : `${zones[f]} → ${zones[t]}`;
+
+  // month -> vehicle -> legs
+  const monthMap = new Map();
+  legs.forEach(l => {
+    l.direction = dirOf(l.from, l.to);
+    const m = monthOf(l.load.ts);
+    if (!monthMap.has(m.key)) monthMap.set(m.key, { key: m.key, label: m.label, legs: [] });
+    monthMap.get(m.key).legs.push(l);
+  });
+
+  const months = [...monthMap.values()].sort((a, b) => a.key < b.key ? -1 : 1).map(m => {
+    const byVeh = new Map();
+    m.legs.forEach(l => { if (!byVeh.has(l.key)) byVeh.set(l.key, []); byVeh.get(l.key).push(l); });
+    const groups = [...byVeh.keys()].sort().map(k => {
+      const g = byVeh.get(k).sort((a, b) => a.load.ts - b.load.ts);
+      return {
+        vehicle: g[0].vehicle,
+        group: [...new Set(g.map(l => l.group))], driver: [...new Set(g.map(l => l.driver))],
+        from: g.map(l => l.from), to: g.map(l => l.to),
+        load: g.map(l => l.load.text), unload: g.map(l => l.unload.text),
+        direction: g.map(l => l.direction),
+        legCount: g.length,
+        tripCount: g.filter(l => isCross(l.direction)).length * 0.5
+      };
+    });
+    return { key: m.key, label: m.label, groups, legCount: m.legs.length,
+             totalTrips: groups.reduce((s, g) => s + g.tripCount, 0) };
+  });
+
+  return {
+    months, notFound, zones, unknown: [...unknown],
+    totalTrips: months.reduce((s, m) => s + m.totalTrips, 0),
+    matchedRows: legs.length, vehicleCount: foundKeys.size
+  };
+}
+
+/* ---------- Excel export (one sheet per month, print-ready) ---------- */
+async function buildWorkbook(res, title) {
+  const wb = new ExcelJS.Workbook();
+  const font = (o = {}) => ({ name: 'Arial', size: 10, ...o });
+  const side = { style: 'thin', color: { argb: 'FF7F7F7F' } };
+  const border = { top: side, left: side, bottom: side, right: side };
+  const fill = argb => ({ type: 'pattern', pattern: 'solid', fgColor: { argb } });
+  const used = new Set();
+
+  res.months.forEach(m => {
+    let name = m.label.replace(/[\\/?*[\]:]/g, '').slice(0, 31) || 'Sheet';
+    while (used.has(name.toLowerCase())) name = name.slice(0, 28) + '_' + used.size;
+    used.add(name.toLowerCase());
+
+    const ws = wb.addWorksheet(name, { views: [{ state: 'frozen', xSplit: 2, ySplit: 3 }] });
+    ws.columns = [6, 16, 20, 26, 24, 24, 23, 23, 20, 11].map(width => ({ width }));
+
+    ws.mergeCells('A1:J1');
+    const t = ws.getCell('A1'); t.value = title;
+    t.font = font({ bold: true, size: 16 }); t.alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.getRow(1).height = 28;
+    ws.mergeCells('A2:J2');
+    const s = ws.getCell('A2'); s.value = `Month: ${m.label}`;
+    s.font = font({ bold: true, size: 12 }); s.alignment = { horizontal: 'center', vertical: 'middle' };
+    ws.getRow(2).height = 20;
+
+    const head = ws.addRow(['S.No', 'Vehicle', 'Group', 'Driver', 'From Location', 'To Location',
+                            'Loading Time', 'Unloaded Time', 'Direction', 'Trip Count']);
+    head.height = 26;
+    head.eachCell(c => {
+      c.font = font({ bold: true }); c.fill = fill('FFE6EDF5'); c.border = border;
+      c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    });
+
+    const join = a => a.join(',\n');
+    const rich = (items, fontFor) => ({ richText: items.map((x, i) => ({ text: x + (i < items.length - 1 ? ',\n' : ''), font: fontFor(i) })) });
+    m.groups.forEach((g, i) => {
+      const n = i + 4, H = `I${n}`;
+      const formula =
+        `0.5*((LEN(${H})-LEN(SUBSTITUTE(${H},"${DIR_SN}","")))/LEN("${DIR_SN}")` +
+        `+(LEN(${H})-LEN(SUBSTITUTE(${H},"${DIR_NS}","")))/LEN("${DIR_NS}"))`;
+      const locFont = k => isCross(g.direction[k]) ? font({ bold: true, color: { argb: 'FF000000' } }) : font({ color: { argb: 'FF555555' } });
+      const dirFont = k => isCross(g.direction[k]) ? font({ bold: true, color: { argb: 'FF1A7F4B' } }) : font({ color: { argb: 'FF8A96A3' } });
+      const row = ws.addRow([i + 1, g.vehicle, join(g.group), join(g.driver),
+        rich(g.from, locFont), rich(g.to, locFont), join(g.load), join(g.unload),
+        rich(g.direction, dirFont), { formula, result: g.tripCount }]);
+      row.height = Math.min(409, Math.max(18, 13.5 * g.legCount + 4));
+      row.eachCell({ includeEmpty: true }, (c, col) => {
+        c.font = font({ bold: col === 2 }); c.border = border;
+        c.alignment = { vertical: 'top', wrapText: true, horizontal: (col === 1 || col === 10) ? 'center' : 'left' };
+        if (i % 2 === 1) c.fill = fill('FFF6F9FC');
+      });
+      row.getCell(10).numFmt = '0.0';
+    });
+
+    const last = m.groups.length + 3;
+    const tot = ws.addRow(['', 'TOTAL', '', '', '', '', '', '', '', { formula: `SUM(J4:J${last})`, result: m.totalTrips }]);
+    tot.eachCell({ includeEmpty: true }, (c, col) => {
+      c.font = font({ bold: true }); c.border = border; c.fill = fill('FFE6EDF5');
+      if (col === 10) { c.alignment = { horizontal: 'center' }; c.numFmt = '0.0'; }
+    });
+    ws.autoFilter = `A3:J${last}`;
+    ws.pageSetup = {
+      paperSize: 9, orientation: 'landscape', fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+      horizontalCentered: true, printTitlesRow: '3:3',
+      margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 }
+    };
+  });
+
+  const zs = wb.addWorksheet('Location Zones');
+  zs.columns = [{ width: 30 }, { width: 12 }];
+  zs.addRow(['Location', 'Zone']).eachCell(c => { c.font = font({ bold: true }); c.fill = fill('FFE6EDF5'); });
+  Object.keys(res.zones).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+    .forEach(l => zs.addRow([l, res.zones[l]]).eachCell(c => c.font = font()));
+  zs.addRow([]);
+  zs.addRow(['Rule: each South→North or North→South leg = 0.5 trip. Same-zone legs = 0.']).getCell(1).font = font({ italic: true });
+
+  if (res.notFound.length) {
+    const ns = wb.addWorksheet('Not Found');
+    ns.columns = [{ width: 40 }];
+    ns.addRow(['Vehicle (in register, not in Trip Log)']).getCell(1).font = font({ bold: true });
+    res.notFound.forEach(v => ns.addRow([v]).getCell(1).font = font());
+  }
+  return wb;
+}
+
+/* ---------- UI ---------- */
+if (typeof document !== 'undefined') {
+  const $ = id => document.getElementById(id);
+  const state = { trip: null, reg: null, tripData: null, regData: null, overrides: {}, result: null };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const comma = (a, i) => i < a.length - 1 ? ',' : '';
+  const plain = a => a.map((x, i) => `<span class="line">${esc(x)}${comma(a, i)}</span>`).join('');
+  const title = () => ($('titleInput').value || '').trim() || 'MMR - Anish Driver';
+
+  function setMessage(t, err) { $('message').textContent = t || ''; $('message').className = 'message' + (err ? ' error' : ''); }
+
+  function bindDrop(boxId, inputId, nameId, key) {
+    const box = $(boxId), input = $(inputId);
+    const take = f => {
+      if (!f) return;
+      if (!/\.xlsx$/i.test(f.name)) { setMessage('Please choose an .xlsx file.', true); return; }
+      state[key] = f; $(nameId).textContent = f.name; box.classList.add('has-file');
+      setMessage(''); $('processBtn').disabled = !(state.trip && state.reg);
+    };
+    input.addEventListener('change', () => take(input.files[0]));
+    ['dragenter', 'dragover'].forEach(e => box.addEventListener(e, ev => { ev.preventDefault(); box.classList.add('over'); }));
+    ['dragleave', 'drop'].forEach(e => box.addEventListener(e, ev => { ev.preventDefault(); box.classList.remove('over'); }));
+    box.addEventListener('drop', ev => take(ev.dataTransfer.files[0]));
+  }
+
+  function fillMonths() {
+    const sel = $('monthSelect'), keep = sel.value;
+    sel.innerHTML = '<option value="all">All months</option>' +
+      state.result.months.map(m => `<option value="${m.key}">${esc(m.label)}</option>`).join('');
+    sel.value = state.result.months.some(m => m.key === keep) ? keep : 'all';
+  }
+
+  function sectionHtml(m) {
+    const rows = m.groups.map((g, i) => `
+      <tr>
+        <td class="c">${i + 1}</td>
+        <td class="veh">${esc(g.vehicle)}</td>
+        <td class="wrapcell">${plain(g.group)}</td>
+        <td class="wrapcell">${plain(g.driver)}</td>
+        <td>${g.from.map((x, k) => `<span class="line loc${isCross(g.direction[k]) ? ' strong' : ''}">${esc(x)}${comma(g.from, k)}</span>`).join('')}</td>
+        <td>${g.to.map((x, k) => `<span class="line loc${isCross(g.direction[k]) ? ' strong' : ''}">${esc(x)}${comma(g.to, k)}</span>`).join('')}</td>
+        <td>${plain(g.load)}</td>
+        <td>${plain(g.unload)}</td>
+        <td>${g.direction.map((d, k) => `<span class="line ${isCross(d) ? 'dir-x' : 'dir-l'}">${esc(d)}${comma(g.direction, k)}</span>`).join('')}</td>
+        <td class="cnt">${g.tripCount.toFixed(1)}</td>
+      </tr>`).join('');
+    return `
+    <section class="month-section">
+      <div class="report-head">
+        <h1 class="report-title">${esc(title())}</h1>
+        <div class="report-sub">
+          <span class="month-badge">${esc(m.label)}</span>
+          <span>Vehicles: <b>${m.groups.length}</b></span>
+          <span>Trip legs: <b>${m.legCount}</b></span>
+          <span>Total trips: <b>${m.totalTrips.toFixed(1)}</b></span>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="report">
+          <thead><tr>
+            <th style="width:4%">S.No</th><th style="width:9%">Vehicle</th><th style="width:9%">Group</th><th style="width:9%">Driver</th>
+            <th>From Location</th><th>To Location</th><th>Loading Time</th><th>Unloaded Time</th><th>Direction</th><th style="width:5%">Trip Count</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+          <tfoot><tr><td></td><td>TOTAL</td><td colspan="7"></td><td class="cnt">${m.totalTrips.toFixed(1)}</td></tr></tfoot>
+        </table>
+      </div>
+    </section>`;
+  }
+
+  function render() {
+    const r = state.result;
+    $('results').hidden = false;
+    $('stats').innerHTML = [
+      [r.vehicleCount, 'Vehicles matched'], [r.matchedRows, 'Trip legs'],
+      [r.months.length, 'Months'], [r.totalTrips.toFixed(1), 'Total trip count'], [r.notFound.length, 'Not in Trip Log']
+    ].map(([n, l]) => `<div class="stat"><b>${n}</b><span>${l}</span></div>`).join('');
+
+    const msgs = [];
+    if (r.notFound.length) msgs.push(`<b>Not found in Trip Log:</b> ${r.notFound.map(esc).join(', ')}`);
+    if (r.unknown.length) msgs.push(`<b>Zone unknown (assumed North &ndash; please check below):</b> ${r.unknown.map(esc).join(', ')}`);
+    $('notFoundBox').hidden = !msgs.length; $('notFoundBox').innerHTML = msgs.join('<br>');
+
+    const sel = $('monthSelect').value;
+    const list = sel === 'all' ? r.months : r.months.filter(m => m.key === sel);
+    $('reportArea').innerHTML = list.map(sectionHtml).join('');
+
+    $('zoneGrid').innerHTML = Object.keys(r.zones).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+      .map(l => `<div class="zone-row${r.unknown.includes(l) ? ' unknown' : ''}">
+        <span>${esc(l)}</span>
+        <select data-loc="${esc(l)}">
+          <option${r.zones[l] === 'South' ? ' selected' : ''}>South</option>
+          <option${r.zones[l] === 'North' ? ' selected' : ''}>North</option>
+        </select></div>`).join('');
+    $('zoneGrid').querySelectorAll('select').forEach(s => s.addEventListener('change', () => {
+      state.overrides[locKey(s.dataset.loc)] = s.value; recompute();
+    }));
+    $('downloadBtn').disabled = false; $('printBtn').disabled = false;
+  }
+
+  function recompute() {
+    state.result = buildResult(state.tripData, state.regData, state.overrides);
+    state.result.unknown = state.result.unknown.filter(l => !state.overrides[locKey(l)]);
+    fillMonths(); render();
+  }
+
+  async function process() {
+    try {
+      setMessage('Reading files…'); $('processBtn').disabled = true;
+      state.tripData = await readSheetRows(state.trip);
+      state.regData = await readSheetRows(state.reg);
+      state.overrides = {};
+      $('monthSelect').value = 'all';
+      recompute();
+      setMessage(`Done. ${state.result.vehicleCount} vehicles, ${state.result.months.length} month(s), total trip count ${state.result.totalTrips.toFixed(1)}.`);
+    } catch (e) {
+      console.error(e); setMessage(e.message || 'Could not read the files.', true);
+    } finally { $('processBtn').disabled = !(state.trip && state.reg); }
+  }
+
+  async function download() {
+    const wb = await buildWorkbook(state.result, title());
+    const buf = await wb.xlsx.writeBuffer();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    a.download = 'Vehicle_Wise_Trip_Summary.xlsx';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+
+  bindDrop('dropTrip', 'tripFile', 'tripName', 'trip');
+  bindDrop('dropReg', 'regFile', 'regName', 'reg');
+  $('processBtn').addEventListener('click', process);
+  $('downloadBtn').addEventListener('click', download);
+  $('printBtn').addEventListener('click', () => window.print());
+  $('monthSelect').addEventListener('change', () => state.result && render());
+  $('titleInput').addEventListener('input', () => state.result && render());
+}
+
+if (typeof module !== 'undefined') module.exports = { readSheetRows, buildResult, buildWorkbook };
+  </script>
+</body>
+</html>
