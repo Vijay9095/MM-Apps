@@ -464,6 +464,46 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
 .btn-open-multi { background: linear-gradient(135deg, #0d9488 0%, #14b8a6 100%); box-shadow: 0 4px 24px rgba(13,148,136,0.3); margin-top: 12px; }
 .btn-open-multi:hover { box-shadow: 0 8px 32px rgba(13,148,136,0.35); }
 
+/* ── CONSOLIDATED VIEW ── */
+.nav-item.active.nav-consolidated { background: linear-gradient(135deg,#2563eb,#3b82f6); box-shadow: 0 4px 18px rgba(37,99,235,.3), inset 0 1px 0 rgba(255,255,255,.2); }
+.nav-item.active.nav-consolidated::before { background:#93c5fd; }
+.cons-landing { position:absolute; inset:0; display:none; flex-direction:column; background:var(--page-bg); opacity:0; transition:opacity .28s; overflow-y:auto; padding:22px 26px 40px; }
+.cons-landing.active { display:flex; }
+.cons-landing.visible { opacity:1; }
+.cons-head { display:flex; flex-wrap:wrap; gap:14px; align-items:center; justify-content:space-between; margin-bottom:18px; }
+.cons-title { font-family:'Rajdhani',sans-serif; font-size:26px; font-weight:700; color:var(--txt-dark); }
+.cons-stats { display:flex; gap:10px; flex-wrap:wrap; }
+.cons-stat { background:#fff; border:1.5px solid var(--border); border-radius:12px; padding:8px 16px; text-align:center; box-shadow:var(--shadow); }
+.cons-stat b { display:block; font-family:'Rajdhani',sans-serif; font-size:22px; color:var(--accent); line-height:1.1; }
+.cons-stat span { font-size:10.5px; font-weight:700; color:var(--txt-muted); text-transform:uppercase; letter-spacing:.8px; }
+.cons-tools { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:20px; }
+.cons-search { flex:1; min-width:220px; padding:11px 16px; border:2px solid var(--border); border-radius:12px; font:600 13.5px 'Nunito',sans-serif; outline:none; background:#fff; }
+.cons-search:focus { border-color:var(--accent); box-shadow:0 0 0 4px var(--accent-glow); }
+.cons-chip { padding:8px 16px; border-radius:20px; border:1.5px solid var(--border); background:#fff; font:700 12px 'Nunito',sans-serif; color:var(--txt-mid); cursor:pointer; transition:.18s; }
+.cons-chip:hover { border-color:var(--accent); color:var(--accent); }
+.cons-chip.on { background:var(--accent-grad); color:#fff; border-color:transparent; box-shadow:0 3px 12px var(--accent-glow); }
+.cons-sec { font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--txt-mid); margin:18px 0 12px; display:flex; align-items:center; gap:10px; }
+.cons-sec::after { content:''; flex:1; height:2px; background:var(--border); border-radius:2px; }
+.cons-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:14px; }
+.cons-card { background:#fff; border:1.5px solid var(--border); border-radius:14px; padding:16px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:10px; position:relative; overflow:hidden; transition:transform .18s, box-shadow .18s, border-color .18s; }
+.cons-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--accent-grad); }
+.cons-card.portal::before { background:var(--red-grad); }
+.cons-card.multi::before { background:linear-gradient(135deg,#0d9488,#14b8a6); }
+.cons-card:hover { transform:translateY(-4px); border-color:var(--accent2); box-shadow:0 10px 30px rgba(0,0,0,.12); }
+.cons-top { display:flex; gap:12px; align-items:center; }
+.cons-ico { width:44px; height:44px; border-radius:12px; background:var(--accent-soft); display:flex; align-items:center; justify-content:center; font-size:23px; flex-shrink:0; }
+.cons-name { font-weight:800; font-size:14px; color:var(--txt-dark); line-height:1.25; }
+.cons-sub { font-size:11.5px; color:var(--txt-muted); font-weight:600; }
+.cons-tags { display:flex; gap:6px; flex-wrap:wrap; }
+.cons-tag { font-size:9.5px; font-weight:800; padding:2px 9px; border-radius:20px; text-transform:uppercase; letter-spacing:.6px; background:#eff6ff; color:#2563eb; }
+.cons-tag.portal { background:#fef2f2; color:#dc2626; } .cons-tag.multi { background:#f0fdfa; color:#0f766e; } .cons-tag.new { background:#f0fdf4; color:#16a34a; }
+.cons-path { font-size:11px; color:var(--txt-muted); font-weight:600; word-break:break-all; background:#f8fafc; border-radius:8px; padding:6px 9px; }
+.cons-btns { display:flex; gap:8px; flex-wrap:wrap; margin-top:auto; }
+.cons-btn { flex:1; text-align:center; padding:8px 10px; border-radius:9px; font:800 12px 'Nunito',sans-serif; cursor:pointer; border:none; text-decoration:none; transition:.18s; white-space:nowrap; }
+.cons-btn.pri { background:var(--accent-grad); color:#fff; } .cons-btn.pri:hover { box-shadow:0 4px 14px var(--accent-glow); }
+.cons-btn.sec { background:#f1f5f9; color:var(--txt-mid); border:1.5px solid var(--border); } .cons-btn.sec:hover { background:var(--blue); color:#fff; border-color:var(--blue); }
+.cons-empty { text-align:center; padding:60px 0; color:var(--txt-muted); font-weight:700; }
+
 /* ── LOADER ── */
 .loader { position: absolute; inset: 0; background: var(--page-bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; z-index: 10; transition: opacity 0.3s; }
 .loader.hide { opacity: 0; pointer-events: none; }
@@ -495,6 +535,7 @@ html, body { height: 100%; font-family: 'Nunito', sans-serif; overflow: hidden; 
   .driver-card { padding: 36px 24px 30px; }
   .collapse-btn { display: none; }
   .btn-topbar-reload span.reload-label { display: none; }
+  .cons-landing { padding: 16px 14px 30px; }
 }
 </style>
 </head>
@@ -612,6 +653,7 @@ const USERS = [
 ];
 
 const MODULES = [
+  { icon:'🗂️', title:'Consolidated View', sub:'All Modules & Links', type:'consolidated', isNew: true },
   { icon:'🏠', title:'Dashboard',                   sub:'Transport Overview',          type:'file',          file:'deepseek_html_20260202_9f48c3.html',      isNew: false },
   { icon:'🏠', title:'Asset Work Log',                   sub:'Mail Update',          type:'file',           file:'work-update-composer (2).html',          isNew: false },
   { icon:'👤', title:'Daily Omni Tally',                sub:'Asset And Omni',      type:'Tally Report',       url:'https://omniand-fuel.vercel.app/',     isNew: false },
@@ -717,6 +759,91 @@ function toggleCollapse() {
   }
 }
 
+/* ── CONSOLIDATED VIEW ── */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const kindOf = m => m.links ? 'multi' : m.url ? 'portal' : 'file';
+
+function buildConsolidated(box) {
+  const items = MODULES.map((m, i) => ({ m, i })).filter(x => x.m.type !== 'consolidated');
+  let filter = 'all', q = '';
+  const cnt = k => items.filter(x => kindOf(x.m) === k).length;
+
+  box.innerHTML = `
+    <div class="cons-head">
+      <div class="cons-title">🗂️ All Modules — One Page</div>
+      <div class="cons-stats">
+        <div class="cons-stat"><b>${items.length}</b><span>Total</span></div>
+        <div class="cons-stat"><b>${cnt('file')}</b><span>Files</span></div>
+        <div class="cons-stat"><b>${cnt('portal') + cnt('multi')}</b><span>Portals</span></div>
+        <div class="cons-stat"><b>${items.filter(x => x.m.isNew).length}</b><span>New</span></div>
+      </div>
+    </div>
+    <div class="cons-tools">
+      <input class="cons-search" placeholder="🔍 Search module, field, link..." />
+      <button class="cons-chip on" data-f="all">All</button>
+      <button class="cons-chip" data-f="file">📄 Files</button>
+      <button class="cons-chip" data-f="portal">🌐 Portals</button>
+      <button class="cons-chip" data-f="new">✨ New</button>
+    </div>
+    <div class="cons-body"></div>`;
+
+  const body = box.querySelector('.cons-body');
+
+  const card = ({ m, i }) => {
+    const k = kindOf(m);
+    const paths = m.links
+      ? m.links.map(l => `<div class="cons-path">${l.icon} ${esc(l.label)}<br>${esc(l.url)}</div>`).join('')
+      : `<div class="cons-path">${k === 'portal' ? '🔗' : '📄'} ${esc(m.url || m.file)}</div>`;
+    const newTabs = m.links
+      ? m.links.map(l => `<a class="cons-btn sec" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">↗ ${esc(l.label)}</a>`).join('')
+      : `<a class="cons-btn sec" href="${esc(encodeURI(m.url || m.file))}" target="_blank" rel="noopener noreferrer">↗ New Tab</a>`;
+    return `
+      <div class="cons-card ${k}">
+        <div class="cons-top">
+          <div class="cons-ico">${m.icon}</div>
+          <div><div class="cons-name">${esc(m.title)}</div><div class="cons-sub">${esc(m.sub)}</div></div>
+        </div>
+        <div class="cons-tags">
+          <span class="cons-tag ${k}">${k === 'file' ? 'File' : k === 'multi' ? 'Multi Link' : 'Portal'}</span>
+          ${m.isNew ? '<span class="cons-tag new">New</span>' : ''}
+        </div>
+        ${paths}
+        <div class="cons-btns">
+          <button class="cons-btn pri" data-open="${i}">▶ Open Here</button>
+          ${newTabs}
+        </div>
+      </div>`;
+  };
+
+  const render = () => {
+    const list = items.filter(({ m }) => {
+      const k = kindOf(m);
+      if (filter === 'file' && k !== 'file') return false;
+      if (filter === 'portal' && k === 'file') return false;
+      if (filter === 'new' && !m.isNew) return false;
+      const hay = (m.title + ' ' + m.sub + ' ' + (m.url || m.file || '') + ' ' + (m.links || []).map(l => l.label + l.url).join(' ')).toLowerCase();
+      return hay.includes(q);
+    });
+    if (!list.length) { body.innerHTML = '<div class="cons-empty">😕 No modules found</div>'; return; }
+    const files   = list.filter(x => kindOf(x.m) === 'file');
+    const portals = list.filter(x => kindOf(x.m) !== 'file');
+    body.innerHTML =
+      (files.length   ? `<div class="cons-sec">📄 Reports & Tools (${files.length})</div><div class="cons-grid">${files.map(card).join('')}</div>` : '') +
+      (portals.length ? `<div class="cons-sec">🌐 Online Portals & Links (${portals.length})</div><div class="cons-grid">${portals.map(card).join('')}</div>` : '');
+  };
+
+  box.querySelector('.cons-search').addEventListener('input', e => { q = e.target.value.trim().toLowerCase(); render(); });
+  box.querySelectorAll('.cons-chip').forEach(b => b.addEventListener('click', () => {
+    box.querySelectorAll('.cons-chip').forEach(x => x.classList.remove('on'));
+    b.classList.add('on'); filter = b.dataset.f; render();
+  }));
+  body.addEventListener('click', e => {
+    const b = e.target.closest('[data-open]');
+    if (b) activate(parseInt(b.dataset.open, 10));
+  });
+  render();
+}
+
 /* ── APP INIT ── */
 let activeIdx = -1;
 let frameMap  = {};
@@ -726,7 +853,7 @@ let pinnedOrder = []; // array of original MODULES indices, most-recently-pinned
 /* Load pinned state from localStorage (persists per browser) */
 function loadPinned() {
   try {
-    const raw = localStorage.getItem('mmr_pinned_modules');
+    const raw = localStorage.getItem('mmr_pinned_modules_v2');
     if (raw) {
       const arr = JSON.parse(raw);
       if (Array.isArray(arr)) pinnedOrder = arr.filter(i => Number.isInteger(i) && MODULES[i]);
@@ -734,7 +861,7 @@ function loadPinned() {
   } catch (e) { pinnedOrder = []; }
 }
 function savePinned() {
-  try { localStorage.setItem('mmr_pinned_modules', JSON.stringify(pinnedOrder)); } catch (e) {}
+  try { localStorage.setItem('mmr_pinned_modules_v2', JSON.stringify(pinnedOrder)); } catch (e) {}
 }
 
 function initApp() {
@@ -748,6 +875,15 @@ function initApp() {
 
     const area = document.getElementById('contentArea');
     MODULES.forEach((mod, i) => {
+      if (mod.type === 'consolidated') {
+        const div = document.createElement('div');
+        div.className = 'cons-landing';
+        area.appendChild(div);
+        buildConsolidated(div);
+        frameMap[i] = { type: 'consolidated', el: div };
+        return;
+      }
+
       if (mod.type === 'file') {
         const fr = document.createElement('iframe');
         fr.className = 'module-frame';
@@ -829,7 +965,7 @@ function initApp() {
     renderNavList();
   }
 
-  activate(pinnedOrder.length ? pinnedOrder[0] : 0);
+  activate(0);
 
   const btn = document.getElementById('collapseBtn');
   btn.style.left = (235 - 40) + 'px';
@@ -848,13 +984,11 @@ function renderNavList() {
     indices.forEach(i => {
       const mod = MODULES[i];
       const el = document.createElement('div');
-      const extraClass = mod.type === 'ext'
-        ? ' nav-rejected'
-        : mod.type === 'driver-salary'
-          ? ' nav-driver-salary'
-          : mod.type === 'multi'
-            ? ' nav-multi'
-            : '';
+      const extraClass = mod.type === 'ext' ? ' nav-rejected'
+        : mod.type === 'driver-salary' ? ' nav-driver-salary'
+        : mod.type === 'multi' ? ' nav-multi'
+        : mod.type === 'consolidated' ? ' nav-consolidated'
+        : '';
       el.className = 'nav-item' + extraClass;
       el.setAttribute('data-title', mod.title);
       el.setAttribute('data-idx', i);
@@ -977,7 +1111,7 @@ function reloadModule(idx, btnEl) {
       }, 3500);
     }, 80);
   } else {
-    /* For ext/driver-salary: just a visual flash to acknowledge reload */
+    /* For ext/driver-salary/multi/consolidated: just a visual flash to acknowledge reload */
     fo.el.style.opacity = '0.4';
     setTimeout(() => { fo.el.style.opacity = ''; }, 400);
   }
@@ -1020,7 +1154,7 @@ function activate(idx) {
   activeIdx = idx;
   const fo = frameMap[idx];
 
-  if (fo.type === 'ext' || fo.type === 'driver-salary' || fo.type === 'multi') {
+  if (['ext', 'driver-salary', 'multi', 'consolidated'].includes(fo.type)) {
     document.getElementById('loader').classList.add('hide');
     fo.el.classList.add('active');
     setTimeout(() => fo.el.classList.add('visible'), 30);
