@@ -64,6 +64,9 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui
 .fitem .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fitem .ct{font-size:11.5px;color:var(--muted);white-space:nowrap}
 .fitem .ct em{font-style:normal;display:block;text-align:right}
+#cbList,#psList{max-height:280px;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
+#cbList::-webkit-scrollbar,#psList::-webkit-scrollbar{width:6px}
+#cbList::-webkit-scrollbar-thumb,#psList::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:6px}
 .reset{margin:0 16px 16px;width:calc(100% - 32px)}
 
 /* report */
@@ -81,6 +84,8 @@ th{background:#eef2f7;text-align:left;font-weight:700;font-size:12.5px;white-spa
 tbody tr:nth-child(even){background:#fafbfc}
 tbody tr:hover{background:#f3f7ff}
 tfoot td{font-weight:700;background:#eef2f7}
+tbody tr.gsub,tbody tr.gsub:hover{background:#eaf0ff}
+tbody tr.gsub td{font-weight:700;background:#eaf0ff}
 .num{text-align:right}
 .nw{white-space:nowrap}
 .sums{display:flex;flex-wrap:wrap;gap:0 24px;padding:0 20px}
@@ -160,8 +165,8 @@ tfoot td{font-weight:700;background:#eef2f7}
 
   <div class="layout" id="layout" hidden>
     <aside class="card side">
-      <div class="fgroup"><div class="label">Created By</div><div id="cbList"></div></div>
-      <div class="fgroup"><div class="label">Payment Source</div><div id="psList"></div></div>
+      <div class="fgroup"><div class="label">Created By <span style="text-transform:none;letter-spacing:0;font-weight:500">(multi select)</span></div><div id="cbList"></div></div>
+      <div class="fgroup"><div class="label">Payment Source <span style="text-transform:none;letter-spacing:0;font-weight:500">(multi select)</span></div><div id="psList"></div></div>
       <button class="btn reset" id="reset">Reset filters</button>
     </aside>
 
@@ -217,7 +222,7 @@ const COLS=[
 ];
 ['vehicle','date','source'].forEach(k=>COLS.find(c=>c.key===k).nw=true);
 const NOV='(No Voucher)', DASH='-';
-let rows=[], selV=new Set(), fBy='ALL', fSrc='ALL', editing=null;
+let rows=[], selV=new Set(), fBy=new Set(), fSrc=new Set(), editing=null;
 const $=id=>document.getElementById(id);
 const norm=s=>String(s).toLowerCase().replace(/[^a-z0-9]/g,'');
 const fmtAmt=n=>Number(n||0).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -270,7 +275,7 @@ function load(file){
       return out;
     }).filter(r=>r.vehicle||r.amount);
     mergeVouchers();
-    selV=new Set(rows.map(r=>r.voucher));fBy='ALL';fSrc='ALL';
+    selV=new Set(rows.map(r=>r.voucher));fBy=new Set();fSrc=new Set();
     ['vcard','layout','toolbar'].forEach(i=>$(i).hidden=false);
     $('drop').classList.add('compact');
     $('dropT').textContent='Vera file upload panna: ';$('dropS').textContent='click illa drag & drop';
@@ -281,17 +286,20 @@ function load(file){
 
 const inV=r=>selV.has(r.voucher);
 const byOf=r=>r.by||DASH, srcOf=r=>r.source||DASH;
-function filtered(){return rows.filter(r=>inV(r)&&(fBy==='ALL'||byOf(r)===fBy)&&(fSrc==='ALL'||srcOf(r)===fSrc));}
+function filtered(){return rows.filter(r=>inV(r)&&(fBy.size===0||fBy.has(byOf(r)))&&(fSrc.size===0||fSrc.has(srcOf(r))));}
 function visCols(){return COLS.filter(c=>c.show);}
 
-function facet(list,field,fn,active,attr){
+function facet(list,field,fn,isOn,attr){
   // counts respect voucher + the other filter
-  const base=rows.filter(r=>inV(r)&&(field==='by'?(fSrc==='ALL'||srcOf(r)===fSrc):(fBy==='ALL'||byOf(r)===fBy)));
-  const g={};base.forEach(r=>{const k=fn(r);g[k]=g[k]||{n:0,amt:0};g[k].n++;g[k].amt+=r.amount;});
+  const base=rows.filter(r=>inV(r)&&(field==='by'?(fSrc.size===0||fSrc.has(srcOf(r))):(fBy.size===0||fBy.has(byOf(r)))));
+  const g={};
+  // Payment Source list: always show every source of the selected vouchers (Created By filter doesn't hide them)
+  if(field==='src')rows.filter(inV).forEach(r=>{const k=fn(r);g[k]=g[k]||{n:0,amt:0};});
+  base.forEach(r=>{const k=fn(r);g[k]=g[k]||{n:0,amt:0};g[k].n++;g[k].amt+=r.amount;});
   const keys=Object.keys(g).sort((a,b)=>g[b].amt-g[a].amt);
   const all=base.reduce((s,r)=>s+r.amount,0);
-  let h=`<button class="fitem ${active==='ALL'?'active':''}" data-${attr}="ALL"><span class="nm">All</span><span class="ct"><em>${base.length} veh</em><em>₹${fmtAmt(all)}</em></span></button>`;
-  keys.forEach(k=>{h+=`<button class="fitem ${active===k?'active':''}" data-${attr}="${esc(k)}"><span class="nm" title="${esc(k)}">${esc(k)}</span><span class="ct"><em>${g[k].n} veh</em><em>₹${fmtAmt(g[k].amt)}</em></span></button>`;});
+  let h=`<button class="fitem ${isOn('ALL')?'active':''}" data-${attr}="ALL"><span class="nm">All</span><span class="ct"><em>${base.length} veh</em><em>₹${fmtAmt(all)}</em></span></button>`;
+  keys.forEach(k=>{h+=`<button class="fitem ${isOn(k)?'active':''}" style="${g[k].n===0?'opacity:.5':''}" data-${attr}="${esc(k)}"><span class="nm" title="${esc(k)}">${esc(k)}</span><span class="ct"><em>${g[k].n} veh</em><em>₹${fmtAmt(g[k].amt)}</em></span></button>`;});
   list.innerHTML=h;return g;
 }
 
@@ -306,10 +314,13 @@ function render(){
   keys.forEach(k=>{const on=selV.has(k);h+=`<div class="chip ${on?'active':''}" data-v="${esc(k)}"><input type="checkbox" ${on?'checked':''} tabindex="-1"><div><b>${esc(k)}</b><small>${g[k].n} vehicles · ₹${fmtAmt(g[k].amt)}</small></div><button class="edit" data-e="${esc(k)}" title="Voucher No edit">✎</button></div>`;});
   $('chips').innerHTML=h;
 
-  let gb=facet($('cbList'),'by',byOf,fBy,'b');
-  if(fBy!=='ALL'&&!gb[fBy]){fBy='ALL';gb=facet($('cbList'),'by',byOf,fBy,'b');}
-  let gs=facet($('psList'),'src',srcOf,fSrc,'s');
-  if(fSrc!=='ALL'&&!gs[fSrc]){fSrc='ALL';facet($('psList'),'src',srcOf,fSrc,'s');facet($('cbList'),'by',byOf,fBy,'b');}
+  const isBy=k=>k==='ALL'?fBy.size===0:fBy.has(k), isSrc=k=>k==='ALL'?fSrc.size===0:fSrc.has(k);
+  let gb=facet($('cbList'),'by',byOf,isBy,'b');
+  let chg=false;[...fBy].forEach(k=>{if(!gb[k]){fBy.delete(k);chg=true;}});
+  if(chg)gb=facet($('cbList'),'by',byOf,isBy,'b');
+  let gs=facet($('psList'),'src',srcOf,isSrc,'s');
+  let chg2=false;[...fSrc].forEach(k=>{if(!gs[k]){fSrc.delete(k);chg2=true;}});
+  if(chg2){facet($('psList'),'src',srcOf,isSrc,'s');facet($('cbList'),'by',byOf,isBy,'b');}
 
   const data=filtered(), cols=visCols();
   const amt=data.reduce((s,r)=>s+r.amount,0);
@@ -346,7 +357,19 @@ function render(){
 
   let t='<thead><tr><th>S.No</th>'+cols.map(c=>`<th class="${c.num?'num':''}">${c.label}</th>`).join('')+'</tr></thead><tbody>';
   if(!data.length)t+=`<tr><td class="empty" colspan="${cols.length+1}">Data illa</td></tr>`;
-  data.forEach((r,i)=>{t+=`<tr><td>${i+1}</td>`+cols.map(c=>`<td class="${c.num?'num':c.nw?'nw':''}">${c.num?fmtAmt(r[c.key]):esc(r[c.key])}</td>`).join('')+'</tr>';});
+  const rowHtml=(r,i)=>`<tr><td>${i}</td>`+cols.map(c=>`<td class="${c.num?'num':c.nw?'nw':''}">${c.num?fmtAmt(r[c.key]):esc(r[c.key])}</td>`).join('')+'</tr>';
+  const ai=cols.findIndex(c=>c.key==='amount');
+  if(fBy.size>0&&data.length){
+    // Created By filter -> Payment Source wise grouped, each with its own total
+    let n=0;
+    consGroups(data).forEach(x=>{
+      x.rows.forEach(r=>{n++;t+=rowHtml(r,n);});
+      t+=`<tr class="gsub"><td colspan="${ai>=0?ai+1:cols.length+1}" class="num">${esc(x.src)} · Total (${x.rows.length} vehicles)</td>`+
+        (ai>=0?`<td class="num">${fmtAmt(x.amt)}</td>`+(cols.length-ai-1>0?`<td colspan="${cols.length-ai-1}"></td>`:''):'')+'</tr>';
+    });
+  }else{
+    data.forEach((r,i)=>{t+=rowHtml(r,i+1);});
+  }
   t+='</tbody>';
   if(cols.some(c=>c.key==='amount'))
     t+='<tfoot><tr><td>Total</td>'+cols.map(c=>c.key==='amount'?`<td class="num">${fmtAmt(amt)}</td>`:'<td></td>').join('')+'</tr></tfoot>';
@@ -362,12 +385,12 @@ function vSummary(data){
   return Object.keys(g).sort((a,b)=>g[b].amt-g[a].amt).map(k=>[k,g[k].n,g[k].amt]);
 }
 function srcInfo(data){
-  const all=fBy==='ALL';
+  const all=fBy.size===0;
   // Created By = ALL -> selected voucher(s) only (not whole file); otherwise current filtered data
   const d=all?rows.filter(inV):data;
   const allV=selV.size===new Set(rows.map(r=>r.voucher)).size;
   const vt=allV?'All Data':(selV.size===1?'Voucher: '+[...selV][0]:selV.size+' Vouchers');
-  return {title:all?'Payment Source wise Total ('+vt+')':fBy+' · Payment Source wise Total',data:d,
+  return {title:all?'Payment Source wise Total ('+vt+')':byLabel()+' · Payment Source wise Total',data:d,
     list:srcSummary(d),n:d.length,amt:d.reduce((x,r)=>x+r.amount,0)};
 }
 function typeSummary(data){
@@ -396,9 +419,9 @@ $('chips').onclick=e=>{
   else{selV.has(v)?selV.delete(v):selV.add(v);}
   render();
 };
-$('cbList').onclick=e=>{const b=e.target.closest('.fitem');if(b){fBy=b.dataset.b;render();}};
-$('psList').onclick=e=>{const b=e.target.closest('.fitem');if(b){fSrc=b.dataset.s;render();}};
-$('reset').onclick=()=>{fBy='ALL';fSrc='ALL';render();};
+$('cbList').onclick=e=>{const b=e.target.closest('.fitem');if(!b)return;const k=b.dataset.b;if(k==='ALL')fBy.clear();else if(fBy.has(k))fBy.delete(k);else fBy.add(k);render();};
+$('psList').onclick=e=>{const b=e.target.closest('.fitem');if(!b)return;const k=b.dataset.s;if(k==='ALL')fSrc.clear();else if(fSrc.has(k))fSrc.delete(k);else fSrc.add(k);render();};
+$('reset').onclick=()=>{fBy=new Set();fSrc=new Set();render();};
 $('mCancel').onclick=()=>$('modal').classList.remove('open');
 $('mSave').onclick=()=>{
   const nv=$('newV').value.trim()||NOV;
@@ -413,16 +436,17 @@ function vlabel(){
   const all=new Set(rows.map(r=>r.voucher));
   return selV.size===all.size?'All Vouchers':'Voucher No: '+([...selV].join(', ')||'None');
 }
+const byLabel=()=>[...fBy].join(', ');
 function subtitle(){
   return [vlabel(),
-    fBy==='ALL'?null:'Created By: '+fBy,
-    fSrc==='ALL'?null:'Payment Source: '+fSrc].filter(Boolean).join('  |  ');
+    fBy.size===0?null:'Created By: '+byLabel(),
+    fSrc.size===0?null:'Payment Source: '+[...fSrc].join(', ')].filter(Boolean).join('  |  ');
 }
 function fname(ext){
   let n='MMR_Vehicle_Advance_Report';
   const _a=new Set(rows.map(r=>r.voucher));if(selV.size!==_a.size)n+=selV.size<=3?'_'+[...selV].join('_'):'_'+selV.size+'_Vouchers';
-  if(fBy!=='ALL')n+='_'+fBy;
-  if(fSrc!=='ALL')n+='_'+fSrc;
+  if(fBy.size)n+=fBy.size<=3?'_'+[...fBy].join('_'):'_'+fBy.size+'_Users';
+  if(fSrc.size)n+=fSrc.size<=3?'_'+[...fSrc].join('_'):'_'+fSrc.size+'_Sources';
   return n.replace(/[^\w\-]/g,'_')+'.'+ext;
 }
 function tableData(){
@@ -496,10 +520,28 @@ $('pdfBtn').onclick=()=>{
     }});
   doc.save(fname('pdf'));
 };
-$('imgBtn').onclick=()=>{
-  html2canvas($('report'),{scale:2,backgroundColor:'#ffffff',scrollX:-window.scrollX,scrollY:-window.scrollY}).then(cv=>{
+
+/* Image / Copy Image target:
+   Created By filter active -> displayed (filtered) data only, payment source wise grouped with totals (consolidated style)
+   otherwise -> the normal report card */
+function shotTarget(){
+  if(fBy.size===0)return {el:$('report'),done:()=>{}};
+  const data=filtered();
+  const wrap=document.createElement('div');
+  wrap.className='cap';
+  wrap.style.cssText='position:fixed;left:-99999px;top:0;width:max-content;background:#fff;padding:14px 16px;box-sizing:border-box';
+  const amt=data.reduce((s,r)=>s+r.amount,0);
+  wrap.innerHTML=consHTMLFor(data,'MMR Vehicle Advance Report',subtitle()+'  |  Total Vehicles: '+data.length+'  |  Total Amount: ₹'+fmtAmt(amt),'Grand Total');
+  document.body.appendChild(wrap);
+  return {el:wrap,done:()=>wrap.remove()};
+}
+$('imgBtn').onclick=async()=>{
+  const t=shotTarget();
+  try{
+    const cv=await html2canvas(t.el,{scale:2,backgroundColor:'#ffffff',scrollX:-window.scrollX,scrollY:-window.scrollY});
     const a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download=fname('png');a.click();
-  });
+  }catch(e){toast('Image create panna mudiyala');}
+  t.done();
 };
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2600);}
 function downloadBlob(blob,name){
@@ -508,18 +550,20 @@ function downloadBlob(blob,name){
 }
 $('copyBtn').onclick=async()=>{
   const btn=$('copyBtn');btn.disabled=true;
+  const t=shotTarget();
+  const opts={scale:2,backgroundColor:'#ffffff',scrollX:-window.scrollX,scrollY:-window.scrollY};
   try{
-    const canvas=await html2canvas($('report'),{scale:2,backgroundColor:'#ffffff',scrollX:-window.scrollX,scrollY:-window.scrollY});
+    const canvas=await html2canvas(t.el,opts);
     const blob=await new Promise(res=>canvas.toBlob(res,'image/png'));
     if(!(navigator.clipboard&&window.ClipboardItem))throw new Error('unsupported');
     await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
     toast('Image copied ✓ WhatsApp la Ctrl+V (paste) pannunga');
   }catch(err){
     // fallback: clipboard blocked (e.g. file:// or old browser) -> download instead
-    try{const canvas=await html2canvas($('report'),{scale:2,backgroundColor:'#ffffff',scrollX:-window.scrollX,scrollY:-window.scrollY});
+    try{const canvas=await html2canvas(t.el,opts);
       canvas.toBlob(b=>{downloadBlob(b);toast('Copy support illa, image download aagiduchu');});}catch(e){toast('Image create panna mudiyala');}
   }
-  btn.disabled=false;
+  t.done();btn.disabled=false;
 };
 
 
@@ -559,7 +603,7 @@ $('copySumBtn').onclick=async()=>{
   wrap.remove();btn.disabled=false;
 };
 
-/* ===== Consolidated Report: all data, payment source wise grouped with totals ===== */
+/* ===== Consolidated Report: payment source wise grouped with totals ===== */
 const CH=['Vehicle No','Driver Name','GC Date','Payment Date','Payment Source','Type','Total Amount','Voucher No','Created By','Note'];
 function cdt(v,time){
   if(v instanceof Date&&!isNaN(v)){
@@ -573,10 +617,13 @@ function cdt(v,time){
 function consRow(r){
   return [r.vehicle,r.driver,cdt(r.gcRaw,false),cdt(r.pdRaw,true),r.source,r.type,fmtAmt(r.amount),r.voucher===NOV?'':r.voucher,r.by,r.note];
 }
-function consGroups(){
+/* group any list of rows by payment source (list defaults to all rows) */
+function consGroups(list){
+  list=list||rows;
   const srcMode=$('cSrcSort').value, vehMode=$('cVehSort').value;
+  rows.forEach((r,i)=>{r._i=i;});
   const m=new Map();
-  rows.forEach((r,i)=>{r._i=i;const k=srcOf(r);if(!m.has(k))m.set(k,{src:k,rows:[],amt:0});const g=m.get(k);g.rows.push(r);g.amt+=r.amount;});
+  list.forEach(r=>{const k=srcOf(r);if(!m.has(k))m.set(k,{src:k,rows:[],amt:0});const g=m.get(k);g.rows.push(r);g.amt+=r.amount;});
   const vk=r=>String(r.vehicle||'').replace(/\s+/g,'').toUpperCase();
   const tm=r=>r.pdRaw instanceof Date&&!isNaN(r.pdRaw)?r.pdRaw.getTime():r._i;
   const out=[...m.values()];
@@ -589,19 +636,23 @@ function consGroups(){
   });
   return out;
 }
-function consHTML(){
-  const g=consGroups(),tot=rows.reduce((s,r)=>s+r.amount,0);
-  let h=`<div class="ctitle">MMR Vehicle Advance Report - Consolidated Report</div><div class="csubt">All Data  |  Total Vehicles: ${rows.length}  |  Total Amount: ₹${fmtAmt(tot)}</div><table class="ctbl"><thead><tr>`+
+function consHTMLFor(list,title,subline,grandLabel){
+  const g=consGroups(list),tot=list.reduce((s,r)=>s+r.amount,0);
+  let h=`<div class="ctitle">${esc(title)}</div><div class="csubt">${esc(subline)}</div><table class="ctbl"><thead><tr>`+
     CH.map((c,i)=>`<th class="${i===6?'num':''}">${c}</th>`).join('')+`</tr></thead><tbody>`;
   g.forEach(x=>{
     x.rows.forEach(r=>{h+='<tr>'+consRow(r).map((v,i)=>`<td class="${i===6?'num':''}">${esc(v)}</td>`).join('')+'</tr>';});
     h+=`<tr class="csub"><td colspan="6" class="num">${esc(x.src)} · Total (${x.rows.length} vehicles)</td><td class="num">${fmtAmt(x.amt)}</td><td colspan="3"></td></tr>`;
   });
-  h+=`<tr class="cgrand"><td colspan="6" class="num">Grand Total (${rows.length} vehicles)</td><td class="num">${fmtAmt(tot)}</td><td colspan="3"></td></tr></tbody></table>`;
+  h+=`<tr class="cgrand"><td colspan="6" class="num">${esc(grandLabel||'Grand Total')} (${list.length} vehicles)</td><td class="num">${fmtAmt(tot)}</td><td colspan="3"></td></tr></tbody></table>`;
   return h;
 }
+function consHTML(){
+  const tot=rows.reduce((s,r)=>s+r.amount,0);
+  return consHTMLFor(rows,'MMR Vehicle Advance Report - Consolidated Report','All Data  |  Total Vehicles: '+rows.length+'  |  Total Amount: ₹'+fmtAmt(tot),'Grand Total');
+}
 $('consBtn').onclick=()=>{$('consBody').innerHTML=consHTML();$('cons').hidden=false;};
-$('cSrcSort').onchange=$('cVehSort').onchange=()=>{$('consBody').innerHTML=consHTML();};
+$('cSrcSort').onchange=$('cVehSort').onchange=()=>{$('consBody').innerHTML=consHTML();if(rows.length)render();};
 $('cClose').onclick=()=>{$('cons').hidden=true;};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('cons').hidden)$('cons').hidden=true;});
 
@@ -627,7 +678,7 @@ async function consCanvas(wrap){
   }
   w=wrap.offsetWidth;h=wrap.offsetHeight;
   const src=await html2canvas(wrap,{scale:Math.max(1,Math.min(3,IMG_W*1.5/w)),backgroundColor:'#ffffff',width:w,height:h,windowWidth:w+40,windowHeight:h+40,scrollX:0,scrollY:0});
-  // final canvas is exactly 1600 x 1307
+  // final canvas is exactly 2500 x 2042
   const out=document.createElement('canvas');out.width=IMG_W;out.height=IMG_H;
   const ctx=out.getContext('2d');
   ctx.fillStyle='#fff';ctx.fillRect(0,0,IMG_W,IMG_H);
